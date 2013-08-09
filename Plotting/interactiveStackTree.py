@@ -196,7 +196,7 @@ def ListBranches( key=None ) :
     global samples
 
     # grab list from 0th sample.  This may not work in some cases
-    for br in samples.samples.values()[0].chain.GetListOfBranches() :
+    for br in samples.samples[0].chain.GetListOfBranches() :
         if key is None :
             print br.GetName()
         else :

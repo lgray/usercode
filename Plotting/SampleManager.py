@@ -7,6 +7,7 @@ import imp
 import ROOT
 import copy
 import uuid
+import itertools
 from array import array
 
 ROOT.gROOT.SetBatch(False)
@@ -19,7 +20,7 @@ for p in atlasstylesearch:
         ROOT.gROOT.LoadMacro(p)
         break
 
-ROOT.SetAtlasStyle()
+#ROOT.SetAtlasStyle()
 ROOT.gStyle.SetPalette(1)
 
 class Sample :
@@ -66,6 +67,10 @@ class Sample :
         # can be further grouped default=[] 
         self.groupedSamples = kwargs.get('groupedSamples', [])
 
+        # set a sample to temporary to delete it
+        # when clear_all is called
+        self.temporary = False
+
 
     def AddFiles( self, treeName, files ) :
         """ Add one or more files and grab the tree named treeName """
@@ -92,7 +97,7 @@ class Sample :
 class SampleManager :
     """ Manage input samples and drawn histograms """
 
-    def __init__(self, base_path, mcweight, treeName, filename='ntuple.root', treeNameModel='events', base_path_model=None) :
+    def __init__(self, base_path, mcweight, treeName, treeNameModel='events', filename='ntuple.root', base_path_model=None) :
 
         #
         # This plotting module assumes that root files are 
@@ -163,14 +168,20 @@ class SampleManager :
 
             
     #--------------------------------
-    def get_samples(self, names=[]) :
+    def get_samples(self, names=None) :
+
+        # default, return all samples
+        if names is None :
+            return self.samples
+
+        # empty list provided, return empty list
+        if not names :
+            return []
+
         if not isinstance(names, list) :
             names = [names]
 
-        if names :
-            return filter( lambda x : x.name in names, self.samples )
-        else :
-           return self.samples
+        return filter( lambda x : x.name in names, self.samples )
 
     #--------------------------------
     def get_model_samples(self, names=[]) :
@@ -199,8 +210,15 @@ class SampleManager :
     #--------------------------------
     def clear_all(self) :
         """ clear all objects """
-        for samp in self.samples :
+        rm_samples = []
+        for idx, samp in enumerate(self.samples) :
             samp.hist=None
+            if samp.temporary :
+                rm_samples.append(samp)
+
+        for samp in rm_samples:
+            self.samples.remove(samp)
+
         for samp in self.modelSamples :
             samp.hist=None
         self.curr_canvases         = {}
@@ -224,6 +242,10 @@ class SampleManager :
 
         return names
             
+    #--------------------------------
+    def add_temp_sample(self, samp) :
+        samp.temporary = True
+        self.samples.append(samp)
 
     #--------------------------------
     def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False) :
@@ -338,7 +360,7 @@ class SampleManager :
             is_a_grouped_sample = ( name in self.get_grouped_sample_names() )
 
             if is_a_grouped_sample :
-                group_samples = self.get_sample(name).groupedSamples
+                group_samples = self.get_samples(name)[0].groupedSamples
                 thisSample.AddGroupSamples( group_samples )
             else :
                 thisSample.AddGroupSamples( samp )
@@ -535,7 +557,7 @@ class SampleManager :
 
         # reverse so that the stack is in the correct order
         reversed_samples = reversed( self.get_samples(self.stack_order) )
-        for samp in reversed samples :              
+        for samp in reversed_samples :              
             samp.hist.SetFillColor( samp.color )
             samp.hist.SetLineColor( ROOT.kBlack )
             self.curr_stack.Add(samp.hist, 'HIST')
@@ -592,17 +614,18 @@ class SampleManager :
             newsamp = copy.copy(samp)
             newsamp.hist=None
             newname = samp.name
-            if newname in created_hists :
+            if newname in created_hists or newname in [x.name for x in self.get_samples()] :
                 newname += str(idx)
 
             newsamp.name = newname
+            newsamp.legendName = samp.name
 
             if useModel :
                 self.create_hist( newsamp, treeHist, treeSelection, histpars, isModel=True)
             else :
                 self.create_hist( newsamp, varexp, sel, histpars)
 
-            self.samples.append(newsamp)
+            self.add_temp_sample(newsamp)
             created_hists.append(newsamp.name)
 
         if not created_hists :
@@ -611,14 +634,32 @@ class SampleManager :
 
         self.variable_rebinning(histpars, created_hists, useStoredBinning=useStoredBinning) 
 
+        created_samples = self.get_samples(created_hists)
+
         self.curr_canvases['same'] = ROOT.TCanvas('same', 'same')
+
+        self.curr_canvases['same'].SetTopMargin(0.08)
+        self.curr_canvases['same'].SetLeftMargin(0.13)
+        self.curr_canvases['same'].SetBottomMargin(0.12)
+
         if doratio :
-            self.curr_canvases['same'].SetTopMargin(0.08)
             self.curr_canvases['same'].SetBottomMargin(0.06)
+
         self.curr_canvases['same'].cd()
 
+        ymax = 0
+        for samp in created_samples :
+            max = samp.hist.GetMaximum()
+            if normalize :
+                max = max / samp.hist.Integral()
+            if max > ymax :
+                ymax = max
+
+        print 'FINAL Max ', ymax
+        
+        ymax *= 1.2
+
         first = True
-        created_samples = self.get_samples(created_hists)
         for samp, color in zip(created_samples, colors) :
             drawcmd = 'same'
             if first :
@@ -627,24 +668,33 @@ class SampleManager :
             if samp.isSignal :
                 drawcmd+='hist'
 
-            samp.hist.SetLineColor( color)
-            #samp.hist.SetMarkerSize( 1.0 )
-            #samp.hist.SetMarkerStyle( 20 )
-            samp.hist.SetMarkerColor(color )
-            #samp.hist.GetXaxis().SetLabelSize(0.05)
-            #samp.hist.GetXaxis().SetTitleSize(0.05)
-            #samp.hist.GetYaxis().SetLabelSize(0.05)
-            #samp.hist.GetYaxis().SetTitleSize(0.05)
-            #samp.hist.SetStats(0)
             if ylabel is not None :
                 samp.hist.GetYaxis().SetTitle( ylabel )
             if not doratio and xlabel is not None :
                 samp.hist.GetXaxis().SetTitle( xlabel )
 
+            samp.hist.SetLineColor( color)
+            samp.hist.SetLineWidth( 2 )
+            samp.hist.SetMarkerSize( 1.1 )
+            samp.hist.SetMarkerStyle( 20 )
+            samp.hist.SetMarkerColor(color )
+            #samp.hist.GetXaxis().SetLabelSize(0.05)
+            #samp.hist.GetXaxis().SetTitleSize(0.05)
+            #samp.hist.GetYaxis().SetLabelSize(0.05)
+            #samp.hist.GetYaxis().SetTitleSize(0.05)
+            #samp.hist.GetYaxis().SetTitleOffset(2.0)
+            samp.hist.SetStats(0)
+
             if normalize :
-                samp.hist.DrawNormalized(drawcmd+'goff')
-            else :
-                samp.hist.Draw(drawcmd+'goff')
+                samp.hist.Scale(1.0/samp.hist.Integral())
+                #samp.hist.DrawNormalized(drawcmd+'goff')
+            #else :
+
+            samp.hist.GetYaxis().SetRangeUser(0.0001, ymax)
+
+            samp.hist.Draw(drawcmd+'goff')
+
+                
 
         if doratio :
             rname = created_samples[0].name + '_ratio'
@@ -822,9 +872,9 @@ class SampleManager :
         else :
             self.curr_canvases['top'] = self.curr_canvases['base']
             self.curr_canvases['top'].SetTopMargin(0.08)
-            #self.curr_canvases['top'].SetBottomMargin(0.13)
-            #self.curr_canvases['top'].SetLeftMargin(0.13)
-            #self.curr_canvases['top'].SetTitle('')
+            self.curr_canvases['top'].SetBottomMargin(0.13)
+            self.curr_canvases['top'].SetLeftMargin(0.13)
+            self.curr_canvases['top'].SetTitle('')
 
         self.curr_canvases['top'].cd()
         if isinstance(topcan, ROOT.TCanvas ) :
@@ -833,13 +883,13 @@ class SampleManager :
                 if isinstance(prim, ROOT.TH1F) :
                     if doratio : # canvas sizes differ for ratio, so title, label sizes are different
                         prim.GetYaxis().SetTitleSize(0.06)
-                        prim.GetYaxis().SetTitleOffset(1.1)
+                        prim.GetYaxis().SetTitleOffset(1.2)
                         prim.GetYaxis().SetLabelSize(0.06)
                         prim.GetXaxis().SetLabelSize(0.06)
                         prim.GetXaxis().SetTitleSize(0.06)
                     else :
                         prim.GetYaxis().SetTitleSize(0.05)
-                        prim.GetYaxis().SetTitleOffset(1.1)
+                        prim.GetYaxis().SetTitleOffset(1.2)
                         prim.GetYaxis().SetLabelSize(0.05)
                         prim.GetXaxis().SetLabelSize(0.05)
                         prim.GetXaxis().SetTitleSize(0.05)
@@ -848,12 +898,16 @@ class SampleManager :
             #self.curr_canvases['top'].GetPrimitive('title').SetTextColor(ROOT.kWhite)
 
         histymax = 0
-        if isinstance(topcan, ROOT.THStack ) :
-            histymax = topcan.GetMaximum()
-
+        if isinstance(topcan, ROOT.TCanvas ) :
+            for prim in topcan.GetListOfPrimitives() :
+                if isinstance(prim, ROOT.TH1F) :
+                    max = prim.GetMaximum()
+                    if max > histymax :
+                        histymax = max
+                    
         datasamps = self.get_samples(datahists)
         for dsamp in datasamps :
-            max = self.samples[name].hist.GetMaximum()
+            max = dsamp.hist.GetMaximum()
             if max > histymax :
                 histymax = max
 
@@ -864,7 +918,8 @@ class SampleManager :
         if ymin is not None :
             histymin = ymin
         else :
-            histymin = 0.1
+            histymin = 0.0001
+
         if isinstance(topcan, ROOT.THStack ) :
             topcan.SetMaximum(histymax)
             topcan.SetMinimum(histymin) #to avoid error when setting log scale
@@ -886,7 +941,7 @@ class SampleManager :
             topcan.GetHistogram().GetYaxis().SetRangeUser(0, histymax)
         
         for dsamp in datasamps :
-            self.samples[name].hist.Draw('PE same')
+            dsamp.hist.Draw('PE same')
 
         sigsamps = self.get_samples(sighists)
         for samp in sighists : 
@@ -904,7 +959,7 @@ class SampleManager :
             atlaslabel = ROOT.TLatex()
             atlaslabel.SetNDC()
             atlaslabel.SetTextSize( 0.05 )
-            atlaslabel.SetText(0.3, 0.85, '#it{ATLAS Internal}')
+            atlaslabel.SetText(0.3, 0.85, '#it{CMS Internal}')
             atlaslabel.Draw()
             self.add_decoration(atlaslabel)
 
@@ -970,14 +1025,14 @@ class SampleManager :
     def DrawSameCanvas(self, normalize=False, doratio=False, xlabel=None, ylabel=None) :
 
         self.curr_canvases['same'] = ROOT.TCanvas('samecan', 'samecan')
-        #self.curr_canvases['same'].SetBottomMargin(0.12)
-        #self.curr_canvases['same'].SetLeftMargin(0.12)
+        self.curr_canvases['same'].SetBottomMargin(0.12)
+        self.curr_canvases['same'].SetLeftMargin(0.12)
 
         for idx, sample in enumerate(self.get_samples()) : 
-            #sample.hist.GetYaxis().SetTitleSize(0.05)
-            #sample.hist.GetYaxis().SetLabelSize(0.05)
-            #sample.hist.GetXaxis().SetLabelSize(0.05)
-            #sample.hist.GetXaxis().SetTitleSize(0.05)
+            sample.hist.GetYaxis().SetTitleSize(0.05)
+            sample.hist.GetYaxis().SetLabelSize(0.05)
+            sample.hist.GetXaxis().SetLabelSize(0.05)
+            sample.hist.GetXaxis().SetTitleSize(0.05)
             sample.hist.SetTitle('')
             if xlabel is not None :
                 sample.hist.GetXaxis().SetTitle(xlabel)
@@ -1048,17 +1103,17 @@ class SampleManager :
                 self.curr_ratios[name].isSignal = True
 
         # make the legend
-        # In placing the legend move the bottom down 0.05 for each entry
         step = len(created_hists)
         self.curr_legend = self.create_standard_legend(step, doratio)
 
         # check for an input legend_entries
         if not legend_entries : 
-            legend_entries = list(created_hists)
+            legend_entries = [self.get_samples(x)[0].legendName for x in created_hists]
 
         created_samples = self.get_samples(created_hists)
+        ymax = 0
         for idx, samp in enumerate(created_samples) :
-            drawopt = 'PE'
+            drawopt = 'PL'
             if samp.isSignal :
                 drawopt = 'L'
             legname = legend_entries[idx]
@@ -1067,7 +1122,7 @@ class SampleManager :
             samp.hist.SetLineColor( colors[idx] )
             samp.hist.SetMarkerColor( colors[idx] )
 
-        self.DrawCanvas(self.curr_canvases['same'], ylabel=ylabel, xlabel=xlabel, rlabel=rlabel, doratio=doratio, noAtlasLabel=noAtlasLabel)
+        self.DrawCanvas(self.curr_canvases['same'], ylabel=ylabel, xlabel=xlabel, rlabel=rlabel, doratio=doratio, noAtlasLabel=noAtlasLabel, ymax=ymax)
 
     def Draw2D( self, varexp, selection, sample_name, histpars=None, drawopts='', xlabel=None, ylabel=None) :
 
@@ -1143,175 +1198,233 @@ class SampleManager :
         self.DrawCanvas(self.curr_canvases['same'], ylabel=ylabel, xlabel=xlabel, doratio=doratio)
 
 
-    ##---------------------------------------------
-    ##---FIX
-    ##---------------------------------------------
+    def MakeFidAcceptTable(self, var, cut_selection, labels, samples, histpars, useModel=False, useTreeModel=False) :
 
-    #def MakeCutflowTable(self, var, cut_selection, labels, histpars, useModel=False, useTreeModel=False) :
+        if not isinstance(cut_selection, list) :
+            cut_selection = [cut_selection]
+        if not isinstance(labels, list) :
+            labels = [labels]
 
-    #    if not isinstance(cut_selection, list) :
-    #        cut_selection = [cut_selection]
-    #    if not isinstance(labels, list) :
-    #        labels = [labels]
+        if len(cut_selection) != len(labels) :
+            print 'Number of labels much match number of cuts'
+            return
 
-    #    if len(cut_selection) != len(labels) :
-    #        print 'Number of labels much match number of cuts'
-    #        return
+        mod_cut_selection = list(cut_selection)
+        mod_labels = list(labels)
+        mod_cut_selection.insert( 0, '' )
+        mod_labels.insert(0, 'Total')
+        
+        data = {}
+        created_hists = {}
+        for selection, label in zip(mod_cut_selection, mod_labels) :
+            data[label] = {}
 
-    #    table_entries = {}
-    #    cut_order = []
-    #    
-    #    for selection, label in zip(cut_selection, labels) :
-    #        cut_order.append(label)
-    #        table_entries[label] = {}
+            self.clear_all()
+            for sampname in samples :
+                samp = self.get_samples(sampname)[0]
 
-    #        self.clear_all()
-    #        for chain in self.samples.iteritems() :
+                histname = 'hist_%s' %(samp.name)
 
-    #            histname = 'hist_%s' %(name)
+                full_selection = selection
+                print 'Drawing sample : %s' %samp.name
 
-    #            full_selection = selection
-    #            print 'Drawing sample : %s' %name
+                self.create_hist( samp, var, selection, histpars )
 
-    #            thishist = None
-    #            if type( histpars ) is tuple :
-    #                thishist = ROOT.TH1F( histname, histname, 1, histpars[1], histpars[2] )
-    #                thishist.Sumw2()
+                # get the histogram
+                created_hists[sampname] = samp.hist.Clone()
 
-    #            if useTreeModel and name in self.treemodels  :
-    #                print 'Tree model is disabled'
-    #            #if useTreeModel and name in self.treemodels  :
-    #            #    # Draw the histogram.  Use histpars as the bin limits if given
-    #            #    self.treemodels[name].Draw(treeHist+ ' >> ' + histname, treeSelection, 'goff' )
-    #            #else :
-    #            #    # Draw the histogram.  Use histpars as the bin limits if given
-    #            chain.Draw(var+ ' >> ' + histname, full_selection, 'goff' )
+            
+            mcsum = 0.0
+            mcerrsq = 0.0
+            for name in samples :
+                hist = created_hists[name]
 
-    #            # get the histogram
-    #            if self.samples[name].isSignal :
-    #                self.curr_signals[name] = thishist.Clone()
-    #                #self.curr_signals[name] = ROOT.gPad.GetPrimitive(histname)
-    #            else :
-    #                self.curr_hists[name] = thishist.Clone()
-    #                #self.curr_hists[name] = ROOT.gPad.GetPrimitive(histname)
+                val = hist.GetBinContent(1)
+                err = hist.GetBinError(1)
+                data[label][name] = (val, err)
 
-    #        
-    #        mcsum = 0.0
-    #        mcerrsq = 0.0
-    #        for name, hist in self.curr_hists.iteritems() :
-    #            val = hist.GetBinContent(1)
-    #            err = hist.GetBinError(1)
-    #            table_entries[label][name] = (val, err)
-    #            if name is not 'Data' :
-    #                mcsum += val
-    #                mcerrsq += err*err
-    #        table_entries[label]['MC'] = (mcsum, math.sqrt(mcerrsq))
-    #        dataval = table_entries[label]['Data'][0]
-    #        dataerr = table_entries[label]['Data'][1]
-    #        ratioval = dataval/mcsum
-    #        ratioerr = dataval/mcsum * math.sqrt( ( dataerr/dataval )*( dataerr/dataval ) + ( mcerrsq/(mcsum*mcsum) ) )
-    #        table_entries[label]['Data/MC'] = (ratioval, ratioerr)
+        print data
 
-    #    for name in cut_order :
-    #        print table_entries[name]
+        table_entries = []
+        # top row
+        top_row = ['Cuts']
+        for name in samples :
+            top_row.append(name)
+            top_row.append('Acceptance')
 
-    #    second_table = {}
-    #    for cut, table in table_entries.iteritems() :
-    #        second_table.setdefault(cut, {})
+        table_entries.append(top_row)
 
-    #        for samp in ['Data','MC', 'Data/MC'] :
-    #            second_table[cut][samp] = table_entries[cut].pop(samp)
+        for label in labels :
+            data_row = [label]
+            for sampname in samples :
+                data_row.append( data[label][sampname][0] )
+                data_row.append( data[label][sampname][0]/float(data['Total'][sampname][0]))
+            table_entries.append(data_row)
 
-    #    table_text_1 = self.LatexCutflowTable(table_entries, cut_order, self.stack_order)
-    #    table_text_2 = self.LatexCutflowTable(second_table, cut_order, ['MC', 'Data', 'Data/MC'])
+        print table_entries
 
-    #    self.MakeLatexDocument(tables=[table_text_1, table_text_2])
+        table_text = self.MakeLatexFidAcceptTable(table_entries)
+    
+        self.MakeLatexDocument(tables=[table_entries])
+            
+        
 
+    def MakeCutflowTable(self, var, cut_selection, labels, histpars, useModel=False, useTreeModel=False) :
 
-    #def LatexCutflowTable(self, entries, roworder, colorder, options={}) :
-    #    print roworder
-    #    print entries.values()[0]
+        if not isinstance(cut_selection, list) :
+            cut_selection = [cut_selection]
+        if not isinstance(labels, list) :
+            labels = [labels]
 
-    #    table = []
-    #    header = []
-    #    header.append('Cut Flow')
-    #    header+= colorder
-    #    table.append(header)
+        if len(cut_selection) != len(labels) :
+            print 'Number of labels much match number of cuts'
+            return
 
-    #    for rowname in roworder :
-    #        entry = entries[rowname]
-    #        cutline = []
-    #        cutline.append(rowname)
-    #        print 'Row %s has entry' %rowname
-    #        print entry
-    #        for sampname in colorder :
-    #            data =  entry[sampname]
-    #            if data[0] > 1000 :
-    #                cutline.append(r'%.2e $\pm$ %.2f'  %( data[0], data[1]) )
-    #            elif data[0] < 1 :
-    #                cutline.append(r'%.3f $\pm$ %.3f'  %( data[0], data[1]) )
-    #            else :
-    #                cutline.append(r'%.2f $\pm$ %.2f'  %( data[0], data[1]) )
-    #        table.append(cutline)
+        table_entries = {}
+        
+        for selection, label in zip(cut_selection, labels) :
+            table_entries[label] = {}
 
-    #    print 'TABLE'
-    #    print table
+            self.clear_all()
+            for samp in self.samples :
 
-    #    # loop over the inputs and collect length information
-    #    column_width = []
-    #    numcol = len(table[0]) # the length of any row (first here) is the column width
-    #    for colnum in range(0, numcol) :
-    #        widths = []
-    #        for row in table :
-    #            colentry = row[colnum]
-    #            widths.append(len(colentry))
-    #        column_width.append(max(widths))
-    #        #column_width[table[0][colnum]] = max(widths)
+                histname = 'hist_%s' %(samp.name)
 
-    #    table_text = []
-    #    table_text.append(r'\begin{table}')
-    #    table_text.append(r'\scriptsize')
+                full_selection = selection
+                print 'Drawing sample : %s' %samp.name
 
-    #    ncutcol = len(colorder)
-    #    table_text.append(r'\begin{tabular}{ | l | %s |}\hline' %( '|'.join([ ' c ' ]*ncutcol)))
-    #    for row in table :
-    #        text_entries = []
-    #        print row
-    #        for coln, ent in enumerate(row) :
-    #            print column_width[coln]
-    #        row_entry = ' %s ' %( ' & '.join([ ent.ljust(column_width[coln])  for coln, ent in enumerate(row) ] ))
-    #        row_entry.rstrip('&&')
-    #        row_entry += r' \\'
-    #        table_text.append(row_entry)
+                self.create_hist( samp, var, selection, histpars )
 
-    #    table_text[-1] += r' \hline'
-    #    table_text.append('\end{tabular}\end{table}')
+                # get the histogram
+                if samp.isSignal :
+                    self.curr_signals[samp.name] = samp.hist.Clone()
+                else :
+                    self.curr_hists[samp.name] = samp.hist.Clone()
 
-    #    print '\n'.join(table_text)
-    #    return table_text
+            
+            mcsum = 0.0
+            mcerrsq = 0.0
+            for name, hist in self.curr_hists.iteritems() :
+                val = hist.GetBinContent(1)
+                err = hist.GetBinError(1)
+                table_entries[label][name] = (val, err)
+                if name is not 'Data' :
+                    mcsum += val
+                    mcerrsq += err*err
+            table_entries[label]['MC'] = (mcsum, math.sqrt(mcerrsq))
+            if 'Data' in self.curr_hists :
+                dataval = table_entries[label]['Data'][0]
+                dataerr = table_entries[label]['Data'][1]
+                ratioval = dataval/mcsum
+                ratioerr = dataval/mcsum * math.sqrt( ( dataerr/dataval )*( dataerr/dataval ) + ( mcerrsq/(mcsum*mcsum) ) )
+                table_entries[label]['Data/MC'] = (ratioval, ratioerr)
 
-    #def MakeLatexDocument(self, tables=[]) :
-    #
-    #    doc_text = []
-    #    doc_text.append(r'\documentclass[12pt]{article}')
-    #    doc_text.append(r'\usepackage[top=3cm,bottom=2cm,left=1cm,right=1cm] {geometry}')
-    #    doc_text.append(r'\begin{document}')
-    #    doc_text.append(r'\begin{center}')
-    #    for table_text in tables :
-    #        doc_text += table_text
-    #    doc_text.append(r'\end{center}')
-    #    doc_text.append(r'\end{document}')
+        for name in labels :
+            print table_entries[name]
 
-    #    print 'DOC'
-    #    print '\n'.join(doc_text)
-    #    tmpname = '/tmp/latex_table'
-    #    tmpfile = open(tmpname+'.tex', 'w')
-    #    tmpfile.write('\n'.join(doc_text))
-    #    tmpfile.close()
+        second_table = {}
+        for cut, table in table_entries.iteritems() :
+            second_table.setdefault(cut, {})
 
-    #    os.system(r'cd /tmp ; latex %s' %tmpname+'.tex')
-    #    os.system(r'dvips %s -o %s' %(tmpname+'.dvi', tmpname+'.ps' ) )
-    #    os.system(r'gv %s' %tmpname+'.ps')
+            if 'Data' in self.curr_hists :
+                for samp in ['Data','MC', 'Data/MC'] :
+                    second_table[cut][samp] = table_entries[cut].pop(samp)
+
+        table_text_1 = self.LatexCutflowTable(table_entries, cut_order, self.stack_order)
+        table_text_2 = self.LatexCutflowTable(second_table, cut_order, ['MC', 'Data', 'Data/MC'])
+
+        self.MakeLatexDocument(tables=[table_text_1, table_text_2])
+
+    def MakeLatexFidAcceptTable(self, entries, options={}) :
+
+        table = []
+        for row in itertools.product(entries) :
+            print 'row = ', row
+
+    def LatexCutflowTable(self, entries, roworder, colorder, options={}) :
+        print roworder
+        print entries
+
+        table = []
+        header = []
+        header.append('Cut Flow')
+        header+= colorder
+        table.append(header)
+
+        for rowname in roworder :
+            entry = entries[rowname]
+            cutline = []
+            cutline.append(rowname)
+            print 'Row %s has entry' %rowname
+            print entry
+            for sampname in colorder :
+                data =  entry[sampname]
+                if data[0] > 1000 :
+                    cutline.append(r'%.2e $\pm$ %.2f'  %( data[0], data[1]) )
+                elif data[0] < 1 :
+                    cutline.append(r'%.3f $\pm$ %.3f'  %( data[0], data[1]) )
+                else :
+                    cutline.append(r'%.2f $\pm$ %.2f'  %( data[0], data[1]) )
+            table.append(cutline)
+
+        print 'TABLE'
+        print table
+
+        # loop over the inputs and collect length information
+        column_width = []
+        numcol = len(table[0]) # the length of any row (first here) is the column width
+        for colnum in range(0, numcol) :
+            widths = []
+            for row in table :
+                colentry = row[colnum]
+                widths.append(len(colentry))
+            column_width.append(max(widths))
+            #column_width[table[0][colnum]] = max(widths)
+
+        table_text = []
+        table_text.append(r'\begin{table}')
+        table_text.append(r'\scriptsize')
+
+        ncutcol = len(colorder)
+        table_text.append(r'\begin{tabular}{ | l | %s |}\hline' %( '|'.join([ ' c ' ]*ncutcol)))
+        for row in table :
+            text_entries = []
+            print row
+            for coln, ent in enumerate(row) :
+                print column_width[coln]
+            row_entry = ' %s ' %( ' & '.join([ ent.ljust(column_width[coln])  for coln, ent in enumerate(row) ] ))
+            row_entry.rstrip('&&')
+            row_entry += r' \\'
+            table_text.append(row_entry)
+
+        table_text[-1] += r' \hline'
+        table_text.append('\end{tabular}\end{table}')
+
+        print '\n'.join(table_text)
+        return table_text
+
+    def MakeLatexDocument(self, tables=[]) :
+    
+        doc_text = []
+        doc_text.append(r'\documentclass[12pt]{article}')
+        doc_text.append(r'\usepackage[top=3cm,bottom=2cm,left=1cm,right=1cm] {geometry}')
+        doc_text.append(r'\begin{document}')
+        doc_text.append(r'\begin{center}')
+        for table_text in tables :
+            doc_text += table_text
+        doc_text.append(r'\end{center}')
+        doc_text.append(r'\end{document}')
+
+        print 'DOC'
+        print '\n'.join(doc_text)
+        tmpname = '/tmp/latex_table'
+        tmpfile = open(tmpname+'.tex', 'w')
+        tmpfile.write('\n'.join(doc_text))
+        tmpfile.close()
+
+        os.system(r'cd /tmp ; latex %s' %tmpname+'.tex')
+        os.system(r'dvips %s -o %s' %(tmpname+'.dvi', tmpname+'.ps' ) )
+        os.system(r'gv %s' %tmpname+'.ps')
 
     # ------------------------------------------------------------
     #   Do variable rebinning for a stack plot
@@ -1371,7 +1484,7 @@ class SampleManager :
     # ----------------------------------------------------------------------------
     def create_standard_legend(self, nentries, doratio=False) :
 
-        legend_limits = { 'x1' : 0.68, 'y1' : 0.82-0.06*nentries, 'x2' : 0.92, 'y2' : 0.82 }
+        legend_limits = { 'x1' : 0.65, 'y1' : 0.82-0.06*nentries, 'x2' : 0.90, 'y2' : 0.82 }
 
         # modify for different canvas size
         if doratio :
