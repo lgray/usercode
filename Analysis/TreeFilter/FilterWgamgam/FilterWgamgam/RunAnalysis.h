@@ -1,20 +1,23 @@
-#include "AnalysisBase.h"
+#ifndef RUNANALYSIS_H
+#define RUNANALYSIS_H
 
-#include "BranchDefs.h"
-#include "BranchInit.icc"
+#include "Core/AnalysisBase.h"
 
-struct CmdOptions {
+#include <string>
 
-  CmdOptions();
 
-  std::string conf_file;
+#include "TTree.h"
+#include "TChain.h"
 
-};
 
-CmdOptions ParseOptions(int, char**);
+void Run( TChain * chain, TTree *outtree, const AnaConfig & config, const CmdOptions & options, int minevt=0, int maxevt=0);
+bool ApplyModule( const ModuleConfig & config );
+void BuildElec  ( const ModuleConfig & config );
+bool FilterElec ( const ModuleConfig & config );
+bool FilterMuon ( const ModuleConfig & config );
+bool FilterJet  ( const ModuleConfig & config );
+bool FilterEvent( const ModuleConfig & config );
+void ConfigOutFile( TFile * file, const std::string & raw_name, TTree * outtree );
 
-void ApplyModule( const ModuleConfig & config );
-void FilterElec( const ModuleConfig & config );
 
-AnaConfig ParseConfig( const std::string & fname );
-
+#endif

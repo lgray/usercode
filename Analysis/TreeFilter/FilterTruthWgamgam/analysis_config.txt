@@ -1,0 +1,8 @@
+files : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TruthFilterWgamgamTau_2013_08_06/FSR/Job_0000/hist.root
+treeName : ggNtuplizer/EventTree
+output : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TruthFilterObjCutsTau_2013_08_07/FSR/Job_0000/hist.root
+__Modules__
+BuildLepton : cut_abseta [< 2.5] ; cut_incTau [False] ; cut_incTauMother [True] ; cut_pt [> 25] ; 
+BuildPhoton : cut_abseta [ < 2.5] ; cut_pt [ > 15] ; 
+BuildNeutrino : 
+BuildEvent : 

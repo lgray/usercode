@@ -17,7 +17,7 @@ LD      = g++
 BIN_DIR = ./
 OBJ_DIR = ./
 SRC_DIR = src/
-INC_DIR = FilterWgamgam
+INC_DIR = BasicFilter
 
 #ROOTCINT     = $(ROOTSYS)/bin/rootcint
 #ROOTCONFIG   = $(ROOTSYS)/bin/root-config
@@ -62,10 +62,10 @@ RUN_MERGE           = $(BIN_DIR)/RunAnalysis
 all:   $(RUN_MERGE)
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cxx
-	$(CXX) $(CXXFLAGS) -c $^ -o $@ -I../FilterWgamgam
+	$(CXX) $(CXXFLAGS) -c $^ -o $@ -I../BasicFilter
 
 $(RUN_MERGE): $(OBJECT_RUNANA) $(BRANCH_INIT)
-	$(CXX) $(CXXFLAGS) -o $@ -g $^ $(COREOBJ) $(LIBS) -I../FilterWgamgam
+	$(CXX) $(CXXFLAGS) -o $@ -g $^ $(COREOBJ) $(LIBS) -I../BasicFilter
 clean:
 	@echo -e "\n\n===> cleaning directories"
 	rm -f $(OBJ_DIR)/*.o 
