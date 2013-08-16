@@ -1,4 +1,4 @@
-*.[oa]
+*.oa
 *~
-*.[pyc]
-*.[root]
+*.pyc
+*.root
