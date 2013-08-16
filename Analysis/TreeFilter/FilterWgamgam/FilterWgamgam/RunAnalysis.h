@@ -9,15 +9,23 @@
 #include "TTree.h"
 #include "TChain.h"
 
+class RunModule : public virtual RunModuleBase {
 
-void Run( TChain * chain, TTree *outtree, const AnaConfig & config, const CmdOptions & options, int minevt=0, int maxevt=0);
-bool ApplyModule( const ModuleConfig & config );
-void BuildElec  ( const ModuleConfig & config );
-bool FilterElec ( const ModuleConfig & config );
-bool FilterMuon ( const ModuleConfig & config );
-bool FilterJet  ( const ModuleConfig & config );
-bool FilterEvent( const ModuleConfig & config );
-void ConfigOutFile( TFile * file, const std::string & raw_name, TTree * outtree );
+    public :
 
+        RunModule() {}
+
+        void Run( TChain * chain, TTree *outtree, const std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
+
+        bool ApplyModule( const ModuleConfig & config ) const;
+        void BuildElec  ( const ModuleConfig & config ) const;
+        bool FilterElec ( const ModuleConfig & config ) const;
+        bool FilterMuon ( const ModuleConfig & config ) const;
+        bool FilterJet  ( const ModuleConfig & config ) const;
+        bool FilterEvent( const ModuleConfig & config ) const;
+
+};
+
+//void Run( TChain * chain, TTree *outtree, const AnaConfig & config, const CmdOptions & options, int minevt=0, int maxevt=0);
 
 #endif

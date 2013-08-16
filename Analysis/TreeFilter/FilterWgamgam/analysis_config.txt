@@ -1,0 +1,6 @@
+files : [root://eoscms.cern.ch//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/job_summer12_ttg/Job_0000/hist.root][0:(0-71598),];
+treeName : ggNtuplizer/EventTree
+outputDir : /tmp/jkunkle/TMP_ggtree_mc_ISR
+outputFile : hist.root
+__Modules__
+FilterJet : cut_pt [> 15] ; 

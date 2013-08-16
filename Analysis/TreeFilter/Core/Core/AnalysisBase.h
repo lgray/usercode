@@ -7,6 +7,12 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "TTree.h"
+#include "TH1F.h"
+#include "TChain.h"
+//class TTree;
+//class TChain;
+
 namespace CutType {
 
     enum Op {
@@ -37,7 +43,7 @@ class Cut {
         Cut(CutType::Op in_op, CutType::Type in_type, 
              bool in_val_bool, int in_val_int, float in_val_float);
 
-        void Print();
+        void Print() const;
     public :
 
         CutType::Op   op;
@@ -79,15 +85,46 @@ class CutConfig {
 
 };
 
+class CutFlowModule {
+
+    public :
+        
+        CutFlowModule( const std::string & _name);
+        ~CutFlowModule();
+
+        // allow for a non-zero weight, but
+        // for now assume the weight is 1
+        void AddCutDecision( const std::string & cutname, bool pass, float weight=1.0);
+        void AddCutDecisionFloat( const std::string & cutname, bool pass, float val, float weight=1.0);
+        void AddCutDecisionInt( const std::string & cutname, bool pass, int val, float weight=1.0);
+        void AddCutDecisionBool( const std::string & cutname, bool pass, bool val, float weight=1.0);
+
+        std::map<std::string, TH1F*> & getHists() { return hists; }
+        bool hasHist( const std::string & name ) { return ( hists.find(name) != hists.end() ); }
+        TH1F* getHist( const std::string & name ) { return hists[name]; }
+        const std::vector<std::string> & getOrder() { return order; }
+
+        void Print() const;
+
+    private :
+
+        std::vector<std::string> order;
+        std::map<std::string, float> counts;
+        float                        total;
+        std::string name;
+        std::map<std::string, TH1F*> hists;
+
+};
+
 class ModuleConfig {
 
     public :
 
-        ModuleConfig(const std::string &in_name, const std::vector<CutConfig> & in_configs);
+        ModuleConfig(const std::string &_name);
 
-        bool PassBool ( const std::string & cutname, const bool  val ) const;
-        bool PassInt  ( const std::string & cutname, const int   val ) const;
-        bool PassFloat( const std::string & cutname, const float val ) const;
+        bool PassBool ( const std::string & cutname, const bool  val );
+        bool PassInt  ( const std::string & cutname, const int   val );
+        bool PassFloat( const std::string & cutname, const float val );
 
         std::string GetName() const {return name;}
 
@@ -96,30 +133,23 @@ class ModuleConfig {
 
         const std::vector<CutConfig> & GetAllCuts() const { return configs; }
 
-    public :
+        void AddCutFlow( const std::string & name );
+        void AddCut( CutConfig config );
+        void AddHist( const std::string & name, int nbin, float xmin, float xmax );
+
+        void PrintCutFlows() const;
+
+        std::vector<CutFlowModule> & getCutFlows() { return cutflows; }
+
+    private :
 
         std::string name;
         std::vector<CutConfig> configs;
 
-};
-
-class AnaConfig {
-
-    public :
-       
-        AnaConfig();
-
-        void AddModule( const std::string &name, const std::vector<CutConfig> & in_confs );
-
-
-        int size() const { return confs.size(); }
-
-        const ModuleConfig getEntry( unsigned int i ) const ;
-        const std::vector<ModuleConfig> getEntries() const;
-    
-    public :
-
-        std::vector<ModuleConfig> confs;
+        // For now assume 1 cutflow per module
+        // but use a vector in case this
+        // needs to be expanded in the future
+        std::vector<CutFlowModule> cutflows;
 
 };
 
@@ -131,7 +161,6 @@ struct FileEntry {
     std::vector< std::pair< std::string, std::pair< int, int > > > jobs;
 
 };
-
 
 struct CmdOptions {
 
@@ -149,6 +178,37 @@ struct CmdOptions {
 };
 
 CmdOptions ParseOptions(int, char**);
+
+class RunModuleBase {
+
+    public : 
+
+        virtual void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) const = 0;
+
+};
+
+class AnaConfig {
+
+    public :
+       
+        AnaConfig();
+
+        void AddModule( ModuleConfig module );
+
+        void Run( const RunModuleBase & base, const CmdOptions & options);
+
+        int size() const { return confs.size(); }
+
+        const ModuleConfig getEntry( unsigned int i ) const ;
+        std::vector<ModuleConfig> & getEntries();
+    
+    public :
+
+        std::vector<ModuleConfig> confs;
+
+};
+
+
 
 AnaConfig ParseConfig( const std::string & fname, CmdOptions & options );
 

@@ -1,4 +1,5 @@
-files : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Samples/WgamgamFSR/ggtree_mc_FSR.root
+files : [root://eoscms.cern.ch//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/ggtree_mc_FSR/Job_0012/hist.root][0:(0-50015),];
 treeName : ggNtuplizer/EventTree
-output : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TruthFilterFSR_2013_08_06/Job_0000/hist.root
+outputDir : .
+outputFile : test.root
 __Modules__

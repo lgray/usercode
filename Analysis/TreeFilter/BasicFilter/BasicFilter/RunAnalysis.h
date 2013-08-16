@@ -9,23 +9,14 @@
 #include "TTree.h"
 #include "TChain.h"
 
-struct CmdOptions {
+class RunModule : public virtual RunModuleBase {
 
-  CmdOptions();
+    public :
 
-  std::string config_file;
-  std::string treeName;
-  std::string output;
-  std::vector<std::string> files;
-  int nevt;
+        RunModule() {}
+
+        void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
 
 };
-
-CmdOptions ParseOptions(int, char**);
-
-void Run( TChain * chain, TTree *outtree, const AnaConfig & config, const CmdOptions & options);
-void ConfigOutFile( TFile * file, const std::string & raw_name, TTree * outtree );
-
-AnaConfig ParseConfig( const std::string & fname, CmdOptions & options );
 
 #endif

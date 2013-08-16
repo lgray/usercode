@@ -1,4 +1,4 @@
-from filter import Filter
+from core import Filter
 
 def get_remove_filter() :
 

@@ -20,11 +20,9 @@ class RunModule : public virtual RunModuleBase {
         void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
 
         bool ApplyModule      ( ModuleConfig & config ) const;
-        void BuildLepton      ( ModuleConfig & config ) const;
-        //void BuildMuon      ( ModuleConfig & config ) const;
+        void BuildElectron    ( ModuleConfig & config ) const;
+        void BuildMuon      ( ModuleConfig & config ) const;
         void BuildPhoton      ( ModuleConfig & config ) const;
-        void BuildNeutrino    ( ModuleConfig & config ) const;
-        void BuildWboson      ( ModuleConfig & config ) const;
         void BuildEvent       ( ModuleConfig & config ) const;
         bool FilterElec       ( ModuleConfig & config ) const;
         bool FilterMuon       ( ModuleConfig & config ) const;
@@ -34,39 +32,35 @@ class RunModule : public virtual RunModuleBase {
 
 };
 
+
 namespace OUT {
 
-    Int_t              lep_n;
+    Int_t              el_n;
+    Int_t              mu_n;
     Int_t              phot_n;
-    Int_t              nu_n;
-    Int_t              w_n;
+    Int_t              vtx_n;
 
-    std::vector<float>  *lep_pt;
-    std::vector<float>  *lep_eta;
-    std::vector<float>  *lep_phi;
-    std::vector<float>  *lep_e;
-    std::vector<int>    *lep_motherPID;
-    std::vector<Bool_t> *lep_isElec;
-    std::vector<Bool_t> *lep_isMuon;
-    std::vector<Bool_t> *lep_isPos;
+    std::vector<float>  *el_pt;
+    std::vector<float>  *el_eta;
+    std::vector<float>  *el_phi;
+    std::vector<float>  *el_e;
+
+    std::vector<float>  *mu_pt;
+    std::vector<float>  *mu_eta;
+    std::vector<float>  *mu_phi;
+    std::vector<float>  *mu_e;
 
     std::vector<float>  *phot_pt;
     std::vector<float>  *phot_eta;
     std::vector<float>  *phot_phi;
     std::vector<float>  *phot_e;
-    std::vector<int>    *phot_motherPID;
 
-    std::vector<float>  *nu_pt;
-    std::vector<float>  *nu_eta;
-    std::vector<float>  *nu_phi;
-    std::vector<float>  *nu_e;
-    std::vector<int>    *nu_motherPID;
+    Float_t             avgPU; 
 
-    std::vector<float>  *w_pt;
-    std::vector<float>  *w_eta;
-    std::vector<float>  *w_phi;
-    std::vector<float>  *w_e;
-    std::vector<Bool_t>  *w_isPos;
+    Float_t             met_et;
+    Float_t             met_phi;
+    Float_t             sumet;
+    Float_t             metsig;
 
     Float_t             leadPhot_pt;
     Float_t             sublPhot_pt;
@@ -80,16 +74,12 @@ namespace OUT {
     Float_t             phot_photDPhi;
     Float_t             photPhot_lepDPhi;
 
-    Float_t             mt_lepnu;
-    Float_t             mt_lepphot1nu;
-    Float_t             mt_lepphot2nu;
-    Float_t             mt_lepphotphotnu;
+    Float_t             mt_lep_met;
+    Float_t             mt_lepphot1_met;
+    Float_t             mt_lepphot2_met;
+    Float_t             mt_lepphotphot_met;
 
-    Float_t             m_lepnu;
     Float_t             m_leplep;
-    Float_t             m_lepphot1nu;
-    Float_t             m_lepphot2nu;
-    Float_t             m_lepphotphotnu;
     Float_t             m_lepphot1;
     Float_t             m_lepphot2;
     Float_t             m_lepphotphot;

@@ -6,21 +6,22 @@
 #include <iomanip>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include "TFile.h"
 
 AnaConfig::AnaConfig()
 {
 }
 
-void AnaConfig::AddModule(  const std::string &in_name, const std::vector<CutConfig> & in_confs ) {
-
-    confs.push_back( ModuleConfig( in_name, in_confs) );
-
+void AnaConfig::AddModule(  ModuleConfig module ) 
+{
+    confs.push_back( module );
 }
 
-ModuleConfig::ModuleConfig( const std::string &in_name, const std::vector<CutConfig> & in_configs ) :
-    
-    name( in_name ),
-    configs( in_configs )
+ModuleConfig::ModuleConfig( const std::string &_name ) :
+    name( _name )
 {
 }
 
@@ -28,13 +29,131 @@ const ModuleConfig AnaConfig::getEntry( unsigned int i ) const {
 
     if( i > confs.size()-1 ) {
         std::cout << "AnaConfig::getEntry - ERROR : entry exceeds size" << std::endl;
-        return ModuleConfig( "", std::vector<CutConfig>() );
+        return ModuleConfig( "" );
     }
 
     return confs[i];
 }
 
-const std::vector<ModuleConfig> AnaConfig::getEntries() const {
+
+
+void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) {
+
+
+    int total_njobs = 0;
+    for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
+        total_njobs += options.files[fidx].jobs.size();
+    }
+
+    // loop over subjobs
+    int jobidx = -1;
+    for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
+        TChain *chain = new TChain(options.treeName.c_str() );
+
+        BOOST_FOREACH( const std::string &fname, options.files[fidx].files ) {
+          std::cout << "Add file " << fname << std::endl;
+          chain->Add( fname.c_str() );
+        }
+
+        // Loop over job ranges
+        for( unsigned jidx = 0 ; jidx < options.files[fidx].jobs.size(); ++jidx ) {
+            jobidx++;
+
+            std::string jobstr = options.files[fidx].jobs[jidx].first;
+            int minevt = options.files[fidx].jobs[jidx].second.first;
+            int maxevt = options.files[fidx].jobs[jidx].second.second;
+
+            std::string outputDir = options.outputDir;
+            if( total_njobs > 1 ) {
+                outputDir += "/" + jobstr;
+            }
+
+            // create the output directory
+            mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            std::string filepath = outputDir + "/" + options.outputFile;
+
+            CutFlowModule cfm( "test" );
+            TFile * outfile  = TFile::Open(filepath.c_str(), "RECREATE");
+
+
+            outfile->cd();
+            TTree * outtree  = 0;
+            std::vector<std::string> name_tok = Tokenize( chain->GetName(), "/" ); 
+
+            std::string dir_path = "";
+            if( name_tok.size() > 1 ) {
+                // if the tree is in a directory
+                // reproduce the directory structure
+                // and put the tree in there
+                for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
+                    dir_path = dir_path + name_tok[i]+"/";
+                    std::cout << " mkdir " << dir_path << std::endl;
+                    outfile->mkdir(dir_path.c_str());
+                }
+                outfile->cd(dir_path.c_str());
+
+                std::string name = name_tok[name_tok.size()-1];
+            
+                outtree = new TTree(name.c_str(), name.c_str());
+                //outtree->SetDirectory(outfile->GetDirectory( dir_path.c_str() ));
+            }
+            else {
+                outtree = new TTree(chain->GetName(), chain->GetName());
+                outtree->SetDirectory(outfile);
+            }
+            //ConfigOutFile( outfile, chain->GetName(), outtree );
+
+            runmod.Run( chain, outtree, getEntries(), options, minevt, maxevt );
+
+            BOOST_FOREACH( ModuleConfig & conf, getEntries() ) {
+                outfile->cd();
+                if( conf.getCutFlows()[0].getHists().size() ) {
+                    outfile->mkdir( conf.GetName().c_str() );
+                    outfile->cd(conf.GetName().c_str() );
+
+                    BOOST_FOREACH( const std::string & cutname, conf.getCutFlows()[0].getOrder() ) {
+                        if( conf.getCutFlows()[0].hasHist(cutname) ) {
+                            conf.getCutFlows()[0].getHist(cutname)->Write();
+                        }
+                    }
+                }
+            }
+
+            outfile->cd(dir_path.c_str());
+
+            outtree->Write();
+            outfile->Close();
+
+            BOOST_FOREACH( const ModuleConfig & conf, getEntries() ) {
+               conf.PrintCutFlows(); 
+            }
+
+            if( options.transferToStorage ) {
+                std::string storage_dir = options.storagePath;
+                std::string eos = "/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select";
+
+                if( jobidx == 1 ) { // make the directory the first time
+                    std::string mkdir_cmd = eos + " mkdir " + options.storagePath;
+                    std::cout << mkdir_cmd << std::endl;
+                    system( mkdir_cmd.c_str() );
+                }
+                if( total_njobs > 1 ) {
+                    storage_dir += "/" + jobstr;
+                    std::string mkdir_cmd = eos + " mkdir " + storage_dir;
+                    std::cout << mkdir_cmd << std::endl;
+                    system( mkdir_cmd.c_str() );
+                }
+
+                std::string copy_cmd = eos + " cp " + filepath + " " + storage_dir + "/" + options.outputFile;
+                std::cout << copy_cmd << std::endl;
+                system( copy_cmd.c_str() );
+            }
+        }
+    }
+   
+}
+
+std::vector<ModuleConfig> & AnaConfig::getEntries() {
   return confs;
 }
 
@@ -48,7 +167,7 @@ Cut::Cut( CutType::Op in_op, CutType::Type in_type,
 {
 }
 
-void Cut::Print() { 
+void Cut::Print() const{ 
     std::cout << "op = " << op << " type = " << type << " bool val = " << val_bool << " int val = " << val_int << " float val = " << val_float << std::endl;
 }
 
@@ -112,9 +231,7 @@ CutConfig::CutConfig( const std::string &cut_str ) {
         else {
             cut_op = attempt_logicalop_parse( val, cut_type, cut_val_int, cut_val_float );
         }
-        Cut testcut(cut_op, cut_type, cut_val_bool, cut_val_int, cut_val_float);
-        testcut.Print();
-        conf_cut.push_back( testcut );
+        conf_cut.push_back( Cut(cut_op, cut_type, cut_val_bool, cut_val_int, cut_val_float) );
     }
 
     SetName( name );
@@ -152,6 +269,12 @@ CutType::Op CutConfig::attempt_logicalop_parse( const std::string & val, CutType
     else if( (pos = val.find( "<" ) ) != std::string::npos ) {
         cut_op = CutType::LESS_THAN;
         mod_val = val.substr( pos+1 );
+    }
+    // grab single = but warn
+    else if( (pos = val.find( "=" ) ) != std::string::npos ) {
+        cut_op = CutType::EQUAL_TO;
+        mod_val = val.substr( pos+1 );
+        std::cout << "CutConfig::attempt_logicalop_parse - WARNING : Interpreting single = as == for cut " << val << std::endl;
     }
     else {
         cut_op = CutType::OTHER;
@@ -284,12 +407,18 @@ bool CutConfig::PassBool(const std::string &name, const bool cutval ) const {
 }
         
 
-bool ModuleConfig::PassFloat( const std::string & cutname, const float cutval ) const
+bool ModuleConfig::PassFloat( const std::string & cutname, const float cutval )
 {
 
     if( HasCut( cutname ) ) {
         const CutConfig & cut_conf = GetCut( cutname );
-        return cut_conf.PassFloat( cutname, cutval );
+        bool result = cut_conf.PassFloat( cutname, cutval );
+
+        if( cutflows.size() ) { // only assume 1 cutflow for now
+            cutflows[0].AddCutDecisionFloat( cutname, result, cutval );
+        }
+
+        return result;
     }
     else {
         //if the cut doesn't exist then pass
@@ -299,12 +428,18 @@ bool ModuleConfig::PassFloat( const std::string & cutname, const float cutval ) 
 
 }
 
-bool ModuleConfig::PassInt( const std::string & cutname, const int cutval ) const
+bool ModuleConfig::PassInt( const std::string & cutname, const int cutval )
 {
 
     if( HasCut( cutname ) ) {
         const CutConfig & cut_conf = GetCut( cutname );
-        return cut_conf.PassInt( cutname, cutval );
+        bool result = cut_conf.PassInt( cutname, cutval );
+
+        if( cutflows.size() ) { // only assume 1 cutflow for now
+            cutflows[0].AddCutDecisionInt( cutname, result, cutval );
+        }
+
+        return result;
     }
     else {
         //if the cut doesn't exist then pass
@@ -313,12 +448,18 @@ bool ModuleConfig::PassInt( const std::string & cutname, const int cutval ) cons
 
 }
 
-bool ModuleConfig::PassBool( const std::string & cutname, const bool cutval ) const
+bool ModuleConfig::PassBool( const std::string & cutname, const bool cutval )
 {
 
     if( HasCut( cutname ) ) {
         const CutConfig & cut_conf = GetCut( cutname );
-        return cut_conf.PassBool( cutname, cutval );
+        bool result = cut_conf.PassBool( cutname, cutval );
+
+        if( cutflows.size() ) { // only assume 1 cutflow for now
+            cutflows[0].AddCutDecisionBool( cutname, result, cutval );
+        }
+
+        return result;
     }
     else {
         //if the cut doesn't exist then pass
@@ -353,6 +494,128 @@ const CutConfig & ModuleConfig::GetCut( const std::string & name ) const {
 
 }
 
+void ModuleConfig::AddCutFlow( const std::string & name ) {
+
+    if( cutflows.size() == 0 ) {
+        cutflows.push_back( CutFlowModule( name ) );
+    }
+
+}
+
+void ModuleConfig::AddCut( CutConfig config ) {
+
+    configs.push_back(config);
+
+}
+
+void ModuleConfig::AddHist( const std::string &histname, int nbin, float xmin, float xmax ) {
+
+    if( cutflows.size() ) {
+        cutflows[0].getHists()[histname] = new TH1F( (GetName() + ":" + histname).c_str(), histname.c_str(), nbin, xmin, xmax );
+    }
+
+}
+
+void ModuleConfig::PrintCutFlows() const {
+
+    BOOST_FOREACH( const CutFlowModule & cf, cutflows ) {
+        cf.Print();
+    }
+}
+
+CutFlowModule::CutFlowModule( const std::string & _name ) :
+  total(0),
+  name(_name)
+{
+}
+
+CutFlowModule::~CutFlowModule() {
+}
+
+void CutFlowModule::AddCutDecision( const std::string & cutname, bool pass, float weight ) {
+
+    std::map<std::string, float>::iterator fitr = counts.find( cutname );
+    if( fitr == counts.end() ) {
+        order.push_back(cutname);
+        counts[cutname] = 0.0;
+        counts[cutname] += pass*weight;
+    }
+    else {
+        fitr->second += pass*weight;
+    }
+    // for the first cut, also add a total that
+    // doesn't care about the cut decision
+    if( std::find(order.begin(), order.end(), cutname ) == order.begin() ) {
+        total += weight;
+    }
+
+}
+
+void CutFlowModule::AddCutDecisionFloat( const std::string & cutname, bool pass, float val, float weight ) {
+
+    AddCutDecision( cutname, pass, weight );
+    // fill hists
+    if( hists.size() ) {
+        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        if( hitr != hists.end() ) {
+            hitr->second->Fill( val );
+        }
+    }
+}
+
+void CutFlowModule::AddCutDecisionInt( const std::string & cutname, bool pass, int val, float weight ) {
+
+    AddCutDecision( cutname, pass, weight );
+    // fill hists
+    if( hists.size() ) {
+        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        if( hitr != hists.end() ) {
+            hitr->second->Fill( val );
+        }
+    }
+}
+
+void CutFlowModule::AddCutDecisionBool( const std::string & cutname, bool pass, bool val, float weight ) {
+
+    AddCutDecision( cutname, pass, weight );
+    // fill hists
+    if( hists.size() ) {
+        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        if( hitr != hists.end() ) {
+            hitr->second->Fill( val );
+        }
+    }
+}
+void CutFlowModule::Print() const {
+
+    // get max width
+    int max_width = 0;
+    BOOST_FOREACH( const std::string & name, order ) {
+        int width = name.size();
+        if( width > max_width ) {
+          max_width = width;
+        }
+    }
+
+    // make it a bit bigger
+    max_width += 5;
+    int line_width = 50;
+    if( max_width > line_width ) {
+      line_width = max_width + 5;
+    }
+
+    std::cout << std::string(line_width, '-') << std::endl;
+    std::cout << "Cut flow : " << name << std::endl;
+    std::cout << std::string(line_width, '-') << std::endl;
+    std::cout << std::setw(max_width) << std::setfill(' ') << std::setiosflags(std::ios::left) << "Total" << " : " << total << std::endl;
+    BOOST_FOREACH( const std::string & name, order ) {
+        
+        std::cout << std::setw(max_width) << std::setfill(' ') << std::setiosflags(std::ios::left) << name << " : " << counts.find(name)->second << std::endl;
+    }
+    std::cout << std::string(line_width, '-') << std::endl;
+
+}
+
 AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
 
     AnaConfig ana_config;
@@ -366,9 +629,6 @@ AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
 
             if( read_modules ) {
 
-                // information to be collected
-                std::string module_name;
-                std::vector<CutConfig> module_cuts;
 
                 // Split by : character.  The 0th entry is the
                 // module name
@@ -378,19 +638,54 @@ AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
                               << "character.  Please check the config file" << std::endl;
                     continue;
                 }
-                module_name = module_split[0];
+                std::string module_name = module_split[0];
                 boost::algorithm::trim(module_name);
+                ModuleConfig this_module(module_name);
+
                 std::string module_config = module_split[1];
 
                 // Split the module config by ';' to separate cut entries
                 std::vector<std::string> cut_split = Tokenize( module_config, ";" );
 
+                std::vector<CutConfig> module_cuts;
                 BOOST_FOREACH( const std::string & cut, cut_split ) {
                     if( cut.find_first_not_of(' ') == std::string::npos ) continue; //check if cut is only whitespace 
-                    module_cuts.push_back( CutConfig( cut ) );
+                    if( cut.find("do_cutflow") != std::string::npos ) {
+                        this_module.AddCutFlow( module_name );
+                        continue;
+                    }
+
+                    if( cut.find("hist") != std::string::npos ) {
+
+                        // example hist entry : hist [cut_d0_barrel,100,-1.000000,1.000000]
+                        // first strip off the []
+                        std::string hist_entries = cut.substr( cut.find("[")+1, cut.find("]")-1 );
+                        std::vector<std::string> hist_split = Tokenize( hist_entries, "," );
+                        if( hist_split.size() != 4 ) {
+                            std::cout << "ParseConfig - ERROR : cannot parse histogram " << hist_entries << std::endl;
+                            continue;
+                        }
+                        std::string name = hist_split[0];
+                        int nbins;
+                        float xmin;
+                        float xmax;
+                        boost::algorithm::trim(hist_split[1]);
+                        boost::algorithm::trim(hist_split[2]);
+                        boost::algorithm::trim(hist_split[3]);
+                        std::stringstream nbinstr(hist_split[1]);
+                        std::stringstream xminstr(hist_split[2]);
+                        std::stringstream xmaxstr(hist_split[3]);
+                        nbinstr >> nbins;
+                        xminstr >> xmin;
+                        xmaxstr >> xmax;
+                        this_module.AddHist( name, nbins, xmin, xmax );
+                        continue;
+                    }
+
+                    this_module.AddCut( CutConfig( cut ) );
                 }
 
-                ana_config.AddModule( module_name, module_cuts );
+                ana_config.AddModule( this_module );
             }
             else {
                 // reading header information
@@ -525,7 +820,6 @@ CmdOptions ParseOptions( int argc, char **argv )
 std::vector<std::string> Tokenize(const std::string & text, const std::string &in_sep ) {
 
     std::vector<std::string> out_tokens;
-    std::cout << "Got sep " << in_sep << " text " << text << std::endl;
     if( text == "" ) {
         std::cout << "Tokenize : WARNING - string to split is empty" << std::endl;
         return out_tokens;
@@ -534,7 +828,6 @@ std::vector<std::string> Tokenize(const std::string & text, const std::string &i
     boost::char_separator<char> sep(in_sep.c_str());
     boost::tokenizer< boost::char_separator<char> > tokens(text, sep);
     BOOST_FOREACH (const std::string& t, tokens) {
-      std::cout << "TOken " << t << std::endl;
         out_tokens.push_back(t);
     }
 

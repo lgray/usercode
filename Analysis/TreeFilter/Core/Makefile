@@ -48,7 +48,7 @@ else
 	LDFLAGS      = -O2 -I$(INC_DIR) $(INCLUDE) 
 endif
 
-OBJECT_BASE = $(OBJ_DIR)/AnalysisBase.o
+OBJECT_BASE = $(OBJ_DIR)/AnalysisBase.o $(OBJ_DIR)/Util.o
 
 # Main targets
 #

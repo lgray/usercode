@@ -1,4 +1,4 @@
-from filter import Filter
+from core import Filter
 
 def get_remove_filter() :
 
@@ -6,7 +6,7 @@ def get_remove_filter() :
 
 def get_keep_filter() :
 
-    return ['mc.*', 'nMC']
+    return ['ele.*', 'nEle']
 
 def config_analysis( alg_list ) :
 

@@ -1,8 +1,6 @@
-files : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TruthFilterWgamgamTau_2013_08_06/FSR/Job_0000/hist.root
+files : [/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/FSR/Job_0000/hist.root,/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/ISR/Job_0000/hist.root,/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/ISR/Job_0001/hist.root,/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/ISR/Job_0002/hist.root,/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/ISR/Job_0003/hist.root,/afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilterWgamgam_2013_08_06/ISR/Job_0004/hist.root][0:(0-2004230),];
 treeName : ggNtuplizer/EventTree
-output : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TruthFilterObjCutsTau_2013_08_07/FSR/Job_0000/hist.root
+outputDir : /afs/cern.ch/work/j/jkunkle/public/Wgamgam/Results/TruthFilter1W1QPhot_2013_08_14/Wgammagamma
+outputFile : tree.root
 __Modules__
-BuildLepton : cut_abseta [< 2.5] ; cut_incTau [False] ; cut_incTauMother [True] ; cut_pt [> 25] ; 
-BuildPhoton : cut_abseta [ < 2.5] ; cut_pt [ > 15] ; 
-BuildNeutrino : 
-BuildEvent : 
+FilterBasicEvent : cut_nPhot [> 0] ; cut_nPhotQuarkMom [== 1] ; cut_nPhotWMom [== 1] ; 

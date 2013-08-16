@@ -1,15 +1,20 @@
 #include "FilterTruthWgamgam/RunAnalysis.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
-#include <getopt.h>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "FilterTruthWgamgam/BranchDefs.h"
 #include "FilterTruthWgamgam/BranchInit.h"
+
+#include "Core/Util.h"
 
 #include "TFile.h"
 
@@ -24,59 +29,24 @@ int main(int argc, char **argv)
 
     std::cout << "Configured " << ana_config.size() << " analysis modules " << std::endl;
 
-    std::cout << "TreenaME" << options.treeName << "test" << std::endl;
-    TChain *chain = new TChain(options.treeName.c_str() );
-    BOOST_FOREACH( const std::string &fname, options.files ) {
-      std::cout << "Add file " << fname << std::endl;
-      chain->Add( fname.c_str() );
-    }
-    std::cout << options.output << std::endl;
-    TFile * outfile  = new TFile(options.output.c_str(), "RECREATE");
+    RunModule runmod;
+    ana_config.Run(runmod, options);
 
-    outfile->cd();
-    TTree * outtree  = 0;
-    std::vector<std::string> name_tok = Tokenize( chain->GetName(), "/" ); 
+    std::cout << "^_^ Finished ^_^" << std::endl;
 
-    if( name_tok.size() > 1 ) {
-        std::string dir_path = "";
-        for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
-            dir_path = dir_path + name_tok[i]+"/";
-            std::cout << " mkdir " << dir_path << std::endl;
-            outfile->mkdir(dir_path.c_str());
-        }
-        outfile->cd(dir_path.c_str());
-        //TDirectory * treedir = outfile->Get(dir_path);
-        //treedir->cd();
-
-        std::cout << "Path is " << dir_path << std::endl;
-
-        std::string name = name_tok[name_tok.size()-1];
-
-        std::cout << "Name is " << name.c_str() << std::endl;
-    
-        outtree = new TTree(name.c_str(), name.c_str());
-        //outtree->SetDirectory(outfile->GetDirectory( dir_path.c_str() ));
-    }
-    else {
-        outtree = new TTree(chain->GetName(), chain->GetName());
-        outtree->SetDirectory(outfile);
-    }
-    //ConfigOutFile( outfile, chain->GetName(), outtree );
-
-    // In BranchInit
-    InitINTree(chain);
-    InitOUTTree( outtree );
-
-    Run( chain, outtree, ana_config, options );
-    outtree->Write();
-    outfile->Close();
-    std::cout << "Finished ^.^" << std::endl;
 
 }
 
-void Run( TChain * chain, TTree * outtree, 
-          const AnaConfig & ana_config, const CmdOptions & options ) {
+void RunModule::Run( TChain * chain, TTree * outtree, 
+          std::vector<ModuleConfig> & configs, const CmdOptions & options,
+          int minevt, int maxevt ) const {
 
+    // *************************
+    // initialize trees
+    // *************************
+    InitINTree(chain);
+    InitOUTTree( outtree );
+    
     // *************************
     // Declare added output variables
     // *************************
@@ -97,10 +67,15 @@ void Run( TChain * chain, TTree * outtree,
     OUT::nu_phi = 0;
     OUT::nu_e = 0;
     OUT::nu_motherPID = 0;
+    OUT::w_pt = 0;
+    OUT::w_eta = 0;
+    OUT::w_phi = 0;
+    OUT::w_e = 0;
     
     outtree->Branch("lep_n" , &OUT::lep_n  , "lep_n/I"   );
     outtree->Branch("phot_n", &OUT::phot_n , "phot_n/I" );
     outtree->Branch("nu_n"  , &OUT::nu_n   , "nu_n/I"   );
+    outtree->Branch("w_n"   , &OUT::w_n    , "w_n/I"   );
 
     outtree->Branch("lep_pt"        , &OUT::lep_pt        );
     outtree->Branch("lep_eta"       , &OUT::lep_eta       );
@@ -109,6 +84,7 @@ void Run( TChain * chain, TTree * outtree,
     outtree->Branch("lep_motherPID" , &OUT::lep_motherPID );
     outtree->Branch("lep_isElec"    , &OUT::lep_isElec    );
     outtree->Branch("lep_isMuon"    , &OUT::lep_isMuon    );
+    outtree->Branch("lep_isPos"     , &OUT::lep_isPos    );
     
     outtree->Branch("phot_pt"        , &OUT::phot_pt  );
     outtree->Branch("phot_eta"       , &OUT::phot_eta );
@@ -122,12 +98,23 @@ void Run( TChain * chain, TTree * outtree,
     outtree->Branch("nu_e"         , &OUT::nu_e       );
     outtree->Branch("nu_motherPID" , &OUT::nu_motherPID );
 
+    outtree->Branch("w_pt"        , &OUT::w_pt      );
+    outtree->Branch("w_eta"       , &OUT::w_eta     );
+    outtree->Branch("w_phi"       , &OUT::w_phi     );
+    outtree->Branch("w_e"         , &OUT::w_e       );
+    outtree->Branch("w_isPos"     , &OUT::w_isPos   );
+
     outtree->Branch("leadPhot_pt" , &OUT::leadPhot_pt , "leadPhot_pt/F" );
     outtree->Branch("sublPhot_pt" , &OUT::sublPhot_pt , "sublPhot_pt/F" );
 
     outtree->Branch("leadPhot_lepDR" , &OUT::leadPhot_lepDR , "leadPhot_lepDR/F" );
     outtree->Branch("sublPhot_lepDR" , &OUT::sublPhot_lepDR , "sublPhot_lepDR/F" );
     outtree->Branch("phot_photDR"    , &OUT::phot_photDR , "phot_photDR/F" );
+    outtree->Branch("photPhot_lepDR" , &OUT::photPhot_lepDR , "photPhot_lepDR/F" );
+    outtree->Branch("leadPhot_lepDPhi" , &OUT::leadPhot_lepDPhi , "leadPhot_lepDPhi/F" );
+    outtree->Branch("sublPhot_lepDPhi" , &OUT::sublPhot_lepDPhi , "sublPhot_lepDPhi/F" );
+    outtree->Branch("phot_photDPhi"    , &OUT::phot_photDPhi , "phot_photDPhi/F" );
+    outtree->Branch("photPhot_lepDPhi"    , &OUT::photPhot_lepDPhi , "photPhot_lepDPhi/F" );
 
     outtree->Branch("mt_lepnu"         , &OUT::mt_lepnu         , "mt_lepnu/F"          );
     outtree->Branch("mt_lepphot1nu"    , &OUT::mt_lepphot1nu    , "mt_lepphot1nu/F"     );
@@ -135,6 +122,7 @@ void Run( TChain * chain, TTree * outtree,
     outtree->Branch("mt_lepphotphotnu" , &OUT::mt_lepphotphotnu , "mt_lepphotphotnu/F"  );
 
     outtree->Branch("m_lepnu"         , &OUT::m_lepnu         , "m_lepnu/F"         );
+    outtree->Branch("m_leplep"        , &OUT::m_leplep        , "m_leplep/F"         );
     outtree->Branch("m_lepphot1nu"    , &OUT::m_lepphot1nu    , "m_lepphot1nu/F"    );
     outtree->Branch("m_lepphot2nu"    , &OUT::m_lepphot2nu    , "m_lepphot2nu/F"    );
     outtree->Branch("m_lepphotphotnu" , &OUT::m_lepphotphotnu , "m_lepphotphotnu/F" );
@@ -146,15 +134,12 @@ void Run( TChain * chain, TTree * outtree,
     // *************************
     // Begin loop over the input tree
     // *************************
-    int minevt = 0;
-    int maxevt = chain->GetEntries();
-
-    if( options.nevt > 0 ) {
-        maxevt = options.nevt;
+    if( maxevt == 0 ) {
+        maxevt = chain->GetEntries();
     }
 
     int n_saved = 0;
-    std::cout << "Will analyze " << maxevt << " events " << std::endl;
+    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
     for( int cidx = minevt; cidx < maxevt; cidx++ ) {
 
         if( cidx % 10000 == 0 ) {
@@ -169,7 +154,7 @@ void Run( TChain * chain, TTree * outtree,
 
         // loop over configured modules
         bool save_event = true;
-        BOOST_FOREACH( const ModuleConfig & mod_conf, ana_config.getEntries() ) {
+        BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
             save_event &= ApplyModule( mod_conf );
         }
 
@@ -183,7 +168,7 @@ void Run( TChain * chain, TTree * outtree,
 
 }
 
-bool ApplyModule( const ModuleConfig & config ) {
+bool RunModule::ApplyModule( ModuleConfig & config ) const {
 
     bool keep_evt = true;
     
@@ -195,6 +180,9 @@ bool ApplyModule( const ModuleConfig & config ) {
     }
     if( config.GetName() == "BuildNeutrino" ) {
         BuildNeutrino( config );
+    }
+    if( config.GetName() == "BuildWboson" ) {
+        BuildWboson( config );
     }
     if( config.GetName() == "BuildEvent" ) {
         BuildEvent( config );
@@ -212,12 +200,15 @@ bool ApplyModule( const ModuleConfig & config ) {
     if( config.GetName() == "FilterTauEvent" ) {
         keep_evt &= FilterTauEvent( config );
     }
+    if( config.GetName() == "FilterBasicEvent" ) {
+        keep_evt &= FilterBasicEvent( config );
+    }
 
     return keep_evt;
 
 }
 
-void BuildLepton( const ModuleConfig & config ) {
+void RunModule::BuildLepton( ModuleConfig & config ) const {
 
     OUT::lep_pt        -> clear();
     OUT::lep_eta       -> clear();
@@ -226,6 +217,7 @@ void BuildLepton( const ModuleConfig & config ) {
     OUT::lep_motherPID -> clear();
     OUT::lep_isElec    -> clear();
     OUT::lep_isMuon    -> clear();
+    OUT::lep_isPos     -> clear();
     OUT::lep_n          = 0;
 
     std::vector<int> accept_pid;
@@ -235,11 +227,16 @@ void BuildLepton( const ModuleConfig & config ) {
     accept_pid.push_back(13);
 
     // don't use for now...must also require that taus have status==3 not 1
-    if( config.PassBool("cut_incTau", true ) ) {
-        accept_pid.push_back(15);
-    }
+    //if( config.PassBool("cut_incTau", true ) ) {
+    //    accept_pid.push_back(15);
+    //}
 
-    accept_mother.push_back(24);
+    if( config.PassBool("cut_incWMother", true ) ) {
+        accept_mother.push_back(24);
+    }
+    if( config.PassBool("cut_incZMother", true ) ) {
+        accept_mother.push_back(23);
+    }
     if( config.PassBool("cut_incTauMother", true ) ) {
         accept_mother.push_back(15);
     }
@@ -247,7 +244,8 @@ void BuildLepton( const ModuleConfig & config ) {
     for( int idx = 0; idx < IN::nMC; ++idx ) {
         if( IN::mcStatus[idx] != 1 ) continue;
 
-        if( std::find(accept_mother.begin(), 
+        if( accept_mother.size() > 0 && 
+            std::find(accept_mother.begin(), 
                       accept_mother.end(), abs(IN::mcMomPID[idx])) == accept_mother.end() ) continue;
         if( std::find(accept_pid.begin(), 
                       accept_pid.end(), abs(IN::mcPID[idx]) ) == accept_pid.end() ) continue;
@@ -275,12 +273,19 @@ void BuildLepton( const ModuleConfig & config ) {
             OUT::lep_isMuon->push_back(false);
         }
 
+        if( IN::mcPID[idx] > 0 ) {
+            OUT::lep_isPos->push_back(false);
+        }
+        else {
+            OUT::lep_isPos->push_back(true);
+        }
+
         OUT::lep_n++;
     }
             
 }        
 
-//void BuildTau( const ModuleConfig & /*config*/ ) {
+//void RunModule::BuildTau( ModuleConfig & /*config*/ ) const {
 //
 //    OUT::mu_pt        -> clear();
 //    OUT::mu_eta       -> clear();
@@ -302,7 +307,7 @@ void BuildLepton( const ModuleConfig & config ) {
 //            
 //}        
 
-void BuildNeutrino( const ModuleConfig & /*config*/ ) {
+void RunModule::BuildNeutrino( ModuleConfig & config ) const {
 
     OUT::nu_pt        -> clear();
     OUT::nu_eta       -> clear();
@@ -311,10 +316,21 @@ void BuildNeutrino( const ModuleConfig & /*config*/ ) {
     OUT::nu_motherPID -> clear();
     OUT::nu_n          = 0;
 
+    std::vector<int> accept_mother;
+    if( config.PassBool("cut_incWMother", true ) ) {
+        accept_mother.push_back(24);
+    }
+    if( config.PassBool("cut_incZMother", true ) ) {
+        accept_mother.push_back(23);
+    }
+
     for( int idx = 0; idx < IN::nMC; ++idx ) {
         if( ( abs(IN::mcPID[idx]) == 12 || 
               abs(IN::mcPID[idx]) == 14 ||  
-              abs(IN::mcPID[idx]) == 16  ) && IN::mcStatus[idx] == 1 && abs(IN::mcMomPID[idx]) == 24  ) {
+              abs(IN::mcPID[idx]) == 16  ) && IN::mcStatus[idx] == 1 ) {
+            if( accept_mother.size() > 0 && 
+            std::find(accept_mother.begin(), 
+                      accept_mother.end(), abs(IN::mcMomPID[idx])) == accept_mother.end() ) continue;
             OUT::nu_pt        -> push_back(IN::mcPt[idx]     );
             OUT::nu_eta       -> push_back(IN::mcEta[idx]    );
             OUT::nu_phi       -> push_back(IN::mcPhi[idx]    );
@@ -326,7 +342,34 @@ void BuildNeutrino( const ModuleConfig & /*config*/ ) {
             
 }        
 
-void BuildPhoton( const ModuleConfig & config ) {
+void RunModule::BuildWboson( ModuleConfig & /*config*/ ) const {
+
+    OUT::w_pt        -> clear();
+    OUT::w_eta       -> clear();
+    OUT::w_phi       -> clear();
+    OUT::w_e         -> clear();
+    OUT::w_isPos     -> clear();
+    OUT::w_n          = 0;
+
+    for( int idx = 0; idx < IN::nMC; ++idx ) {
+        if( abs(IN::mcPID[idx]) == 24 && IN::mcStatus[idx] == 3 ) {
+            OUT::w_pt        -> push_back(IN::mcPt[idx]     );
+            OUT::w_eta       -> push_back(IN::mcEta[idx]    );
+            OUT::w_phi       -> push_back(IN::mcPhi[idx]    );
+            OUT::w_e         -> push_back(IN::mcE[idx]      );
+            OUT::w_n++;
+        }
+
+        if( IN::mcPID[idx] > 0 ) {
+            OUT::w_isPos->push_back(true);
+        }
+        else {
+            OUT::w_isPos->push_back(false);
+        }
+    }
+}
+
+void RunModule::BuildPhoton( ModuleConfig & config ) const {
 
     OUT::phot_pt        -> clear();
     OUT::phot_eta       -> clear();
@@ -352,7 +395,55 @@ void BuildPhoton( const ModuleConfig & config ) {
             
 }        
 
-void BuildEvent( const ModuleConfig & /*config*/ ) {
+bool RunModule::FilterBasicEvent( ModuleConfig & config ) const {
+
+    bool keep_evt = true;
+    std::vector<int> accept_l_mothers;
+    std::vector<int> accept_w_mothers;
+    std::vector<int> accept_q_mothers;
+    accept_l_mothers.push_back(11);
+    accept_l_mothers.push_back(13);
+    accept_l_mothers.push_back(15);
+
+    accept_w_mothers.push_back(24);
+
+    accept_q_mothers.push_back(1);
+    accept_q_mothers.push_back(2);
+    accept_q_mothers.push_back(3);
+    accept_q_mothers.push_back(4);
+    accept_q_mothers.push_back(5);
+    accept_q_mothers.push_back(6);
+
+    int nphot = 0;
+    int nphot_l_mom = 0;
+    int nphot_w_mom = 0;
+    int nphot_q_mom = 0;
+    for( int idx = 0; idx < IN::nMC; ++idx  ) {
+        if( IN::mcPID[idx] == 22 ) {
+            nphot++;
+            
+            if( std::find( accept_l_mothers.begin(), accept_l_mothers.end(), abs(IN::mcMomPID[idx]) ) != accept_l_mothers.end() ) {
+                nphot_l_mom++;
+            }
+            if( std::find( accept_w_mothers.begin(), accept_w_mothers.end(), abs(IN::mcMomPID[idx]) ) != accept_w_mothers.end() ) {
+                nphot_w_mom++;
+            }
+            if( std::find( accept_q_mothers.begin(), accept_q_mothers.end(), abs(IN::mcMomPID[idx]) ) != accept_q_mothers.end() ) {
+                nphot_q_mom++;
+            }
+        }
+    }
+
+
+    if( !config.PassInt( "cut_nPhot", nphot ) ) keep_evt=false;
+    if( !config.PassInt( "cut_nPhotLepMom", nphot_l_mom ) ) keep_evt=false;
+    if( !config.PassInt( "cut_nPhotWMom", nphot_w_mom ) ) keep_evt=false;
+    if( !config.PassInt( "cut_nPhotQuarkMom", nphot_q_mom ) ) keep_evt=false;
+
+    return keep_evt;
+}
+
+void RunModule::BuildEvent( ModuleConfig & /*config*/ ) const {
 
     std::vector<TLorentzVector> leptons;
     std::vector<TLorentzVector> neutrinos;
@@ -406,6 +497,10 @@ void BuildEvent( const ModuleConfig & /*config*/ ) {
         OUT::sublPhot_pt = 0;
     }
 
+    if( leptons.size() == 2 ) {
+        OUT::m_leplep = ( leptons[0] + leptons[1] ).M();
+    }
+
     if( leptons.size() == 1 && neutrinos.size() == 1 ) {
        
         OUT::m_lepnu = ( leptons[0] + neutrinos[0] ).M();
@@ -419,6 +514,12 @@ void BuildEvent( const ModuleConfig & /*config*/ ) {
             OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
             OUT::sublPhot_lepDR = photons[sublidx].DeltaR(leptons[0]);
             OUT::phot_photDR    = photons[leadidx].DeltaR(photons[sublidx]);
+            OUT::photPhot_lepDR = (photons[leadidx]+photons[sublidx]).DeltaR(photons[sublidx]);
+            
+            OUT::leadPhot_lepDPhi = photons[leadidx].DeltaPhi(leptons[0]);
+            OUT::sublPhot_lepDPhi = photons[sublidx].DeltaPhi(leptons[0]);
+            OUT::phot_photDPhi    = photons[leadidx].DeltaPhi(photons[sublidx]);
+            OUT::photPhot_lepDPhi = (photons[leadidx]+photons[sublidx]).DeltaPhi(photons[sublidx]);
             
             OUT::m_lepphot1nu = ( leptons[0] + photons[leadidx] + neutrinos[0] ).M();
             OUT::m_lepphot2nu = ( leptons[0] + photons[sublidx] + neutrinos[0] ).M();
@@ -449,14 +550,7 @@ void BuildEvent( const ModuleConfig & /*config*/ ) {
 
 }
 
-float calc_mt( const TLorentzVector & obj, const TLorentzVector & nu ) {
-
-    return sqrt( 2*obj.Pt()*nu.Pt() * ( 1 - cos( obj.DeltaPhi(nu) ) ) );
-
-}
-    
-
-bool FilterElec( const ModuleConfig & config ) {
+bool RunModule::FilterElec( ModuleConfig & config ) const {
 
     //int nElOut = 0;
     //for( int idx = 0; idx < IN::nEle; ++idx ) {
@@ -473,7 +567,7 @@ bool FilterElec( const ModuleConfig & config ) {
     return true;
 }     
 
-bool FilterMuon( const ModuleConfig & config ) {
+bool RunModule::FilterMuon( ModuleConfig & config ) const {
 
     //int nMuOut = 0;
     //for( int idx = 0; idx < IN::nMu; ++idx ) {
@@ -491,16 +585,26 @@ bool FilterMuon( const ModuleConfig & config ) {
     return true;
 }     
 
-bool FilterEvent( const ModuleConfig & config ) {
+bool RunModule::FilterEvent( ModuleConfig & config ) const {
 
     bool keep_event = true;
     if( !config.PassInt("cut_nLep", OUT::lep_n ) ) keep_event = false;
+
+    //count number of photons that originate from a W
+    int nwphot=0;
+    for( int idx = 0 ; idx < OUT::phot_n; ++idx ) {
+        if( abs(OUT::phot_motherPID->at(idx)) == 24 ) {
+            nwphot++;
+        }
+    }
+
+    if( !config.PassInt("cut_nWPhot", nwphot ) ) keep_event = false;
 
     return keep_event;
 
     
 }
-bool FilterTauEvent( const ModuleConfig & config ) {
+bool RunModule::FilterTauEvent( ModuleConfig & config ) const {
 
     bool keep_evt = true;
 
@@ -519,145 +623,4 @@ bool FilterTauEvent( const ModuleConfig & config ) {
 
     return keep_evt;
 
-}
-
-
-void ConfigOutFile( TFile * file, const std::string & raw_name, TTree * outtree ) {
-
-    // if the tree is in a directory, recreate the directory and put the tree in it
-    // otherwise just make the tree in the root directory
-    std::vector<std::string> name_tok = Tokenize( raw_name, "/" ); 
-
-    if( name_tok.size() > 1 ) {
-        std::string dir_path = "";
-        for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
-            dir_path = dir_path + name_tok[i]+"/";
-            std::cout << " mkdir " << dir_path << std::endl;
-            file->mkdir(dir_path.c_str());
-        }
-        file->cd();
-
-        std::cout << "Path is " << dir_path << std::endl;
-
-        std::string name = name_tok[name_tok.size()-1];
-
-        std::cout << "Name is " << name.c_str() << std::endl;
-    
-        outtree = new TTree(name.c_str(), name.c_str());
-        outtree->SetDirectory(file->GetDirectory( dir_path.c_str() ));
-    }
-    else {
-        outtree = new TTree(raw_name.c_str(), raw_name.c_str());
-        outtree->SetDirectory(file);
-    }
-
-
-}
-
-AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
-
-    AnaConfig ana_config;
-
-    std::ifstream file(fname.c_str());
-    std::string line;
-    if( file.is_open() ) {
-        
-        bool read_modules = false;
-        while( getline(file, line) ) {
-
-            if( read_modules ) {
-
-                // information to be collected
-                std::string module_name;
-                std::vector<CutConfig> module_cuts;
-
-                // Split by : character.  The 0th entry is the
-                // module name
-                std::vector<std::string> module_split = Tokenize( line, ":" );
-                if( module_split.size() != 2 ) {
-                    std::cout << "ParseConfig - ERROR : config file entry does not contain a \":\" "
-                              << "character.  Please check the config file" << std::endl;
-                    continue;
-                }
-                module_name = module_split[0];
-                boost::algorithm::trim(module_name);
-                std::string module_config = module_split[1];
-
-                // Split the module config by ';' to separate cut entries
-                std::vector<std::string> cut_split = Tokenize( module_config, ";" );
-
-                BOOST_FOREACH( const std::string & cut, cut_split ) {
-                    if( cut.find_first_not_of(' ') == std::string::npos ) continue; //check if cut is only whitespace 
-                    module_cuts.push_back( CutConfig( cut ) );
-                }
-
-                ana_config.AddModule( module_name, module_cuts );
-            }
-            else {
-                // reading header information
-                std::vector<std::string> header_split = Tokenize( line, ":" );
-                if( header_split.size() == 2 ) {
-                    std::string header_key = header_split[0];
-                    if( header_key.find("files") != std::string::npos ) {// read files
-                        std::vector<std::string> file_list = Tokenize(header_split[1], ",");
-                        BOOST_FOREACH( const std::string & file, file_list ) {
-                            options.files.push_back(file);
-                        }
-                    }
-                    else if( header_key.find("treeName") != std::string::npos ) {
-                        options.treeName = header_split[1];
-                        boost::algorithm::trim(options.treeName);
-                    }
-                    else if( header_key.find("output") != std::string::npos ) {
-                        options.output = header_split[1];
-                        boost::algorithm::trim(options.output);
-                    }
-                    else if( header_key.find("nevt") != std::string::npos ) {
-                        std::stringstream ss(header_split[1]);
-                        ss >> options.nevt;
-                    }
-                        
-                }
-            }
-
-            // __Modules__ line indicates the beginning of modules
-
-            if( line.find("__Modules__") != std::string::npos ) {
-                read_modules = true;
-            }
-        }
-    }
-    return ana_config;
-}
-
-CmdOptions::CmdOptions() : nevt(-1) 
-{
-}
-
-CmdOptions ParseOptions( int argc, char **argv ) 
-{
-
-    CmdOptions options;
-    const struct option longopts[] =
-         {
-         {"conf_file", required_argument,        0, 'c'},
-         {0,0,0,0},
-    };
-
-    int iarg=0;
-
-    //turn off getopt error message
-    
-    while(iarg != -1) {
-      iarg = getopt_long(argc, argv, "c:", longopts, 0);
-      switch (iarg) {
-        case 'c' : 
-          {
-          options.config_file = optarg;
-          break;
-          }
-      }
-    }
-
-    return options;
 }

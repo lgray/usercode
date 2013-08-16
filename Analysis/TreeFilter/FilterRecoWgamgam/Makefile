@@ -17,7 +17,7 @@ LD      = g++
 BIN_DIR = ./
 OBJ_DIR = ./
 SRC_DIR = src/
-INC_DIR = BasicFilter
+INC_DIR = FilterRecoWgamgam
 
 #ROOTCINT     = $(ROOTSYS)/bin/rootcint
 #ROOTCONFIG   = $(ROOTSYS)/bin/root-config

@@ -12,6 +12,7 @@ import re
 import math
 import subprocess
 import multiprocessing
+import inspect
 import ROOT
 
 import core
@@ -27,9 +28,9 @@ if workarea is None :
     print 'Did not locate WorkArea environment variable.  Please set it to the root of the package'
     sys.exit(-1)
 
-def_file_name = workarea + '/FilterWgamgam/FilterWgamgam/BranchDefs.h'
-header_file_name = workarea + '/FilterWgamgam/FilterWgamgam/BranchInit.h'
-source_file_name = workarea + '/FilterWgamgam/src/BranchInit.cxx'
+def_file_name = workarea + '/FilterRecoWgamgam/FilterRecoWgamgam/BranchDefs.h'
+header_file_name = workarea + '/FilterRecoWgamgam/FilterRecoWgamgam/BranchInit.h'
+source_file_name = workarea + '/FilterRecoWgamgam/src/BranchInit.cxx'
 
 def main(**kwargs) :
 
@@ -41,7 +42,7 @@ def main(**kwargs) :
     if options.files is not None :
         input_files = options.files.split(',')
     elif options.filesDir is not None :
-        input_files = core.collect_input_files( options.filesDir )
+        input_files = core.collect_input_files( options.filesDir, options.fileKey )
 
     # if output file name is not given grab the name from one of the input files
     if options.outputFile is None :
@@ -54,40 +55,18 @@ def main(**kwargs) :
 
     ImportedModule = core.import_module( options.module )
 
-    remove_filter = []
-    keep_filter = []
-    if hasattr(ImportedModule, 'get_remove_filter') :
-        remove_filter = ImportedModule.get_remove_filter()
-    if hasattr(ImportedModule, 'get_keep_filter') :
-        keep_filter = ImportedModule.get_keep_filter()
+    branches_to_keep = core.get_keep_branches( ImportedModule, branches, 
+                                               options.enableKeepFilter, 
+                                               options.enableRemoveFilter )
+
+    if options.enableKeepFilter :
+        print 'Will keep %d branches from output file : ' %len(branches_to_keep)
+        print '\n'.join(branches_to_keep)
+    elif options.enableRemoveFilter :
+        print 'Will remove %d branches from output file : ' %( len(branches) - len(branches_to_keep))
+        print '\n'.join( list( set( [ br['name'] for br in branches ] ) - set( branches_to_keep ) ) )
 
     if not options.noCompile :
-        # by default keep all branches
-        all_branches = [ br['name'] for br in branches ]
-        branches_to_keep =  list(all_branches)
-        if options.enableKeepFilter :
-            #only keep these branches.  Reset the keep list
-            branches_to_keep = []
-            for kregex in keep_filter :
-                matches = [ re.match( kregex, br['name'] ) for br in branches ]
-                successful_matches = filter( lambda x : x is not None, matches )
-                branches_to_keep += [ x.group(0) for x in successful_matches]
-
-        if options.enableRemoveFilter :
-            for rregex in remove_filter :
-                matches = [ re.match( rregex, br['name'] ) for br in branches ]
-                successful_matches = filter( lambda x : x is not None, matches )
-                branches_to_remove = [ x.group(0) for x in successful_matches]
-                print 'rm branches'
-                print branches_to_remove
-                branches_to_keep = list( set(branches_to_keep) - set(branches_to_remove) )
-            
-        if options.enableKeepFilter :
-            print 'Will keep %d branches from output file : ' %len(branches_to_keep)
-            print '\n'.join(branches_to_keep)
-        elif options.enableRemoveFilter :
-            print 'Will remove %d branches from output file : ' %( len(branches) - len(branches_to_keep))
-            print '\n'.join( list( set( all_branches ) - set( branches_to_keep ) ) )
 
         # Write the c++ files having the branch definitions and 
         # SetBranchAddress calls
@@ -116,7 +95,7 @@ def main(**kwargs) :
     exe_path = None
 
     if workarea is not None :
-        exe_path = '%s/FilterWgamgam/RunAnalysis' %workarea
+        exe_path = '%s/FilterRecoWgamgam/RunAnalysis' %workarea
 
     if exe_path is None :
         print ('Did not find executable through the WorkArea environment variable. '
@@ -148,49 +127,27 @@ def main(**kwargs) :
 
     if options.nproc > 1 : #multiprocessing!
 
-        nFilesPerJob = int(math.ceil(float(len(input_files))/nsplit))
-        if nFilesPerJob == 0 :
-            nFilesPerJob = 1
-        # split into sub-lists based on the number of jobs.  last job may have fewer files
-        jobs = [file_evt_list[i:i+nFilesPerJob] for i in range(0, len(input_files), nFilesPerJob)]
+        if options.nproc > len(file_evt_list) :
+            options.nproc = len(file_evt_list)
 
-        configs = []
-        commands = []
-        for idx, file_split in enumerate(jobs) :
-            jobid = 'Job_%04d' %idx
-            outputDir = options.outputDir + '/' + jobid
-            conf_file = '%s/%s_%s.%s' %(outputDir, options.confFileName.split('.')[0], jobid, '.'.join(options.confFileName.split('.')[1:]))
-            if not os.path.isdir( outputDir ) :
-                os.makedirs( outputDir )
-            
-            core.write_config(alg_list, conf_file, options.treeName, outputDir, options.outputFile, file_split, options.storagePath )
-            commands.append( make_exe_command( exe_path, conf_file ) )
+        commands = core.generate_multiprocessing_commands( file_evt_list, alg_list, exe_path, options )
+
+        print 'Will run a total of %d processes, %d at a time' %(len(commands), options.nproc)
 
         pool = multiprocessing.Pool(options.nproc)
-        pool.map( os.system, commands )
+        cmds_with_echo = ['echo "%s" ; %s' %(x,x) for x in commands ]
+        pool.map( os.system, cmds_with_echo )
 
     else :
-
-        print file_evt_list
 
         output_file = '%s/%s' %(options.outputDir, options.outputFile )
         if not os.path.isdir( options.outputDir ) and options.outputDir.count('root://') != -1 :
             os.makedirs( options.outputDir )
-
         core.write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath ) 
-        command = make_exe_command( exe_path, options.confFileName )
+        command = core.make_exe_command( exe_path, options.confFileName )
 
         print command
         os.system(command)
-
-    
-def make_exe_command( exe_path, conf_file ) :
-
-    command = [exe_path,
-               ' --conf_file %s' %conf_file,
-              ]
-
-    return ' '.join(command)
 
 
 if __name__ == '__main__' :

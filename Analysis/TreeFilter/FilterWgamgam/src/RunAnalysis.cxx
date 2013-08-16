@@ -6,8 +6,6 @@
 #include <sstream>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <stdlib.h>
 
 
@@ -27,107 +25,22 @@ int main(int argc, char **argv)
 
     std::cout << "Configured " << ana_config.size() << " analysis modules " << std::endl;
 
-    int total_njobs = 0;
-    for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
-        total_njobs += options.files[fidx].jobs.size();
-    }
+    RunModule runmod;
+    ana_config.Run(runmod, options);
 
-    // loop over subjobs
-    int jobidx = -1;
-    for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
-        TChain *chain = new TChain(options.treeName.c_str() );
-
-        BOOST_FOREACH( const std::string &fname, options.files[fidx].files ) {
-          std::cout << "Add file " << fname << std::endl;
-          chain->Add( fname.c_str() );
-        }
-
-        // Loop over job ranges
-        for( unsigned jidx = 0 ; jidx < options.files[fidx].jobs.size(); ++jidx ) {
-            jobidx++;
-
-            std::string jobstr = options.files[fidx].jobs[jidx].first;
-            int minevt = options.files[fidx].jobs[jidx].second.first;
-            int maxevt = options.files[fidx].jobs[jidx].second.second;
-
-            std::string outputDir = options.outputDir;
-            if( total_njobs > 1 ) {
-                outputDir += "/" + jobstr;
-            }
-
-            // create the output directory
-            mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-            std::string filepath = outputDir + "/" + options.outputFile;
-
-            TFile * outfile  = TFile::Open(filepath.c_str(), "RECREATE");
-
-            outfile->cd();
-            TTree * outtree  = 0;
-            std::vector<std::string> name_tok = Tokenize( chain->GetName(), "/" ); 
-
-            if( name_tok.size() > 1 ) {
-                std::string dir_path = "";
-                for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
-                    dir_path = dir_path + name_tok[i]+"/";
-                    std::cout << " mkdir " << dir_path << std::endl;
-                    outfile->mkdir(dir_path.c_str());
-                }
-                outfile->cd(dir_path.c_str());
-                //TDirectory * treedir = outfile->Get(dir_path);
-                //treedir->cd();
-
-                std::cout << "Path is " << dir_path << std::endl;
-
-                std::string name = name_tok[name_tok.size()-1];
-
-                std::cout << "Name is " << name.c_str() << std::endl;
-            
-                outtree = new TTree(name.c_str(), name.c_str());
-                //outtree->SetDirectory(outfile->GetDirectory( dir_path.c_str() ));
-            }
-            else {
-                outtree = new TTree(chain->GetName(), chain->GetName());
-                outtree->SetDirectory(outfile);
-            }
-            //ConfigOutFile( outfile, chain->GetName(), outtree );
-
-            // In BranchInit
-            InitINTree(chain);
-            InitOUTTree( outtree );
-
-            Run( chain, outtree, ana_config, options, minevt, maxevt );
-            outtree->Write();
-            outfile->Close();
-
-            if( options.transferToStorage ) {
-                std::string storage_dir = options.storagePath;
-                std::string eos = "/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select";
-
-                if( jobidx == 1 ) { // make the directory the first time
-                    std::string mkdir_cmd = eos + " mkdir " + options.storagePath;
-                    std::cout << mkdir_cmd << std::endl;
-                    system( mkdir_cmd.c_str() );
-                }
-                if( total_njobs > 1 ) {
-                    storage_dir += "/" + jobstr;
-                    std::string mkdir_cmd = eos + " mkdir " + storage_dir;
-                    std::cout << mkdir_cmd << std::endl;
-                    system( mkdir_cmd.c_str() );
-                }
-
-                std::string copy_cmd = eos + " cp " + filepath + " " + storage_dir + "/" + options.outputFile;
-                std::cout << copy_cmd << std::endl;
-                system( copy_cmd.c_str() );
-            }
-        }
-    }
     std::cout << "Finished ^.^" << std::endl;
 
 }
 
-void Run( TChain * chain, TTree * outtree, 
-          const AnaConfig & ana_config, const CmdOptions & options,
-          int minevt, int maxevt ) {
+void RunModule::Run( TChain * chain, TTree * outtree, 
+                     const std::vector<ModuleConfig> & mod_configs, const CmdOptions & options,
+                     int minevt, int maxevt ) const {
+    // *************************
+    // initialize trees
+    // *************************
+    InitINTree(chain);
+    InitOUTTree( outtree );
+    
 
     // *************************
     // Declare output branches here
@@ -145,7 +58,7 @@ void Run( TChain * chain, TTree * outtree,
     }
 
     int n_saved = 0;
-    std::cout << "Will analyze " << maxevt << " events between " << minevt << " and " << maxevt << std::endl;
+    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
     for( int cidx = minevt; cidx < maxevt; cidx++ ) {
 
         if( cidx % 1000 == 0 ) {
@@ -161,7 +74,7 @@ void Run( TChain * chain, TTree * outtree,
 
         // loop over configured modules
         bool save_event = true;
-        BOOST_FOREACH( const ModuleConfig & mod_conf, ana_config.getEntries() ) {
+        BOOST_FOREACH( const ModuleConfig & mod_conf, mod_configs ) {
             save_event &= ApplyModule( mod_conf );
         }
 
@@ -175,7 +88,7 @@ void Run( TChain * chain, TTree * outtree,
 
 }
 
-bool ApplyModule( const ModuleConfig & config ) {
+bool RunModule::ApplyModule( const ModuleConfig & config ) const {
 
     bool keep_evt = true;
     
@@ -200,7 +113,7 @@ bool ApplyModule( const ModuleConfig & config ) {
 
 }
 
-void BuildElec( const ModuleConfig & config ) {
+void RunModule::BuildElec( const ModuleConfig & config ) const {
 
     //std::cout << "EVENT " << std::endl;
 
@@ -215,7 +128,7 @@ void BuildElec( const ModuleConfig & config ) {
 
 }
 
-bool FilterElec( const ModuleConfig & config ) {
+bool RunModule::FilterElec( const ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -235,7 +148,7 @@ bool FilterElec( const ModuleConfig & config ) {
     return true;
 }     
 
-bool FilterJet( const ModuleConfig & config ) {
+bool RunModule::FilterJet( const ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -255,7 +168,7 @@ bool FilterJet( const ModuleConfig & config ) {
     return true;
 }     
 
-bool FilterMuon( const ModuleConfig & config ) {
+bool RunModule::FilterMuon( const ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -275,7 +188,7 @@ bool FilterMuon( const ModuleConfig & config ) {
     return true;
 }     
 
-bool FilterEvent( const ModuleConfig & config ) {
+bool RunModule::FilterEvent( const ModuleConfig & config ) const {
 
     //int nMu = OUT::nMu;
     //int nEl = OUT::nEle;
@@ -290,37 +203,4 @@ bool FilterEvent( const ModuleConfig & config ) {
     return keep_evt;
 
 }     
-
-
-void ConfigOutFile( TFile * file, const std::string & raw_name, TTree * outtree ) {
-
-    // if the tree is in a directory, recreate the directory and put the tree in it
-    // otherwise just make the tree in the root directory
-    std::vector<std::string> name_tok = Tokenize( raw_name, "/" ); 
-
-    if( name_tok.size() > 1 ) {
-        std::string dir_path = "";
-        for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
-            dir_path = dir_path + name_tok[i]+"/";
-            std::cout << " mkdir " << dir_path << std::endl;
-            file->mkdir(dir_path.c_str());
-        }
-        file->cd();
-
-        std::cout << "Path is " << dir_path << std::endl;
-
-        std::string name = name_tok[name_tok.size()-1];
-
-        std::cout << "Name is " << name.c_str() << std::endl;
-    
-        outtree = new TTree(name.c_str(), name.c_str());
-        outtree->SetDirectory(file->GetDirectory( dir_path.c_str() ));
-    }
-    else {
-        outtree = new TTree(raw_name.c_str(), raw_name.c_str());
-        outtree->SetDirectory(file);
-    }
-
-
-}
 

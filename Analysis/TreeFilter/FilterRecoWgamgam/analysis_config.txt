@@ -1,0 +1,7 @@
+files : [root://eoscms.cern.ch//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/ggtree_mc_FSR/Job_0012/hist.root][0:(0-50015),];
+treeName : ggNtuplizer/EventTree
+outputDir : .
+outputFile : test.root
+__Modules__
+BuildElectron : cut_abseta [ <2.5 ] ; cut_abseta_crack ![ > 1.44, < 1.57 ] ; cut_convfit_barrel [ < 0.000001 ] ; cut_d0_barrel [ < 0.02 ] ; cut_dEtaIn_barrel [ < 0.004 ] ; cut_dPhiIn_barrel [ < 0.03 ] ; cut_ecalIso30_barrel [ < 0.1 ] ; cut_emfrac_barrel [ < 0.12 ] ; cut_eoverp_barrel [ < 0.1 ] ; cut_misshits_barrel [ == 0 ] ; cut_pt [ > 25] ; cut_sigmaIEIE_barrel [ < 0.01 ] ; cut_z0_barrel [ < 0.1 ] ; do_cutflow [] ; hist [cut_pt,100,0.000000,500.000000];hist [cut_abseta,50,0.000000,5.000000];hist [cut_dEtaIn_barrel,100,-0.100000,0.100000];hist [cut_dPhiIn_barrel,100,-0.100000,0.100000];hist [cut_sigmaIEIE_barrel,100,0.000000,0.050000];hist [cut_emfrac_barrel,100,-1.000000,1.000000];hist [cut_d0_barrel,100,-1.000000,1.000000];hist [cut_z0_barrel,100,-1.000000,1.000000];hist [cut_eoverp_barrel,100,0.000000,1.000000];hist [cut_ecalIso30_barrel,100,0.000000,10.000000];hist [cut_convfit_barrel,2,0.000000,1.000000];hist [cut_misshits_barrel,10,0.000000,10.000000];
+BuildMuon : cut_abseta [ < 2.5] ; cut_pt [ > 25 ] ; do_cutflow [] ; hist [cut_pt,100,0.000000,500.000000];hist [cut_abseta,50,0.000000,5.000000];
