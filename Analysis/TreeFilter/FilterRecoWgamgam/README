@@ -1,0 +1,7 @@
+examples :
+
+python scripts/filter.py  --files /afs/cern.ch/work/c/cranelli/public/QGC/Samples/ggtree_mc_ISR.root  --outputDir .  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableRemoveFilter
+
+python scripts/filter.py  --files root://eoscms.cern.ch//eos/cms/store/user/volper/ggNtuple/V05-03-07-11/job_summer12_ttg.root  --outputDir .  --outputFile filt1.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamBasicFilter.py --enableRemoveFilter 
+
+python scripts/filter.py  --filesDir root://eoscms.cern.ch//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/job_summer12_Wg --fileKey tree.root  --outputDir /tmp/jkunkle/job_summer12_Wg  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableRemoveFilter --nsplit 10
