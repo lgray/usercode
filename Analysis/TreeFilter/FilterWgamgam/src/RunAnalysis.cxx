@@ -13,10 +13,10 @@
 #include "FilterWgamgam/BranchInit.h"
 
 #include "TFile.h"
+#include "TH1.h"
 
 int main(int argc, char **argv)
 {
-
 
     CmdOptions options = ParseOptions( argc, argv );
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 }
 
 void RunModule::Run( TChain * chain, TTree * outtree, 
-                     const std::vector<ModuleConfig> & mod_configs, const CmdOptions & options,
+                     std::vector<ModuleConfig> & mod_configs, const CmdOptions & options,
                      int minevt, int maxevt ) const {
     // *************************
     // initialize trees
@@ -74,7 +74,7 @@ void RunModule::Run( TChain * chain, TTree * outtree,
 
         // loop over configured modules
         bool save_event = true;
-        BOOST_FOREACH( const ModuleConfig & mod_conf, mod_configs ) {
+        BOOST_FOREACH( ModuleConfig & mod_conf, mod_configs ) {
             save_event &= ApplyModule( mod_conf );
         }
 
@@ -88,7 +88,7 @@ void RunModule::Run( TChain * chain, TTree * outtree,
 
 }
 
-bool RunModule::ApplyModule( const ModuleConfig & config ) const {
+bool RunModule::ApplyModule( ModuleConfig & config ) const {
 
     bool keep_evt = true;
     
@@ -113,7 +113,7 @@ bool RunModule::ApplyModule( const ModuleConfig & config ) const {
 
 }
 
-void RunModule::BuildElec( const ModuleConfig & config ) const {
+void RunModule::BuildElec( ModuleConfig & config ) const {
 
     //std::cout << "EVENT " << std::endl;
 
@@ -128,7 +128,7 @@ void RunModule::BuildElec( const ModuleConfig & config ) const {
 
 }
 
-bool RunModule::FilterElec( const ModuleConfig & config ) const {
+bool RunModule::FilterElec( ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -148,7 +148,7 @@ bool RunModule::FilterElec( const ModuleConfig & config ) const {
     return true;
 }     
 
-bool RunModule::FilterJet( const ModuleConfig & config ) const {
+bool RunModule::FilterJet( ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -168,7 +168,7 @@ bool RunModule::FilterJet( const ModuleConfig & config ) const {
     return true;
 }     
 
-bool RunModule::FilterMuon( const ModuleConfig & config ) const {
+bool RunModule::FilterMuon( ModuleConfig & config ) const {
 
     // NOTE this assumes that the jets are 
     // sorted in descending order
@@ -188,7 +188,7 @@ bool RunModule::FilterMuon( const ModuleConfig & config ) const {
     return true;
 }     
 
-bool RunModule::FilterEvent( const ModuleConfig & config ) const {
+bool RunModule::FilterEvent( ModuleConfig & config ) const {
 
     //int nMu = OUT::nMu;
     //int nEl = OUT::nEle;

@@ -72,7 +72,6 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
             mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             std::string filepath = outputDir + "/" + options.outputFile;
 
-            CutFlowModule cfm( "test" );
             TFile * outfile  = TFile::Open(filepath.c_str(), "RECREATE");
 
 
@@ -107,13 +106,19 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
 
             BOOST_FOREACH( ModuleConfig & conf, getEntries() ) {
                 outfile->cd();
-                if( conf.getCutFlows()[0].getHists().size() ) {
+
+                if( conf.hasCutFlows() ) {
                     outfile->mkdir( conf.GetName().c_str() );
                     outfile->cd(conf.GetName().c_str() );
 
                     BOOST_FOREACH( const std::string & cutname, conf.getCutFlows()[0].getOrder() ) {
-                        if( conf.getCutFlows()[0].hasHist(cutname) ) {
-                            conf.getCutFlows()[0].getHist(cutname)->Write();
+                        std::string befname = cutname+"_before";
+                        std::string aftname = cutname+"_after";
+                        if( conf.getCutFlows()[0].hasHist(befname) ) {
+                            conf.getCutFlows()[0].getHist(befname).Write();
+                        }
+                        if( conf.getCutFlows()[0].hasHist(aftname) ) {
+                            conf.getCutFlows()[0].getHist(aftname).Write();
                         }
                     }
                 }
@@ -124,8 +129,25 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
             outtree->Write();
             outfile->Close();
 
+            std::vector<std::string> output_files;
+            output_files.push_back(filepath);
+
+
+            bool has_cutflows = false;
             BOOST_FOREACH( const ModuleConfig & conf, getEntries() ) {
-               conf.PrintCutFlows(); 
+                if( conf.hasCutFlows() ) has_cutflows = true;
+            }
+            if( has_cutflows ) {
+
+                std::string cutflowpath = outputDir + "/cutflows.root";
+                output_files.push_back(cutflowpath);
+
+                TFile * cutflowfile = TFile::Open(cutflowpath.c_str(), "RECREATE");
+
+                BOOST_FOREACH( const ModuleConfig & conf, getEntries() ) {
+                   conf.PrintCutFlows(); 
+                   conf.WriteCutFlowHists( cutflowfile );
+                }
             }
 
             if( options.transferToStorage ) {
@@ -144,9 +166,11 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                     system( mkdir_cmd.c_str() );
                 }
 
-                std::string copy_cmd = eos + " cp " + filepath + " " + storage_dir + "/" + options.outputFile;
-                std::cout << copy_cmd << std::endl;
-                system( copy_cmd.c_str() );
+                BOOST_FOREACH( const std::string & path, output_files ) {
+                    std::string copy_cmd = eos + " cp " + path + " " + storage_dir + "/" + options.outputFile;
+                    std::cout << copy_cmd << std::endl;
+                    system( copy_cmd.c_str() );
+                }
             }
         }
     }
@@ -511,7 +535,13 @@ void ModuleConfig::AddCut( CutConfig config ) {
 void ModuleConfig::AddHist( const std::string &histname, int nbin, float xmin, float xmax ) {
 
     if( cutflows.size() ) {
-        cutflows[0].getHists()[histname] = new TH1F( (GetName() + ":" + histname).c_str(), histname.c_str(), nbin, xmin, xmax );
+        std::string befname = histname + "_before";
+        std::string aftname = histname + "_after";
+
+        cutflows[0].createHist(GetName(), befname, nbin, xmin, xmax );
+        cutflows[0].createHist(GetName(), aftname, nbin, xmin, xmax );
+        //cutflows[0].getHists()[befname] = new TH1F( (GetName() + ":" + befname).c_str(), befname.c_str(), nbin, xmin, xmax );
+        //cutflows[0].getHists()[aftname] = new TH1F( (GetName() + ":" + aftname).c_str(), aftname.c_str(), nbin, xmin, xmax );
     }
 
 }
@@ -523,6 +553,13 @@ void ModuleConfig::PrintCutFlows() const {
     }
 }
 
+void ModuleConfig::WriteCutFlowHists( TFile * cutflowfile ) const {
+
+    BOOST_FOREACH( const CutFlowModule & cf, cutflows ) {
+        cf.WriteCutFlowHist( cutflowfile );
+    }
+}
+
 CutFlowModule::CutFlowModule( const std::string & _name ) :
   total(0),
   name(_name)
@@ -530,6 +567,46 @@ CutFlowModule::CutFlowModule( const std::string & _name ) :
 }
 
 CutFlowModule::~CutFlowModule() {
+}
+
+void CutFlowModule::WriteCutFlowHist( TDirectory * dir) const
+{
+
+    unsigned nbins = order.size() + 1;
+    TH1F* cuthist = new TH1F( ( GetName() + ":cuthist").c_str(), "cuthist", nbins, 0, nbins );
+    cuthist->GetXaxis()->SetBinLabel( 1, "Total" );
+    cuthist->SetBinContent( 1, total );
+    for( unsigned binnum = 0; binnum < order.size(); ++binnum ) {
+        cuthist->GetXaxis()->SetBinLabel( binnum+2, order[binnum].c_str() );
+        cuthist->SetBinContent(binnum+2, counts.at(order[binnum]));
+    }
+    //cuthist->SetDirectory( thisdir );
+
+    cuthist->Write();
+
+}
+
+    
+
+//CutFlowModule::CutFlowModule(const CutFlowModule & copy ) {
+//
+//    for( std::map<std::string, TH1F*>::const_iterator itr = copy.getHists().begin(); itr != getHists().end(); ++itr ) {
+//        getHists().insert( std::make_pair( itr->first, new TH1F( *(itr->second) ) ) );
+//    }
+//
+//    copy.SetOrder(order);
+//    copy.SetCounts(counts);
+//    copy.SetTotal(total);
+//    copy.SetName(name);
+//}
+
+void CutFlowModule::createHist( const std::string &basename, const std::string &histname, 
+                                int nbin, float xmin, float xmax) 
+{
+
+    hists.insert( std::make_pair(histname, 
+                                 TH1F( ( basename + ":" + histname).c_str(), histname.c_str(), 
+                                 nbin, xmin, xmax ) ) );
 }
 
 void CutFlowModule::AddCutDecision( const std::string & cutname, bool pass, float weight ) {
@@ -556,9 +633,18 @@ void CutFlowModule::AddCutDecisionFloat( const std::string & cutname, bool pass,
     AddCutDecision( cutname, pass, weight );
     // fill hists
     if( hists.size() ) {
-        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        std::string befname = cutname + "_before";
+        std::string aftname = cutname + "_after";
+        std::map<std::string, TH1F>::iterator hitr = hists.find(befname);
         if( hitr != hists.end() ) {
-            hitr->second->Fill( val );
+            hitr->second.Fill( val );
+        }
+        // fill the after hist only when the cut passes
+        if( pass ) {
+            std::map<std::string, TH1F>::iterator hitr = hists.find(aftname);
+            if( hitr != hists.end() ) {
+                hitr->second.Fill( val );
+            }
         }
     }
 }
@@ -568,9 +654,18 @@ void CutFlowModule::AddCutDecisionInt( const std::string & cutname, bool pass, i
     AddCutDecision( cutname, pass, weight );
     // fill hists
     if( hists.size() ) {
-        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        std::string befname = cutname + "_before";
+        std::string aftname = cutname + "_after";
+        std::map<std::string, TH1F>::iterator hitr = hists.find(befname);
         if( hitr != hists.end() ) {
-            hitr->second->Fill( val );
+            hitr->second.Fill( val );
+        }
+        // fill the after hist only when the cut passes
+        if( pass ) {
+            std::map<std::string, TH1F>::iterator hitr = hists.find(aftname);
+            if( hitr != hists.end() ) {
+                hitr->second.Fill( val );
+            }
         }
     }
 }
@@ -580,9 +675,18 @@ void CutFlowModule::AddCutDecisionBool( const std::string & cutname, bool pass, 
     AddCutDecision( cutname, pass, weight );
     // fill hists
     if( hists.size() ) {
-        std::map<std::string, TH1F*>::iterator hitr = hists.find(cutname);
+        std::string befname = cutname + "_before";
+        std::string aftname = cutname + "_after";
+        std::map<std::string, TH1F>::iterator hitr = hists.find(befname);
         if( hitr != hists.end() ) {
-            hitr->second->Fill( val );
+            hitr->second.Fill( val );
+        }
+        // fill the after hist only when the cut passes
+        if( pass ) {
+            std::map<std::string, TH1F>::iterator hitr = hists.find(aftname);
+            if( hitr != hists.end() ) {
+                hitr->second.Fill( val );
+            }
         }
     }
 }

@@ -44,6 +44,11 @@ namespace OUT {
     std::vector<float>  *el_eta;
     std::vector<float>  *el_phi;
     std::vector<float>  *el_e;
+    std::vector<float>  *el_mva;
+    std::vector<Bool_t> *el_passTight;
+    std::vector<Bool_t> *el_passMedium;
+    std::vector<Bool_t> *el_passLoose;
+    std::vector<Bool_t> *el_passVeryLoose;
 
     std::vector<float>  *mu_pt;
     std::vector<float>  *mu_eta;

@@ -21,10 +21,12 @@
 int main(int argc, char **argv)
 {
 
+    //TH1::AddDirectory(kFALSE);
     CmdOptions options = ParseOptions( argc, argv );
 
     // Parse the text file and form the configuration object
-    AnaConfig ana_config = ParseConfig( options.config_file, options );
+    //AnaConfig ana_config = ParseConfig( options.config_file, options );
+    AnaConfig ana_config = ParseConfig( "analysis_config.txt", options );
     std::cout << "Configured " << ana_config.size() << " analysis modules " << std::endl;
 
     RunModule runmod;
@@ -52,6 +54,11 @@ void RunModule::Run( TChain * chain, TTree * outtree,
     OUT::el_eta = 0;
     OUT::el_phi = 0;
     OUT::el_e = 0;
+    OUT::el_mva  = 0;
+    OUT::el_passTight = 0;
+    OUT::el_passMedium = 0;
+    OUT::el_passLoose= 0;
+    OUT::el_passVeryLoose = 0;
     OUT::mu_pt = 0;
     OUT::mu_eta = 0;
     OUT::mu_phi = 0;
@@ -61,55 +68,60 @@ void RunModule::Run( TChain * chain, TTree * outtree,
     OUT::phot_phi = 0;
     OUT::phot_e = 0;
     
-    outtree->Branch("el_n" , &OUT::el_n  , "el_n/I"   );
-    outtree->Branch("mu_n" , &OUT::mu_n  , "mu_n/I"   );
-    outtree->Branch("phot_n", &OUT::phot_n , "phot_n/I" );
-    outtree->Branch("vtx_n" , &OUT::vtx_n   , "vtx_n/I" );
+    outtree->Branch("el_n"               , &OUT::el_n  , "el_n/I"                            );
+    outtree->Branch("mu_n"               , &OUT::mu_n  , "mu_n/I"                            );
+    outtree->Branch("phot_n"             , &OUT::phot_n , "phot_n/I"                         );
+    outtree->Branch("vtx_n"              , &OUT::vtx_n   , "vtx_n/I"                         );
 
-    outtree->Branch("el_pt"          , &OUT::el_pt          );
-    outtree->Branch("el_eta"         , &OUT::el_eta         );
-    outtree->Branch("el_phi"         , &OUT::el_phi         );
-    outtree->Branch("el_e"           , &OUT::el_e           );
+    outtree->Branch("el_pt"              , &OUT::el_pt                                       );
+    outtree->Branch("el_eta"             , &OUT::el_eta                                      );
+    outtree->Branch("el_phi"             , &OUT::el_phi                                      );
+    outtree->Branch("el_e"               , &OUT::el_e                                        );
+    outtree->Branch("el_mva"             , &OUT::el_mva                                      );
+    outtree->Branch("el_passTight"       , &OUT::el_passTight                                );
+    outtree->Branch("el_passMedium"      , &OUT::el_passMedium                               );
+    outtree->Branch("el_passLoose"       , &OUT::el_passLoose                                );
+    outtree->Branch("el_passVeryLoose"   , &OUT::el_passVeryLoose                            );
     
-    outtree->Branch("mu_pt"          , &OUT::mu_pt          );
-    outtree->Branch("mu_eta"         , &OUT::mu_eta         );
-    outtree->Branch("mu_phi"         , &OUT::mu_phi         );
-    outtree->Branch("mu_e"           , &OUT::mu_e           );
+    outtree->Branch("mu_pt"              , &OUT::mu_pt                                       );
+    outtree->Branch("mu_eta"             , &OUT::mu_eta                                      );
+    outtree->Branch("mu_phi"             , &OUT::mu_phi                                      );
+    outtree->Branch("mu_e"               , &OUT::mu_e                                        );
     
-    outtree->Branch("phot_pt"        , &OUT::phot_pt  );
-    outtree->Branch("phot_eta"       , &OUT::phot_eta );
-    outtree->Branch("phot_phi"       , &OUT::phot_phi );
-    outtree->Branch("phot_e"         , &OUT::phot_e   );
+    outtree->Branch("phot_pt"            , &OUT::phot_pt                                     );
+    outtree->Branch("phot_eta"           , &OUT::phot_eta                                    );
+    outtree->Branch("phot_phi"           , &OUT::phot_phi                                    );
+    outtree->Branch("phot_e"             , &OUT::phot_e                                      );
     
-    outtree->Branch("avgPU"  , &OUT::avgPU, "avgPU/F" );
+    outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                            );
 
-    outtree->Branch("met_et"  , &OUT::met_et , "met_et/F" );
-    outtree->Branch("met_phi" , &OUT::met_phi , "met_phi/F" );
-    outtree->Branch("sumet" , &OUT::sumet, "sumet/F" );
-    outtree->Branch("metsig" , &OUT::metsig, "metsig/F" );
+    outtree->Branch("met_et"             , &OUT::met_et , "met_et/F"                         );
+    outtree->Branch("met_phi"            , &OUT::met_phi , "met_phi/F"                       );
+    outtree->Branch("sumet"              , &OUT::sumet, "sumet/F"                            );
+    outtree->Branch("metsig"             , &OUT::metsig, "metsig/F"                          );
 
-    outtree->Branch("leadPhot_pt" , &OUT::leadPhot_pt , "leadPhot_pt/F" );
-    outtree->Branch("sublPhot_pt" , &OUT::sublPhot_pt , "sublPhot_pt/F" );
+    outtree->Branch("leadPhot_pt"        , &OUT::leadPhot_pt , "leadPhot_pt/F"               );
+    outtree->Branch("sublPhot_pt"        , &OUT::sublPhot_pt , "sublPhot_pt/F"               );
 
-    outtree->Branch("leadPhot_lepDR" , &OUT::leadPhot_lepDR , "leadPhot_lepDR/F" );
-    outtree->Branch("sublPhot_lepDR" , &OUT::sublPhot_lepDR , "sublPhot_lepDR/F" );
-    outtree->Branch("phot_photDR"    , &OUT::phot_photDR , "phot_photDR/F" );
-    outtree->Branch("photPhot_lepDR" , &OUT::photPhot_lepDR , "photPhot_lepDR/F" );
-    outtree->Branch("leadPhot_lepDPhi" , &OUT::leadPhot_lepDPhi , "leadPhot_lepDPhi/F" );
-    outtree->Branch("sublPhot_lepDPhi" , &OUT::sublPhot_lepDPhi , "sublPhot_lepDPhi/F" );
-    outtree->Branch("phot_photDPhi"    , &OUT::phot_photDPhi , "phot_photDPhi/F" );
-    outtree->Branch("photPhot_lepDPhi"    , &OUT::photPhot_lepDPhi , "photPhot_lepDPhi/F" );
+    outtree->Branch("leadPhot_lepDR"     , &OUT::leadPhot_lepDR , "leadPhot_lepDR/F"         );
+    outtree->Branch("sublPhot_lepDR"     , &OUT::sublPhot_lepDR , "sublPhot_lepDR/F"         );
+    outtree->Branch("phot_photDR"        , &OUT::phot_photDR , "phot_photDR/F"               );
+    outtree->Branch("photPhot_lepDR"     , &OUT::photPhot_lepDR , "photPhot_lepDR/F"         );
+    outtree->Branch("leadPhot_lepDPhi"   , &OUT::leadPhot_lepDPhi , "leadPhot_lepDPhi/F"     );
+    outtree->Branch("sublPhot_lepDPhi"   , &OUT::sublPhot_lepDPhi , "sublPhot_lepDPhi/F"     );
+    outtree->Branch("phot_photDPhi"      , &OUT::phot_photDPhi , "phot_photDPhi/F"           );
+    outtree->Branch("photPhot_lepDPhi"   , &OUT::photPhot_lepDPhi , "photPhot_lepDPhi/F"     );
 
-    outtree->Branch("mt_lep_met"         , &OUT::mt_lep_met         , "mt_lep_met/F"          );
-    outtree->Branch("mt_lepphot1_met"    , &OUT::mt_lepphot1_met    , "mt_lepphot1_met/F"     );
-    outtree->Branch("mt_lepphot2_met"    , &OUT::mt_lepphot2_met    , "mt_lepphot2_met/F"     );
-    outtree->Branch("mt_lepphotphot_met" , &OUT::mt_lepphotphot_met , "mt_lepphotphot_met/F"  );
+    outtree->Branch("mt_lep_met"         , &OUT::mt_lep_met         , "mt_lep_met/F"         );
+    outtree->Branch("mt_lepphot1_met"    , &OUT::mt_lepphot1_met    , "mt_lepphot1_met/F"    );
+    outtree->Branch("mt_lepphot2_met"    , &OUT::mt_lepphot2_met    , "mt_lepphot2_met/F"    );
+    outtree->Branch("mt_lepphotphot_met" , &OUT::mt_lepphotphot_met , "mt_lepphotphot_met/F" );
 
-    outtree->Branch("m_leplep"        , &OUT::m_leplep        , "m_leplep/F"         );
-    outtree->Branch("m_lepphot1"      , &OUT::m_lepphot1      , "m_lepphot1/F"      );
-    outtree->Branch("m_lepphot2"      , &OUT::m_lepphot2      , "m_lepphot2/F"      );
-    outtree->Branch("m_lepphotphot"   , &OUT::m_lepphotphot   , "m_lepphotphot/F"   );
-    outtree->Branch("m_photphot"      , &OUT::m_photphot      , "m_photphot/F"      );
+    outtree->Branch("m_leplep"           , &OUT::m_leplep        , "m_leplep/F"              );
+    outtree->Branch("m_lepphot1"         , &OUT::m_lepphot1      , "m_lepphot1/F"            );
+    outtree->Branch("m_lepphot2"         , &OUT::m_lepphot2      , "m_lepphot2/F"            );
+    outtree->Branch("m_lepphotphot"      , &OUT::m_lepphotphot   , "m_lepphotphot/F"         );
+    outtree->Branch("m_photphot"         , &OUT::m_photphot      , "m_photphot/F"            );
 
     // *************************
     // Begin loop over the input tree
@@ -195,9 +207,21 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
         float eta = IN::muEta[idx];
         float phi = IN::muPhi[idx];
 
+        float chi2 = IN::muChi2NDF[idx];
+        int   nTrkLayers = IN::muNumberOfValidTrkLayers[idx];
+        int   muStations = IN::muStations[idx];
+        int   nPixHit    = IN::muNumberOfValidPixelHits[idx];
+        float d0         = IN::muD0GV[idx];
+        float muIso      = IN::muIsoTrk[idx];
 
-        if( !config.PassFloat( "cut_pt"  , pt  ) ) continue;
-        if( !config.PassFloat( "cut_abseta"  , fabs(eta)   ) ) continue;
+        if( !config.PassFloat( "cut_pt"         , pt         ) ) continue;
+        if( !config.PassFloat( "cut_abseta"     , fabs(eta)  ) ) continue;
+        if( !config.PassFloat( "cut_chi2"       , chi2       ) ) continue;
+        if( !config.PassFloat( "cut_nTrkLayers" , nTrkLayers ) ) continue;
+        if( !config.PassFloat( "cut_nStations"  , muStations ) ) continue;
+        if( !config.PassFloat( "cut_nPixelHits" , nPixHit    ) ) continue;
+        if( !config.PassFloat( "cut_d0"         , fabs(d0)   ) ) continue;
+        if( !config.PassFloat( "cut_trkiso"     , muIso/pt   ) ) continue;
 
         OUT::mu_n++;
 
@@ -216,69 +240,126 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
 
 void RunModule::BuildElectron( ModuleConfig & config ) const {
 
-    OUT::el_pt        -> clear();
-    OUT::el_eta       -> clear();
-    OUT::el_phi       -> clear();
-    OUT::el_e         -> clear();
-    OUT::el_n          = 0;
+    OUT::el_pt            -> clear();
+    OUT::el_eta           -> clear();
+    OUT::el_phi           -> clear();
+    OUT::el_e             -> clear();
+    OUT::el_mva           -> clear();
+    OUT::el_passTight     -> clear();
+    OUT::el_passMedium    -> clear();
+    OUT::el_passLoose     -> clear();
+    OUT::el_passVeryLoose -> clear();
+    OUT::el_n             = 0;
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
         float dEtaIn    = IN::eledEtaAtVtx[idx];
         float dPhiIn    = IN::eledPhiAtVtx[idx];
         float sigmaIEIE = IN::eleSigmaIEtaIEta[idx];
         float d0        = IN::eleD0GV[idx];
-        float z0        = IN::eleD0GV[idx];
-        float emfrac    = IN::eleHoverE[idx];
+        float z0        = IN::eleDzGV[idx];
+        float hovere    = IN::eleHoverE[idx];
         //float eoverp    = IN::eleEoverP[idx];
-        float ecaliso30 = IN::eleIsoEcalDR03[idx];
+        float pfiso30   = IN::elePFChIso03[idx];
         float convfit   = IN::eleConvVtxFit[idx];
-        float misshits  = IN::eleMissHits[idx];
+        int misshits    = IN::eleMissHits[idx];
 
         float pt        = IN::elePt[idx];
         float eta       = IN::eleEta[idx];
         float sceta     = IN::eleSCEta[idx];
         float phi       = IN::elePhi[idx];
         float en        = IN::eleEn[idx];
-        float pin       = IN::elePin[idx];
-        float eoverp    = fabs( (1/en) - (1/pin) );
+        float p         = en/(IN::eleEoverP[idx]);
+        float eoverp    = fabs( (1/en) - (1/p) );
+        float mva       = IN::eleIDMVATrig[idx];
 
         if( !config.PassFloat( "cut_pt"  , pt  ) ) continue;
         if( !config.PassFloat( "cut_abseta" , fabs(eta) ) ) continue;
         if( !config.PassFloat( "cut_abseta_crack" , fabs(eta) ) ) continue;
 
+        if( !config.PassFloat( "cut_mva" , mva ) ) continue;
+
+        bool pass_tight     = true;
+        bool pass_medium    = true;
+        bool pass_loose     = true;
+        bool pass_veryloose = true;
+
         if( fabs(sceta) < 1.479 ) { // barrel
             
-            if( !config.PassFloat( "cut_dEtaIn_barrel"    , dEtaIn       ) ) continue;
-            if( !config.PassFloat( "cut_dPhiIn_barrel"    , dPhiIn       ) ) continue;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel" , sigmaIEIE    ) ) continue;
-            if( !config.PassFloat( "cut_d0_barrel"        , d0           ) ) continue;
-            if( !config.PassFloat( "cut_z0_barrel"        , z0           ) ) continue;
-            if( !config.PassFloat( "cut_emfrac_barrel"    , emfrac       ) ) continue;
-            if( !config.PassFloat( "cut_eoverp_barrel"    , eoverp       ) ) continue;
-            if( !config.PassFloat( "cut_ecalIso30_barrel" , ecaliso30/pt ) ) continue;
-            if( !config.PassFloat( "cut_convfit_barrel"   , convfit      ) ) continue;
-            if( !config.PassInt  ( "cut_misshits_barrel"  , misshits     ) ) continue;
-        }
-        if( fabs(sceta) < 2.5 && fabs(sceta) > 1.479 ) { // endcap
+            // Tight cuts
+            if( !config.PassFloat( "cut_dEtaIn_barrel_tight"    , dEtaIn       ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_dPhiIn_barrel_tight"    , dPhiIn       ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight" , sigmaIEIE    ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_d0_barrel_tight"        , d0           ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_z0_barrel_tight"        , z0           ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_hovere_barrel_tight"    , hovere       ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_eoverp_barrel_tight"    , eoverp       ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_pfIso30_barrel_tight"   , pfiso30/pt   ) ) pass_tight=false;
+            if( !config.PassFloat( "cut_convfit_barrel_tight"   , convfit      ) ) pass_tight=false;
+            if( !config.PassInt  ( "cut_misshits_barrel_tight"  , misshits     ) ) pass_tight=false;
+            
+            // Medium cuts
+            if( !config.PassFloat( "cut_dEtaIn_barrel_medium"    , dEtaIn       ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_dPhiIn_barrel_medium"    , dPhiIn       ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium" , sigmaIEIE    ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_d0_barrel_medium"        , d0           ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_z0_barrel_medium"        , z0           ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_hovere_barrel_medium"    , hovere       ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_eoverp_barrel_medium"    , eoverp       ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_pfIso30_barrel_medium"   , pfiso30/pt   ) ) pass_medium=false;
+            if( !config.PassFloat( "cut_convfit_barrel_medium"   , convfit      ) ) pass_medium=false;
+            if( !config.PassInt  ( "cut_misshits_barrel_medium"  , misshits     ) ) pass_medium=false;
+            
+            // Loose cuts
+            if( !config.PassFloat( "cut_dEtaIn_barrel_loose"    , dEtaIn       ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_dPhiIn_barrel_loose"    , dPhiIn       ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose" , sigmaIEIE    ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_d0_barrel_loose"        , d0           ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_z0_barrel_loose"        , z0           ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_hovere_barrel_loose"    , hovere       ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_eoverp_barrel_loose"    , eoverp       ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_pfIso30_barrel_loose"   , pfiso30/pt   ) ) pass_loose=false;
+            if( !config.PassFloat( "cut_convfit_barrel_loose"   , convfit      ) ) pass_loose=false;
+            if( !config.PassInt  ( "cut_misshits_barrel_loose"  , misshits     ) ) pass_loose=false;
 
-            if( !config.PassFloat( "cut_dEtaIn_endcap"    , dEtaIn       ) ) continue;
-            if( !config.PassFloat( "cut_dPhiIn_endcap"    , dPhiIn       ) ) continue;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap" , sigmaIEIE    ) ) continue;
-            if( !config.PassFloat( "cut_d0_endcap"        , d0           ) ) continue;
-            if( !config.PassFloat( "cut_z0_endcap"        , z0           ) ) continue;
-            if( !config.PassFloat( "cut_emfrac_endcap"    , emfrac       ) ) continue;
-            if( !config.PassFloat( "cut_eoverp_endcap"    , eoverp       ) ) continue;
-            if( !config.PassFloat( "cut_ecalIso30_endcap" , ecaliso30/pt ) ) continue;
-            if( !config.PassFloat( "cut_convfit_endcap"   , convfit      ) ) continue;
-            if( !config.PassInt  ( "cut_misshits_endcap"  , misshits     ) ) continue;
+            // Very Loose cuts
+            if( !config.PassFloat( "cut_dEtaIn_barrel_loose"    , dEtaIn       ) ) pass_veryloose=false;
+            
+            if( !config.PassFloat( "cut_dEtaIn_barrel_veryloose"    , dEtaIn       ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_dPhiIn_barrel_veryloose"    , dPhiIn       ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_sigmaIEIE_barrel_veryloose" , sigmaIEIE    ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_d0_barrel_veryloose"        , d0           ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_z0_barrel_veryloose"        , z0           ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_hovere_barrel_veryloose"    , hovere       ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_eoverp_barrel_veryloose"    , eoverp       ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_pfIso30_barrel_veryloose"   , pfiso30/pt   ) ) pass_veryloose=false;
+            if( !config.PassFloat( "cut_convfit_barrel_veryloose"   , convfit      ) ) pass_veryloose=false;
+            if( !config.PassInt  ( "cut_misshits_barrel_veryloose"  , misshits     ) ) pass_veryloose=false;
         }
+        //if( fabs(sceta) < 2.5 && fabs(sceta) > 1.479 ) { // endcap
+
+        //    if( !config.PassFloat( "cut_dEtaIn_endcap"    , dEtaIn       ) ) continue;
+        //    if( !config.PassFloat( "cut_dPhiIn_endcap"    , dPhiIn       ) ) continue;
+        //    if( !config.PassFloat( "cut_sigmaIEIE_endcap" , sigmaIEIE    ) ) continue;
+        //    if( !config.PassFloat( "cut_d0_endcap"        , d0           ) ) continue;
+        //    if( !config.PassFloat( "cut_z0_endcap"        , z0           ) ) continue;
+        //    if( !config.PassFloat( "cut_emfrac_endcap"    , hovere       ) ) continue;
+        //    if( !config.PassFloat( "cut_eoverp_endcap"    , eoverp       ) ) continue;
+        //    if( !config.PassFloat( "cut_pfIso30_endcap"   , pfiso30/pt   ) ) continue;
+        //    if( !config.PassFloat( "cut_convfit_endcap"   , convfit      ) ) continue;
+        //    if( !config.PassInt  ( "cut_misshits_endcap"  , misshits     ) ) continue;
+        //}
 
         OUT::el_n++;
 
-        OUT::el_pt        -> push_back(pt);
-        OUT::el_eta       -> push_back(eta);
-        OUT::el_phi       -> push_back(phi);
-        OUT::el_e         -> push_back(pt*cosh(eta));
+        OUT::el_pt            -> push_back(pt);
+        OUT::el_eta           -> push_back(eta);
+        OUT::el_phi           -> push_back(phi);
+        OUT::el_e             -> push_back(pt*cosh(eta));
+        OUT::el_mva           -> push_back(mva);
+        OUT::el_passTight     -> push_back(pass_tight);
+        OUT::el_passMedium    -> push_back(pass_medium);
+        OUT::el_passLoose     -> push_back(pass_loose);
+        OUT::el_passVeryLoose -> push_back(pass_veryloose);
         
     }
 
@@ -314,20 +395,48 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
     OUT::phot_e         -> clear();
     OUT::phot_n          = 0;
 
-    //for( int idx = 0; idx < IN::nMC; ++idx  ) {
-    //    if( IN::mcPID[idx] == 22 && IN::mcStatus[idx] == 1 ) {
+    for( int idx = 0; idx < IN::nPho; ++idx ) {
+        float pt        = IN::phoEt[idx];
+        float eta       = IN::phoEta[idx];
+        float sceta     = IN::phoSCEta[idx];
+        float phi       = IN::phoPhi[idx];
+        float en        = IN::phoE[idx];
+        int   isConv    = IN::phoIsConv[idx];
 
-    //        if( !config.PassFloat( "cut_pt", IN::mcPt[idx] ) ) continue;
-    //        if( !config.PassFloat( "cut_abseta", fabs(IN::mcEta[idx]) ) ) continue;
 
-    //        OUT::phot_pt        -> push_back(IN::mcPt[idx]     );
-    //        OUT::phot_eta       -> push_back(IN::mcEta[idx]    );
-    //        OUT::phot_phi       -> push_back(IN::mcPhi[idx]    );
-    //        OUT::phot_e         -> push_back(IN::mcE[idx]      );
-    //        OUT::phot_motherPID -> push_back(IN::mcMomPID[idx] );
-    //        OUT::phot_n++;
-    //    }
-    //}
+        int   eleVeto   = IN::phoEleVeto[idx];
+        float hovere    = IN::phoHoverE[idx];
+        float sigmaIEIE = IN::phoSigmaIEtaIEta[idx];
+        int   pixseed   = IN::phohasPixelSeed[idx];
+
+        float isohollow40 = IN::phoTrkIsoHollowDR04[idx];
+        float ecaliso40   = IN::phoEcalIsoDR04[idx];
+        float hcaliso40   = IN::phoHcalIsoDR04[idx];
+
+        float pfChIso     = IN::phoPFChIso[idx];
+        float pfNeuIso    = IN::phoPFNeuIso[idx];
+        float pfPhoIso    = IN::phoPFPhoIso[idx];
+
+        if( !config.PassFloat( "cut_pt"    , pt       ) ) continue;
+        if( !config.PassFloat( "cut_abseta"    , fabs(eta)       ) ) continue;
+        if( !config.PassFloat( "cut_abseta_crack"    , fabs(eta)       ) ) continue;
+        if( !config.PassFloat( "cut_emfrac"    , hovere ) ) continue;
+        if( fabs(sceta) < 1.479 ) { // barrel
+
+            if( !config.PassFloat( "cut_sigmaIEIE_barrel"    , sigmaIEIE) ) continue;
+            if( !config.PassFloat( "cut_trkiso40_barrel"    , isohollow40) ) continue;
+            if( !config.PassFloat( "cut_ecaliso40_barrel"    , ecaliso40) ) continue;
+            if( !config.PassFloat( "cut_hcaliso40_barrel"    , hcaliso40) ) continue;
+
+        }
+
+        OUT::phot_n++;
+
+        OUT::phot_pt        -> push_back(pt);
+        OUT::phot_eta       -> push_back(eta);
+        OUT::phot_phi       -> push_back(phi);
+        OUT::phot_e         -> push_back(pt*cosh(eta));
+    }
             
 }        
 

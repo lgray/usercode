@@ -91,6 +91,7 @@ class CutFlowModule {
         
         CutFlowModule( const std::string & _name);
         ~CutFlowModule();
+        //CutFlowModule(const CutFlowModule &);
 
         // allow for a non-zero weight, but
         // for now assume the weight is 1
@@ -99,12 +100,17 @@ class CutFlowModule {
         void AddCutDecisionInt( const std::string & cutname, bool pass, int val, float weight=1.0);
         void AddCutDecisionBool( const std::string & cutname, bool pass, bool val, float weight=1.0);
 
-        std::map<std::string, TH1F*> & getHists() { return hists; }
+        const std::string & GetName() const { return name; }
+
+        std::map<std::string, TH1F> getHists() { return hists; }
         bool hasHist( const std::string & name ) { return ( hists.find(name) != hists.end() ); }
-        TH1F* getHist( const std::string & name ) { return hists[name]; }
+        TH1F getHist( const std::string & name ) { return hists.at(name); }
         const std::vector<std::string> & getOrder() { return order; }
+        void createHist( const std::string &basename, const std::string &histname, 
+                         int nbin, float xmin, float xmax);
 
         void Print() const;
+        void WriteCutFlowHist( TDirectory * dir ) const;
 
     private :
 
@@ -112,7 +118,7 @@ class CutFlowModule {
         std::map<std::string, float> counts;
         float                        total;
         std::string name;
-        std::map<std::string, TH1F*> hists;
+        std::map<std::string, TH1F> hists;
 
 };
 
@@ -138,7 +144,10 @@ class ModuleConfig {
         void AddHist( const std::string & name, int nbin, float xmin, float xmax );
 
         void PrintCutFlows() const;
+        void WriteCutFlowHists( TFile *) const;
 
+
+        bool hasCutFlows() const {return cutflows.size(); }
         std::vector<CutFlowModule> & getCutFlows() { return cutflows; }
 
     private :
