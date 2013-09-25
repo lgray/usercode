@@ -39,7 +39,6 @@ const ModuleConfig AnaConfig::getEntry( unsigned int i ) const {
 
 void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) {
 
-
     int total_njobs = 0;
     for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
         total_njobs += options.files[fidx].jobs.size();
@@ -102,7 +101,7 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
             }
             //ConfigOutFile( outfile, chain->GetName(), outtree );
 
-            runmod.Run( chain, outtree, getEntries(), options, minevt, maxevt );
+            runmod.Run( chain, outtree, outfile, getEntries(), options, minevt, maxevt );
 
             BOOST_FOREACH( ModuleConfig & conf, getEntries() ) {
                 outfile->cd();
@@ -154,10 +153,13 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                 std::string storage_dir = options.storagePath;
                 std::string eos = "/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select";
 
-                if( jobidx == 1 ) { // make the directory the first time
+                if( jobidx == 0 ) { // make the directory the first time
                     std::string mkdir_cmd = eos + " mkdir " + options.storagePath;
                     std::cout << mkdir_cmd << std::endl;
                     system( mkdir_cmd.c_str() );
+                    // copy the configuration script to this directory for future reference
+                    std::string cpy_cmd = eos + " cp " + options.config_file + " " + options.storagePath + "/" + options.config_file ;
+                    system( cpy_cmd.c_str() );
                 }
                 if( total_njobs > 1 ) {
                     storage_dir += "/" + jobstr;
@@ -171,6 +173,11 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                     std::cout << copy_cmd << std::endl;
                     system( copy_cmd.c_str() );
                 }
+                BOOST_FOREACH( const std::string & path, output_files ) {
+                    std::string rm_cmd = " rm " + path;
+                    std::cout << rm_cmd << std::endl;
+                    system( rm_cmd.c_str() );
+                }
             }
         }
     }
@@ -181,10 +188,11 @@ std::vector<ModuleConfig> & AnaConfig::getEntries() {
   return confs;
 }
 
-Cut::Cut( CutType::Op in_op, CutType::Type in_type, 
+Cut::Cut( CutType::Op in_op, CutType::Type in_type, CutType::Comp in_comp,
                bool in_val_bool, int in_val_int, float in_val_float ) : 
     op( in_op ),
     type( in_type ),
+    comp( in_comp ),
     val_bool( in_val_bool ),
     val_int ( in_val_int ),
     val_float( in_val_float )
@@ -197,7 +205,8 @@ void Cut::Print() const{
 
 CutConfig::CutConfig( const std::string &cut_str ) {
 
-    // cut string should have the formant name [val]
+    // cut string should have the format name [val]
+    // find the location of the brackets
     std::size_t posbeg = cut_str.find("[");
     std::size_t posend = cut_str.find("]");
 
@@ -210,7 +219,7 @@ CutConfig::CutConfig( const std::string &cut_str ) {
     }
 
     // get the cut name values
-    std::string name = cut_str.substr(0, posbeg);
+    std::string name    = cut_str.substr( 0, posbeg);
     std::string val_str = cut_str.substr( posbeg+1, posend-posbeg-1 );
 
     bool should_invert = false;
@@ -225,10 +234,38 @@ CutConfig::CutConfig( const std::string &cut_str ) {
     // remove whitespace from the name
     boost::algorithm::trim(name);
 
-    const std::vector<std::string> each_cut = Tokenize(val_str, ",");
+    // treat a comma or & as an and operator
+    bool has_comma_op = val_str.find(",") != std::string::npos;
+    bool has_and_op   = val_str.find("&") != std::string::npos;
+    bool has_or_op    = val_str.find("|") != std::string::npos;
+
+    // throw an error if both ANDs and ORs are present in the cut
+    // this case is not handled yet ( requires order of operation handling )
+    if( ( has_comma_op || has_and_op ) && has_or_op ) {
+        std::cout << "CutConfig - ERROR : both an AND operation and an OR operation are present in the cut.  This case is not yet handled" << std::endl;
+    }
+          
+    // handle the case if a double & or | was used in the cut definition
+    // just remove one of them
+    size_t loc;
+    while( loc = val_str.find("&&"), loc != std::string::npos ) {
+        val_str.erase(loc, 1);
+    }
+    while( loc = val_str.find("||"), loc != std::string::npos ) {
+        val_str.erase(loc, 1);
+    }
+    std::cout << "val_str is now " << val_str << std::endl;
 
     std::vector<Cut> conf_cut;
 
+    std::vector<std::string> each_cut; 
+    // split by the operator.  If no operator is 
+    // found, then just use the whole string
+    if     ( has_comma_op ) each_cut = Tokenize(val_str, ",");
+    else if( has_and_op )   each_cut = Tokenize(val_str, "&");
+    else if( has_or_op )    each_cut = Tokenize(val_str, "|");
+    else                    each_cut.push_back(val_str);
+    
     BOOST_FOREACH( const std::string & val_orig, each_cut ) {
       
         // copy the value string and set it to lower case (mainly for True/False -> true/false )
@@ -255,7 +292,13 @@ CutConfig::CutConfig( const std::string &cut_str ) {
         else {
             cut_op = attempt_logicalop_parse( val, cut_type, cut_val_int, cut_val_float );
         }
-        conf_cut.push_back( Cut(cut_op, cut_type, cut_val_bool, cut_val_int, cut_val_float) );
+
+        CutType::Comp cut_comp = CutType::AND;
+        if( has_or_op ) {
+            cut_comp = CutType::OR;
+        }
+
+        conf_cut.push_back( Cut(cut_op, cut_type, cut_comp, cut_val_bool, cut_val_int, cut_val_float) );
     }
 
     SetName( name );
@@ -335,8 +378,9 @@ CutType::Op CutConfig::attempt_logicalop_parse( const std::string & val, CutType
 
 bool CutConfig::PassFloat(const std::string &name, const float cutval ) const {
 
-    bool pass = true;
+    bool pass_cuts = true;
     BOOST_FOREACH( const Cut & cut, GetCuts() ) {
+        bool pass = true;
 
         if( cut.type != CutType::FLOAT && cut.type != CutType::INT ) {
           std::cout << "CutConfig::PassFloat - ERROR : Float cut requested for cut " << name << " but cut was not configured as a float " << std::endl;
@@ -361,19 +405,28 @@ bool CutConfig::PassFloat(const std::string &name, const float cutval ) const {
           std::cout << "CutConfig::PassFloat - WARNING : EQUAL_TO operator used for float comparison for cut " << name << std::endl;
         }
 
+        // Handle AND vs OR
+        if( cut.comp == CutType::AND ) {
+            pass_cuts &= pass;
+        }
+        if( cut.comp == CutType::OR ) {
+            pass_cuts |= pass;
+        }
     }
 
     if( GetIsInverted() ) {
-      pass = !pass;
+      pass_cuts = !pass_cuts;
     }
 
-    return pass;
+    return pass_cuts;
 }
         
 bool CutConfig::PassInt(const std::string &name, const int cutval ) const {
 
-    bool pass = true;
+    bool pass_cuts = true;
     BOOST_FOREACH( const Cut & cut, GetCuts() ) {
+
+        bool pass = true;
 
         if( cut.type != CutType::INT ) {
           std::cout << "CutConfig::PassInt - ERROR : Int cut requested for cut " << name << " but cut was not configured as an int" << std::endl;
@@ -397,19 +450,28 @@ bool CutConfig::PassInt(const std::string &name, const int cutval ) const {
           if( !(cutval == cut.val_int) ) pass = false;
         }
 
+        // Handle AND vs OR
+        if( cut.comp == CutType::AND ) {
+            pass_cuts &= pass;
+        }
+        if( cut.comp == CutType::OR ) {
+            pass_cuts |= pass;
+        }
     }
 
     if( GetIsInverted() ) {
-      pass = !pass;
+      pass_cuts = !pass_cuts;
     }
 
-    return pass;
+    return pass_cuts;
 }
         
 bool CutConfig::PassBool(const std::string &name, const bool cutval ) const {
 
-    bool pass = true;
+    bool pass_cuts = true;
     BOOST_FOREACH( const Cut & cut, GetCuts() ) {
+
+        bool pass = true;
 
         if( cut.type != CutType::BOOL ) {
           std::cout << "CutConfig::PassBool - ERROR : Boolean cut requested for cut " << name << " but cut was not configured as a bool " << std::endl;
@@ -421,13 +483,20 @@ bool CutConfig::PassBool(const std::string &name, const bool cutval ) const {
             if( !(cutval == cut.val_bool) ) pass = false;
         }
 
+        // Handle AND vs OR
+        if( cut.comp == CutType::AND ) {
+            pass_cuts &= pass;
+        }
+        if( cut.comp == CutType::OR ) {
+            pass_cuts |= pass;
+        }
     }
 
     if( GetIsInverted() ) {
-        pass = !pass;
+        pass_cuts = !pass_cuts;
     }
 
-    return pass;
+    return pass_cuts;
 }
         
 
@@ -725,169 +794,236 @@ AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
     AnaConfig ana_config;
 
     std::ifstream file(fname.c_str());
+    std::cout << "Read file " << fname << std::endl;
     std::string line;
     if( file.is_open() ) {
         
         bool read_modules = false;
         while( getline(file, line) ) {
-
-            if( read_modules ) {
-
-
-                // Split by : character.  The 0th entry is the
-                // module name
-                std::vector<std::string> module_split = Tokenize( line, ":" );
-                if( module_split.size() != 2 ) {
-                    std::cout << "ParseConfig - ERROR : config file entry does not contain a \":\" "
-                              << "character.  Please check the config file" << std::endl;
-                    continue;
-                }
-                std::string module_name = module_split[0];
-                boost::algorithm::trim(module_name);
-                ModuleConfig this_module(module_name);
-
-                std::string module_config = module_split[1];
-
-                // Split the module config by ';' to separate cut entries
-                std::vector<std::string> cut_split = Tokenize( module_config, ";" );
-
-                std::vector<CutConfig> module_cuts;
-                BOOST_FOREACH( const std::string & cut, cut_split ) {
-                    if( cut.find_first_not_of(' ') == std::string::npos ) continue; //check if cut is only whitespace 
-                    if( cut.find("do_cutflow") != std::string::npos ) {
-                        this_module.AddCutFlow( module_name );
-                        continue;
-                    }
-
-                    if( cut.find("hist") != std::string::npos ) {
-
-                        // example hist entry : hist [cut_d0_barrel,100,-1.000000,1.000000]
-                        // first strip off the []
-                        std::string hist_entries = cut.substr( cut.find("[")+1, cut.find("]")-1 );
-                        std::vector<std::string> hist_split = Tokenize( hist_entries, "," );
-                        if( hist_split.size() != 4 ) {
-                            std::cout << "ParseConfig - ERROR : cannot parse histogram " << hist_entries << std::endl;
-                            continue;
-                        }
-                        std::string name = hist_split[0];
-                        int nbins;
-                        float xmin;
-                        float xmax;
-                        boost::algorithm::trim(hist_split[1]);
-                        boost::algorithm::trim(hist_split[2]);
-                        boost::algorithm::trim(hist_split[3]);
-                        std::stringstream nbinstr(hist_split[1]);
-                        std::stringstream xminstr(hist_split[2]);
-                        std::stringstream xmaxstr(hist_split[3]);
-                        nbinstr >> nbins;
-                        xminstr >> xmin;
-                        xmaxstr >> xmax;
-                        this_module.AddHist( name, nbins, xmin, xmax );
-                        continue;
-                    }
-
-                    this_module.AddCut( CutConfig( cut ) );
-                }
-
-                ana_config.AddModule( this_module );
-            }
-            else {
-                // reading header information
-                std::vector<std::string> header_split = Tokenize( line, ":" );
-                if( header_split.size() > 1  ) {
-                    std::string header_key = header_split[0];
-                    std::vector<std::string> remainder( header_split.begin()+1, header_split.end() );
-                    std::string header_val = boost::algorithm::join(remainder, ":");
-                    if( header_key.find("files") != std::string::npos ) {// read files
-                        // this is a bit complicated
-                        // first remove white space
-                        boost::algorithm::trim(header_val);
-                        // the string should begin with [ and end with ] 
-                        std::vector<std::string> file_map_entries = Tokenize( header_val, ";");
-                        BOOST_FOREACH( const std::string & file_map, file_map_entries ) {
-                            // split again to separate the list of file names from the
-                            // list of events
-                            if( !(file_map[0] == '[' and file_map[file_map.size()-1] == ']' ) ) {
-                                std::cout << "ERROR in reading files.  String should begin with [ and end with ]" << std::endl;
-                                continue;
-                            }
-                            std::string file_map_mod = file_map.substr(1, file_map.size() - 2 );
-                            
-                            std::vector<std::string> file_map_split = Tokenize( file_map_mod, "][" );
-                            if( !file_map_split.size() == 2 ) {
-                                std::cout << "ERROR in reading files.  File entry should have a list of files and a list of events" << std::endl;
-                                continue;
-                            }
-                            // entries are printed as python tuples separated by a comma
-                            std::vector<std::string> job_list = Tokenize( file_map_split[1], "," );
-                            std::vector< std::pair< std::string, std::pair< int, int > > > out_job_list;
-                            int jobidx = -1;
-                            BOOST_FOREACH( const std::string event_vals, job_list ) {
-                                jobidx++;
-                                // the entry is like 0:(0-500) 
-                                std::vector<std::string> job_evtrange = Tokenize( event_vals, ":" );
-                                std::string jobid = job_evtrange[0];
-                                std::stringstream jobstr("");
-                                jobstr << "Job_" << std::setw(4) << std::setfill('0') << jobidx;
-
-                                std::string event_vals_mod = job_evtrange[1].substr( 1, job_evtrange[1].size() - 2 );
-                                std::vector<std::string> vals = Tokenize( event_vals_mod, "-");
-                                if( !vals.size() == 2 ) {
-                                    std::cout << "ERROR in reading files.  Events entry should have a tuple of integers" << std::endl;
-                                    continue;
-                                }
-                                boost::algorithm::trim(vals[0]);
-                                boost::algorithm::trim(vals[1]);
-                                std::stringstream minstr(vals[0]);
-                                std::stringstream maxstr(vals[1]);
-                                int minval;
-                                int maxval;
-                                minstr >> minval ;
-                                maxstr >> maxval ;
-                                std::pair<int, int> evt_range( minval, maxval );
-                                out_job_list.push_back( std::make_pair( jobstr.str(), evt_range ) );
-                            }
-                            std::vector<std::string> files = Tokenize(file_map_split[0], ",");
-                            FileEntry entry;
-                            entry.files = files;
-                            entry.jobs = out_job_list;
-                            options.files.push_back( entry );
-                        }
-                    }
-                    else if( header_key.find("treeName") != std::string::npos ) {
-                        options.treeName = header_val;
-                        boost::algorithm::trim(options.treeName);
-                    }
-                    else if( header_key.find("outputDir") != std::string::npos ) {
-                        options.outputDir = header_val;
-                        boost::algorithm::trim(options.outputDir);
-                    }
-                    else if( header_key.find("outputFile") != std::string::npos ) {
-                        options.outputFile = header_val;
-                        boost::algorithm::trim(options.outputFile);
-                    }
-                    else if( header_key.find("storagePath") != std::string::npos ) {
-                        options.storagePath = header_val;
-                        boost::algorithm::trim(options.storagePath);
-                        options.transferToStorage = true;
-                    }
-                    else if( header_key.find("nevt") != std::string::npos ) {
-                        std::stringstream ss(header_val);
-                        ss >> options.nevt;
-                    }
-                }
-            }
+            std::cout << "Got line " << line << std::endl;
 
             // __Modules__ line indicates the beginning of modules
-
+            // when this line is encountered, don't parse the line, just
+            // indicate that the following lines should be modules
             if( line.find("__Modules__") != std::string::npos ) {
                 read_modules = true;
             }
+            else if( read_modules ) { // when the "Modules" line is found this is set to true
+                ReadModuleLine( line, ana_config );
+            }
+            else {
+                // by default read header lines
+                ReadHeaderLine( line, options );
+            }
+
         }
     }
     return ana_config;
 }
 
+
+void ReadModuleLine( const std::string & line, AnaConfig & config ) {
+
+    // Split by : character.  The 0th entry is the
+    // module name, 1st entry is the configuration
+    std::vector<std::string> module_split = Tokenize( line, ":" );
+    if( module_split.size() != 2 ) {
+        std::cout << "ParseConfig - ERROR : config file entry does not contain a \":\" "
+                  << "character.  Please check the config file" << std::endl;
+        return;
+    }
+    std::string module_name = module_split[0];
+    boost::algorithm::trim(module_name);
+    ModuleConfig this_module(module_name);
+
+    // get the rest of the string ( takes care if multiple ':' are present ) 
+    std::string module_config = boost::algorithm::join( std::vector<std::string>( module_split.begin()+1, module_split.end() ), ":" );
+
+    // Split the module config by ';' to separate cut entries
+    std::vector<std::string> cut_split = Tokenize( module_config, ";" );
+
+    std::vector<CutConfig> module_cuts;
+    BOOST_FOREACH( const std::string & cut, cut_split ) {
+        ReadCut( cut, this_module );
+
+    }
+
+    config.AddModule( this_module );
+
+}
+
+void ReadCut( const std::string &cut, ModuleConfig & module ) {
+
+    if( cut.find_first_not_of(' ') == std::string::npos ) return; //check if cut is only whitespace 
+
+    // if value is do_cutflow just call AddCutFlow
+    if( cut.find("do_cutflow") != std::string::npos ) {
+        module.AddCutFlow( module.GetName() );
+        return;
+    }
+    // if valie is hist parse the histogram parameters
+    else if( cut.find("hist") != std::string::npos ) {
+        ParseHistPars( cut, module );
+        return;
+    }
+    else {
+        // otherwise this is a normal cut
+        module.AddCut( CutConfig( cut ) );
+    }
+
+}
+
+void ParseHistPars( const std::string & cut, ModuleConfig & module ) {
+
+    // example hist entry : hist [cut_d0_barrel,100,-1.000000,1.000000]
+    // first strip off the []
+    std::string hist_entries = cut.substr( cut.find("[")+1, cut.find("]")-1 );
+    std::vector<std::string> hist_split = Tokenize( hist_entries, "," );
+    if( hist_split.size() != 4 ) {
+        std::cout << "ParseHistPars - ERROR : cannot parse histogram.  Expect 4 entries : name, nbins, xmin, xmax " << hist_entries << std::endl;
+        return;
+    }
+    std::string name = hist_split[0];
+    int nbins;
+    float xmin;
+    float xmax;
+    // trim the entries and convert to integer/float
+    boost::algorithm::trim(hist_split[1]);
+    boost::algorithm::trim(hist_split[2]);
+    boost::algorithm::trim(hist_split[3]);
+    std::stringstream nbinstr(hist_split[1]);
+    std::stringstream xminstr(hist_split[2]);
+    std::stringstream xmaxstr(hist_split[3]);
+    nbinstr >> nbins;
+    xminstr >> xmin;
+    xmaxstr >> xmax;
+    // add histogram
+    module.AddHist( name, nbins, xmin, xmax );
+
+}
+
+void ReadHeaderLine( const std::string & line, CmdOptions & options ) {
+
+    // reading header information
+    // every header entry should have the format
+    // name : value
+    std::vector<std::string> header_split = Tokenize( line, ":" );
+    if( header_split.size() < 2 ) {
+        std::cout << "ReadHeaderLine - ERROR : cannot parse header.  Expect a format of name : value " << std::endl;
+        return;
+    }
+
+    std::string header_key = header_split[0];
+    // the remaining part of the string has the header value
+    // takes care of the case when multiple ':' are present in the line
+    std::string header_val = boost::algorithm::join( std::vector<std::string>( header_split.begin()+1, header_split.end() ) , ":");
+    boost::algorithm::trim(header_val);
+
+    if( header_key.find("files") != std::string::npos ) {// read files
+        ParseFiles( header_val, options );
+    }
+    else if( header_key.find("treeName") != std::string::npos ) {
+        options.treeName = header_val;
+        boost::algorithm::trim(options.treeName);
+    }
+    else if( header_key.find("outputDir") != std::string::npos ) {
+        options.outputDir = header_val;
+        boost::algorithm::trim(options.outputDir);
+    }
+    else if( header_key.find("outputFile") != std::string::npos ) {
+        options.outputFile = header_val;
+        boost::algorithm::trim(options.outputFile);
+    }
+    else if( header_key.find("storagePath") != std::string::npos ) {
+        options.storagePath = header_val;
+        boost::algorithm::trim(options.storagePath);
+        options.transferToStorage = true;
+    }
+    else if( header_key.find("nevt") != std::string::npos ) {
+        std::stringstream ss(header_val);
+        ss >> options.nevt;
+    }
+    
+}
+
+void ParseFiles( const std::string & files_val, CmdOptions & options ) {
+
+    // this is a bit complicated
+    // jobs are associated to one or more input files
+    // the jobs are labeled by a number ID and are associated
+    // with an event range
+    // The format is like this
+    // [file1,file2,file3][0:(0-10),1:(10-20)];[file4,file5][2:(0-10)]
+    //
+    // first split into individual [files][jobs] entries with a ;
+  std::cout << "Got files_val " << files_val << std::endl;
+    std::vector<std::string> file_map_entries = Tokenize( files_val, ";");
+    BOOST_FOREACH( const std::string & file_map, file_map_entries ) {
+        std::cout << "Got file map " << file_map << std::endl;
+     
+        // First check that the string begins with [ and ends with ] 
+        if( !(file_map[0] == '[' and file_map[file_map.size()-1] == ']' ) ) {
+            std::cout << "ParseFiles - ERROR : String should begin with [ and end with ]" << std::endl;
+            continue;
+        }
+
+        // remove the '[' at the beginning and ']' at the end
+        std::string file_map_mod = file_map.substr(1, file_map.size() - 2 );
+        
+        // split by "][" to get individual entries.  There should be 2
+        std::vector<std::string> file_map_split = Tokenize( file_map_mod, "][" );
+        if( !file_map_split.size() == 2 ) {
+            std::cout << "ParseFiles - ERROR : File entry should have a list of files and a list of events" << std::endl;
+            continue;
+        }
+        // entries are printed as python tuples separated by a comma
+        std::vector<std::string> job_list = Tokenize( file_map_split[1], "," );
+
+        // vector to collect the job info.  Map the job id to an event range
+        std::vector< std::pair< std::string, std::pair< int, int > > > out_job_list;
+        int jobidx = -1;
+        BOOST_FOREACH( const std::string event_vals, job_list ) {
+            jobidx++;
+            // the entry is like 0:(0-500) 
+            std::vector<std::string> job_evtrange = Tokenize( event_vals, ":" );
+            std::string jobid = job_evtrange[0];
+            
+            // Transform the job id into a string.  Eg job #0 -> Job_0000
+            std::stringstream jobstr("");
+            jobstr << "Job_" << std::setw(4) << std::setfill('0') << jobidx;
+
+            // Strip the ( ) from the entry
+            std::string event_vals_mod = job_evtrange[1].substr( 1, job_evtrange[1].size() - 2 );
+
+            // Split the values by "-" there should be two entries
+            std::vector<std::string> vals = Tokenize( event_vals_mod, "-");
+            if( !vals.size() == 2 ) {
+                std::cout << "ParseFiles - ERROR : Events entry should have a size 2 tuple of integers" << std::endl;
+                continue;
+            }
+            // trim and convert to integers
+            boost::algorithm::trim(vals[0]);
+            boost::algorithm::trim(vals[1]);
+            std::stringstream minstr(vals[0]);
+            std::stringstream maxstr(vals[1]);
+            int minval;
+            int maxval;
+            minstr >> minval ;
+            maxstr >> maxval ;
+
+            // store the configuration
+            std::pair<int, int> evt_range( minval, maxval );
+            out_job_list.push_back( std::make_pair( jobstr.str(), evt_range ) );
+        }
+
+        std::cout << "Add files " << file_map_split[0] << std::endl;
+        std::vector<std::string> files = Tokenize(file_map_split[0], ",");
+        FileEntry entry;
+        entry.files = files;
+        entry.jobs = out_job_list;
+        options.files.push_back( entry );
+    }
+}
 
 CmdOptions::CmdOptions() : nevt(-1), transferToStorage(false)
 {
@@ -912,6 +1048,7 @@ CmdOptions ParseOptions( int argc, char **argv )
       switch (iarg) {
         case 'c' : 
           {
+          std::cout << "Got config file " << optarg << std::endl;
           options.config_file = optarg;
           break;
           }

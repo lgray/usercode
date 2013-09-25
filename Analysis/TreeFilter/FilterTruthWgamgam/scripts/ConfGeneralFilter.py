@@ -16,8 +16,8 @@ def config_analysis( alg_list ) :
     build_lep.cut_incWMother = 'True'
     build_lep.cut_incZMother = 'True'
 
-    build_lep.cut_pt = '> 25'
-    build_lep.cut_abseta = '< 2.5'
+    #build_lep.cut_pt = '> 25'
+    #build_lep.cut_abseta = '< 2.5'
 
     alg_list.append( build_lep )
 

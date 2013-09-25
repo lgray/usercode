@@ -25,8 +25,7 @@ int main(int argc, char **argv)
     CmdOptions options = ParseOptions( argc, argv );
 
     // Parse the text file and form the configuration object
-    //AnaConfig ana_config = ParseConfig( options.config_file, options );
-    AnaConfig ana_config = ParseConfig( "analysis_config.txt", options );
+    AnaConfig ana_config = ParseConfig( options.config_file, options );
     std::cout << "Configured " << ana_config.size() << " analysis modules " << std::endl;
 
     RunModule runmod;
@@ -37,7 +36,7 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, 
+void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
           std::vector<ModuleConfig> & configs, const CmdOptions & options,
           int minevt, int maxevt ) const {
 
@@ -59,10 +58,14 @@ void RunModule::Run( TChain * chain, TTree * outtree,
     OUT::el_passMedium = 0;
     OUT::el_passLoose= 0;
     OUT::el_passVeryLoose = 0;
+    OUT::el_truthMatch = 0;
+    OUT::el_truthMinDR= 0;
     OUT::mu_pt = 0;
     OUT::mu_eta = 0;
     OUT::mu_phi = 0;
     OUT::mu_e = 0;
+    OUT::mu_truthMatch = 0;
+    OUT::mu_truthMinDR = 0;
     OUT::phot_pt = 0;
     OUT::phot_eta = 0;
     OUT::phot_phi = 0;
@@ -82,11 +85,15 @@ void RunModule::Run( TChain * chain, TTree * outtree,
     outtree->Branch("el_passMedium"      , &OUT::el_passMedium                               );
     outtree->Branch("el_passLoose"       , &OUT::el_passLoose                                );
     outtree->Branch("el_passVeryLoose"   , &OUT::el_passVeryLoose                            );
+    outtree->Branch("el_truthMatch"      , &OUT::el_truthMatch                               );
+    outtree->Branch("el_truthMinDR"      , &OUT::el_truthMinDR                               );
     
     outtree->Branch("mu_pt"              , &OUT::mu_pt                                       );
     outtree->Branch("mu_eta"             , &OUT::mu_eta                                      );
     outtree->Branch("mu_phi"             , &OUT::mu_phi                                      );
     outtree->Branch("mu_e"               , &OUT::mu_e                                        );
+    outtree->Branch("mu_truthMatch"      , &OUT::mu_truthMatch                               );
+    outtree->Branch("mu_truthMinDR"      , &OUT::mu_truthMinDR                               );
     
     outtree->Branch("phot_pt"            , &OUT::phot_pt                                     );
     outtree->Branch("phot_eta"           , &OUT::phot_eta                                    );
@@ -199,6 +206,8 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
     OUT::mu_eta       -> clear();
     OUT::mu_phi       -> clear();
     OUT::mu_e         -> clear();
+    OUT::mu_truthMatch-> clear();
+    OUT::mu_truthMinDR-> clear();
     OUT::mu_n          = 0;
 
     for( int idx = 0; idx < IN::nMu; ++idx ) {
@@ -232,7 +241,15 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
         OUT::mu_eta       -> push_back(eta);
         OUT::mu_phi       -> push_back(phi);
         OUT::mu_e         -> push_back(muon.E());
+
+        std::vector<int> matchPID;
+        matchPID.push_back(13);
+        matchPID.push_back(-13);
         
+        float truthMinDR = 100.0;
+        bool has_match = HasTruthMatch( muon, matchPID, 0.1, truthMinDR );
+        OUT::mu_truthMinDR->push_back( truthMinDR );
+        OUT::mu_truthMatch->push_back( has_match );
     }
 
 }
@@ -249,14 +266,16 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
     OUT::el_passMedium    -> clear();
     OUT::el_passLoose     -> clear();
     OUT::el_passVeryLoose -> clear();
+    OUT::el_truthMatch    -> clear();
+    OUT::el_truthMinDR    -> clear();
     OUT::el_n             = 0;
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
-        float dEtaIn    = IN::eledEtaAtVtx[idx];
-        float dPhiIn    = IN::eledPhiAtVtx[idx];
+        float dEtaIn    = fabs(IN::eledEtaAtVtx[idx]);
+        float dPhiIn    = fabs(IN::eledPhiAtVtx[idx]);
         float sigmaIEIE = IN::eleSigmaIEtaIEta[idx];
-        float d0        = IN::eleD0GV[idx];
-        float z0        = IN::eleDzGV[idx];
+        float d0        = fabs(IN::eleD0GV[idx]);
+        float z0        = fabs(IN::eleDzGV[idx]);
         float hovere    = IN::eleHoverE[idx];
         //float eoverp    = IN::eleEoverP[idx];
         float pfiso30   = IN::elePFChIso03[idx];
@@ -360,6 +379,18 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
         OUT::el_passMedium    -> push_back(pass_medium);
         OUT::el_passLoose     -> push_back(pass_loose);
         OUT::el_passVeryLoose -> push_back(pass_veryloose);
+
+        // check truth matching
+        TLorentzVector ellv;
+        ellv.SetPtEtaPhiE( pt, eta, phi, en );
+        std::vector<int> matchPID;
+        matchPID.push_back(11);
+        matchPID.push_back(-11);
+
+        float minTruthDR = 100.0;
+        bool match = HasTruthMatch( ellv, matchPID, 0.1, minTruthDR );
+        OUT::el_truthMatch->push_back( match  );
+        OUT::el_truthMinDR->push_back( minTruthDR );
         
     }
 
@@ -613,5 +644,38 @@ bool RunModule::FilterTauEvent( ModuleConfig & config ) const {
     if( !config.PassInt( "cut_nTau", ntau ) ) keep_evt = false;
 
     return keep_evt;
+
+}
+
+bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR ) const {
+    
+    float minDR = 100.0;
+    return HasTruthMatch( objlv, matchPID, maxDR, minDR );
+
+}
+
+bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float & minDR ) const {
+   
+    minDR = 100.0;
+    bool match=false;
+    for( int mcidx = 0; mcidx < IN::nMC; mcidx++ ) {
+        
+        if( std::find( matchPID.begin(), matchPID.end(), IN::mcPID[mcidx] ) == matchPID.end() ) continue;
+
+        if( IN::mcStatus[mcidx] != 1 ) continue;
+
+        TLorentzVector mclv;
+        mclv.SetPtEtaPhiE( IN::mcPt[mcidx], IN::mcEta[mcidx], IN::mcPhi[mcidx], IN::mcE[mcidx] );
+        float dr = mclv.DeltaR( objlv );
+        if( dr < maxDR) {
+            match = true;
+        }
+        // store the minimum delta R
+        if( dr < minDR ) {
+            minDR = dr;
+        }
+    }
+
+    return match;
 
 }

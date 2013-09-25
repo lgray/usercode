@@ -33,6 +33,13 @@ namespace CutType {
       FLOAT = 2
 
     };
+
+    enum Comp {
+
+      AND = 0,
+      OR  = 1
+
+    };
     
 }
 
@@ -40,7 +47,7 @@ class Cut {
 
     public :
 
-        Cut(CutType::Op in_op, CutType::Type in_type, 
+        Cut(CutType::Op in_op, CutType::Type in_type, CutType::Comp in_comp,
              bool in_val_bool, int in_val_int, float in_val_float);
 
         void Print() const;
@@ -48,6 +55,7 @@ class Cut {
 
         CutType::Op   op;
         CutType::Type type;
+        CutType::Comp comp;
         bool          val_bool;
         int           val_int;
         float         val_float;
@@ -192,7 +200,7 @@ class RunModuleBase {
 
     public : 
 
-        virtual void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) const = 0;
+        virtual void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) const = 0;
 
 };
 
@@ -220,7 +228,11 @@ class AnaConfig {
 
 
 AnaConfig ParseConfig( const std::string & fname, CmdOptions & options );
-
+void ReadModuleLine( const std::string & line, AnaConfig& config);
+void ReadCut( const std::string & line, ModuleConfig& module);
+void ParseHistPars( const std::string & line, ModuleConfig& module);
+void ReadHeaderLine( const std::string & line, CmdOptions & options);
+void ParseFiles( const std::string & line, CmdOptions& options);
 
 std::vector<std::string> Tokenize(const std::string & input, const std::string &sep );
 

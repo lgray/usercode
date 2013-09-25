@@ -1,4 +1,5 @@
 
+import os
 
 import ROOT
 from argparse import ArgumentParser
@@ -32,7 +33,15 @@ def main() :
 
     print hists
 
-    outfile = ROOT.TFile.Open(options.output, 'RECREATE')
+    copy_to_eos = False
+    if options.output[0:4] == '/eos' :
+        copy_to_eos = True
+
+    if copy_to_eos :
+        outfile = ROOT.TFile.Open('/tmp/histograms.root', 'RECREATE')
+    else :
+        outfile = ROOT.TFile.Open(options.output, 'RECREATE')
+
     for hist in hists :
         histdirs = hist.split('/')
         dir_path = ''
@@ -47,6 +56,9 @@ def main() :
     outfile.Write()
 
     outfile.Close()
+
+    if copy_to_eos :
+        os.system('/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select cp /tmp/histograms.root %s/histograms.root' %options.output ) 
         
 
 

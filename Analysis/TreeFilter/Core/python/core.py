@@ -7,6 +7,7 @@ import ROOT
 import inspect
 import subprocess
 from argparse import ArgumentParser
+
 def ParseArgs() :
 
     parser = ArgumentParser(description='')
@@ -121,6 +122,10 @@ def parse_eos_dir(path, DEBUG=False) :
         if len(splitline) != 9 :
             print 'Cannot parse line :'
             print line
+            print 'Here is the path'
+            print path 
+            print 'Here is the full entry'
+            print result
             continue
 
         obj = splitline[8]

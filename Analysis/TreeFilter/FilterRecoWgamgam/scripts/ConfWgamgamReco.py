@@ -64,8 +64,7 @@ def build_electron( do_cutflow=False, do_hists=False ) :
 
     filt.cut_pt = ' > 25'
     filt.cut_abseta       = ' <2.5 '
-    filt.cut_abseta_crack = ' > 1.44, < 1.57 '
-    filt.invert('cut_abseta_crack')
+    filt.cut_abseta_crack = ' < 1.44 | > 1.57 '
 
     filt.cut_dEtaIn_barrel_tight    = ' < 0.004 '
     filt.cut_dPhiIn_barrel_tight    = ' < 0.03 '

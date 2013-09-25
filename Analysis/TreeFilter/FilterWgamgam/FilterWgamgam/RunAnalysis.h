@@ -15,7 +15,7 @@ class RunModule : public virtual RunModuleBase {
 
         RunModule() {}
 
-        void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
+        void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
 
         bool ApplyModule( ModuleConfig & config ) const;
         void BuildElec  ( ModuleConfig & config ) const;
@@ -23,6 +23,7 @@ class RunModule : public virtual RunModuleBase {
         bool FilterMuon ( ModuleConfig & config ) const;
         bool FilterJet  ( ModuleConfig & config ) const;
         bool FilterEvent( ModuleConfig & config ) const;
+        bool FilterTrigger ( ModuleConfig & config ) const;
 
 };
 

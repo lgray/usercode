@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, 
+void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
                      std::vector<ModuleConfig> & mod_configs, const CmdOptions & options,
                      int minevt, int maxevt ) const {
     // *************************
@@ -40,7 +40,11 @@ void RunModule::Run( TChain * chain, TTree * outtree,
     // *************************
     InitINTree(chain);
     InitOUTTree( outtree );
-    
+
+    outfile->cd();
+    TH1F * hfilter = new TH1F("filter", "filter", 2, 0, 2);
+    hfilter->GetXaxis()->SetBinLabel(1, "Total");
+    hfilter->GetXaxis()->SetBinLabel(2, "Filter");
 
     // *************************
     // Declare output branches here
@@ -78,12 +82,15 @@ void RunModule::Run( TChain * chain, TTree * outtree,
             save_event &= ApplyModule( mod_conf );
         }
 
+        hfilter->Fill(0);
         if( save_event ) {
             outtree->Fill();
+            hfilter->Fill(1);
             n_saved++;
         }
     }
 
+    hfilter->Write();
     std::cout << "Wrote " << n_saved << " events" << std::endl;
 
 }
@@ -107,6 +114,9 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     }
     if( config.GetName() == "FilterEvent" ) {
         keep_evt &= FilterEvent( config );
+    }
+    if( config.GetName() == "FilterTrigger" ) {
+        keep_evt &= FilterTrigger( config );
     }
 
     return keep_evt;
@@ -190,17 +200,36 @@ bool RunModule::FilterMuon( ModuleConfig & config ) const {
 
 bool RunModule::FilterEvent( ModuleConfig & config ) const {
 
-    //int nMu = OUT::nMu;
-    //int nEl = OUT::nEle;
-    //int nLep = nMu + nEl;
+    int nMu = OUT::nMu;
+    int nEl = OUT::nEle;
+    int nPho = OUT::nPho;
+    int nLep = nMu + nEl;
+    int nLepPho = nLep + nPho;
 
     bool keep_evt = true;
 
-    //if( !config.PassInt( "cut_nEl", nEl ) ) keep_evt = false;
-    //if( !config.PassInt( "cut_nMu", nMu ) ) keep_evt = false;
-    //if( !config.PassInt( "cut_nLep", nLep ) ) keep_evt = false;
+    if( !config.PassInt( "cut_nEl", nEl ) ) keep_evt = false;
+    if( !config.PassInt( "cut_nMu", nMu ) ) keep_evt = false;
+    if( !config.PassInt( "cut_nPho", nPho ) ) keep_evt = false;
+    if( !config.PassInt( "cut_nLep", nLep ) ) keep_evt = false;
+    if( !config.PassInt( "cut_nLepPho", nLepPho ) ) keep_evt = false;
 
     return keep_evt;
 
 }     
 
+bool RunModule::FilterTrigger( ModuleConfig & config ) const {
+    
+    bool keep_evt = false;
+    BOOST_FOREACH( const Cut & cut, config.GetCut("cut_trigger").GetCuts() ) {
+       if( IN::HLT[IN::HLTIndex[cut.val_int] ] > 0 ) keep_evt = true;
+    }
+
+    return keep_evt;
+}
+
+
+
+    
+
+    

@@ -17,7 +17,7 @@ class RunModule : public virtual RunModuleBase {
 
         RunModule() {}
 
-        void Run( TChain * chain, TTree *outtree, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
+        void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
 
         bool ApplyModule      ( ModuleConfig & config ) const;
         void BuildElectron    ( ModuleConfig & config ) const;
@@ -30,6 +30,8 @@ class RunModule : public virtual RunModuleBase {
         bool FilterTauEvent   ( ModuleConfig & config ) const;
         bool FilterBasicEvent ( ModuleConfig & config ) const;
 
+        bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR ) const;
+        bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR ) const;
 };
 
 
@@ -49,11 +51,15 @@ namespace OUT {
     std::vector<Bool_t> *el_passMedium;
     std::vector<Bool_t> *el_passLoose;
     std::vector<Bool_t> *el_passVeryLoose;
+    std::vector<Bool_t> *el_truthMatch;
+    std::vector<float>  *el_truthMinDR;
 
     std::vector<float>  *mu_pt;
     std::vector<float>  *mu_eta;
     std::vector<float>  *mu_phi;
     std::vector<float>  *mu_e;
+    std::vector<Bool_t> *mu_truthMatch;
+    std::vector<float>  *mu_truthMinDR;
 
     std::vector<float>  *phot_pt;
     std::vector<float>  *phot_eta;
