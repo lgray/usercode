@@ -17,7 +17,7 @@ LD      = g++
 BIN_DIR = ./
 OBJ_DIR = ./
 SRC_DIR = src/
-INC_DIR = FilterWgamgam
+INC_DIR = $(PWD)
 
 #ROOTCINT     = $(ROOTSYS)/bin/rootcint
 #ROOTCONFIG   = $(ROOTSYS)/bin/root-config
@@ -27,8 +27,8 @@ ROOTCXXFLAGS = $(shell $(ROOTCONFIG) --cflags)
 ROOTLIBS     = $(shell $(ROOTCONFIG) --libs) -lTreePlayer -lTMVA #-lBoost
 BOOSTFLAGS   = -I/afs/cern.ch/sw/lcg/external/Boost/1.50.0_python2.7/x86_64-slc5-gcc43-opt/include/boost-1_50
 
-COREINC = -I$(WorkArea)/Core/
-COREOBJ = $(WorkArea)/Core/obj/AnalysisBase.o
+COREINC = -I$(WorkArea)/TreeFilter/Core/
+COREOBJ = $(WorkArea)/TreeFilter/Core/obj/AnalysisBase.o
 
 # we need to link against an additional library if using root>5.24
 NEWROOTVERSION  = $(shell $(ROOTCONFIG) --version | grep -c "5.24" )
@@ -62,10 +62,10 @@ RUN_MERGE           = $(BIN_DIR)/RunAnalysis
 all:   $(RUN_MERGE)
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cxx
-	$(CXX) $(CXXFLAGS) -c $^ -o $@ -I../FilterWgamgam
+	$(CXX) $(CXXFLAGS) -c $^ -o $@ -I$(INC_DIR)
 
 $(RUN_MERGE): $(OBJECT_RUNANA) $(BRANCH_INIT)
-	$(CXX) $(CXXFLAGS) -o $@ -g $^ $(COREOBJ) $(LIBS) -I../FilterWgamgam
+	$(CXX) $(CXXFLAGS) -o $@ -g $^ $(COREOBJ) $(LIBS) -I$(INC_DIR)
 clean:
 	@echo -e "\n\n===> cleaning directories"
 	rm -f $(OBJ_DIR)/*.o 

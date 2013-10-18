@@ -1,4 +1,4 @@
-#include "FilterWgamgam/RunAnalysis.h"
+#include "include/RunAnalysis.h"
 
 #include <iostream>
 #include <iomanip>
@@ -9,8 +9,8 @@
 #include <stdlib.h>
 
 
-#include "FilterWgamgam/BranchDefs.h"
-#include "FilterWgamgam/BranchInit.h"
+#include "include/BranchDefs.h"
+#include "include/BranchInit.h"
 
 #include "TFile.h"
 #include "TH1.h"

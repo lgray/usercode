@@ -41,24 +41,24 @@ job_conf = [
           #(base_data, 'job_1electron_2012b_Jul13rereco_run2', 20),
           #(base_data, 'job_1electron_2012c_Aug24rereco', 50),
           #(base_data, 'job_1electron_2012c_Dec11rereco', 20),
-          # RERUN SOME
           #(base_data, 'job_1electron_2012c_PRv2_part1', 250),
-          # RERUN SOME
-          (base_data, 'job_1electron_2012c_PRv2_part2', 450),
-          (base_data, 'job_1electron_2012c_PRv2_part3', 2),
-          (base_data, 'job_1electron_2012d_PRv1_part1', 300),
-          (base_data, 'job_1electron_2012d_PRv1_part2', 500),
-          (base_data, 'job_electron_2012a_Aug6rereco',  10),
-          (base_data, 'job_electron_2012a_Jul13rereco', 100),
+          #(base_data, 'job_1electron_2012c_PRv2_part2', 450),
+          #(base_data, 'job_1electron_2012c_PRv2_part3', 2),
+          #(base_data, 'job_1electron_2012d_PRv1_part1', 300),
+          #(base_data, 'job_1electron_2012d_PRv1_part2', 500),
+          #(base_data, 'job_electron_2012a_Aug6rereco',  10),
+          #(base_data, 'job_electron_2012a_Jul13rereco', 100),
           #(base_data, 'job_muon_2012a_Aug6rereco', 5),
           #(base_data, 'job_muon_2012a_Jul13rereco', 40),
           #(base_data, 'job_muon_2012b_Jul13rereco', 300),
           #(base_data, 'job_muon_2012c_Aug24rereco', 30),
           #(base_data, 'job_muon_2012c_Dec11rereco', 10),
           #(base_data, 'job_muon_2012c_PRv2', 150),
+          #RERUN SOME
           #(base_data, 'job_muon_2012c_PRv21', 250),
-          #(base_data, 'job_muon_2012d_PRv1', 200),
-          #(base_data, 'job_muon_2012d_PRv11', 300),
+          #RERUN SOME
+          (base_data, 'job_muon_2012d_PRv1', 200),
+          (base_data, 'job_muon_2012d_PRv11', 300),
 
 
 ]

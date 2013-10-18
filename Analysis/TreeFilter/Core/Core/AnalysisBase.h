@@ -175,7 +175,7 @@ struct FileEntry {
     FileEntry() {}
 
     std::vector<std::string> files;
-    std::vector< std::pair< std::string, std::pair< int, int > > > jobs;
+    std::vector< std::pair< int, std::pair< int, int > > > jobs;
 
 };
 

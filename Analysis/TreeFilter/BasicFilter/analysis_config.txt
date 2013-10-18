@@ -1,5 +1,5 @@
-files : [root://eoscms.cern.ch//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/ggtree_mc_FSR/Job_0012/hist.root][0:(0-50015),];
+files : [root://eoscms//eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-11/job_summer12_LNuGG_FSR.root][0:(0-1000),];
 treeName : ggNtuplizer/EventTree
 outputDir : .
-outputFile : test.root
+outputFile : tree.root
 __Modules__

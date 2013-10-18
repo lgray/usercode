@@ -50,7 +50,6 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
         TChain *chain = new TChain(options.treeName.c_str() );
 
         BOOST_FOREACH( const std::string &fname, options.files[fidx].files ) {
-          std::cout << "Add file " << fname << std::endl;
           chain->Add( fname.c_str() );
         }
 
@@ -58,16 +57,24 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
         for( unsigned jidx = 0 ; jidx < options.files[fidx].jobs.size(); ++jidx ) {
             jobidx++;
 
-            std::string jobstr = options.files[fidx].jobs[jidx].first;
+            int jobid = options.files[fidx].jobs[jidx].first;
             int minevt = options.files[fidx].jobs[jidx].second.first;
             int maxevt = options.files[fidx].jobs[jidx].second.second;
 
+            // Transform the job id into a string.  Eg job #0 -> Job_0000
+            std::stringstream jobstrss("");
+            jobstrss << "Job_" << std::setw(4) << std::setfill('0') << jobid;
+            std::string jobstr = jobstrss.str();
+
             std::string outputDir = options.outputDir;
-            if( total_njobs > 1 ) {
-                outputDir += "/" + jobstr;
-            }
+            //if( total_njobs > 1 || jobid != 0 ) {}
+            // update the output directory to the job directory
+            // this now happens in all cases.  
+            outputDir += "/" + jobstr;
+            
 
             // create the output directory
+            std::cout << "mkdir " << outputDir << std::endl;
             mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
             std::string filepath = outputDir + "/" + options.outputFile;
 
@@ -85,7 +92,7 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                 // and put the tree in there
                 for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
                     dir_path = dir_path + name_tok[i]+"/";
-                    std::cout << " mkdir " << dir_path << std::endl;
+                    std::cout << " TFile::mkdir " << dir_path << std::endl;
                     outfile->mkdir(dir_path.c_str());
                 }
                 outfile->cd(dir_path.c_str());
@@ -103,10 +110,12 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
 
             runmod.Run( chain, outtree, outfile, getEntries(), options, minevt, maxevt );
 
+            bool has_any_cutflows=false;
             BOOST_FOREACH( ModuleConfig & conf, getEntries() ) {
                 outfile->cd();
 
                 if( conf.hasCutFlows() ) {
+                    has_any_cutflows = true;
                     outfile->mkdir( conf.GetName().c_str() );
                     outfile->cd(conf.GetName().c_str() );
 
@@ -120,34 +129,17 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                             conf.getCutFlows()[0].getHist(aftname).Write();
                         }
                     }
+                    conf.WriteCutFlowHists( outfile );
+                    conf.PrintCutFlows( );
                 }
             }
 
             outfile->cd(dir_path.c_str());
-
             outtree->Write();
             outfile->Close();
 
             std::vector<std::string> output_files;
             output_files.push_back(filepath);
-
-
-            bool has_cutflows = false;
-            BOOST_FOREACH( const ModuleConfig & conf, getEntries() ) {
-                if( conf.hasCutFlows() ) has_cutflows = true;
-            }
-            if( has_cutflows ) {
-
-                std::string cutflowpath = outputDir + "/cutflows.root";
-                output_files.push_back(cutflowpath);
-
-                TFile * cutflowfile = TFile::Open(cutflowpath.c_str(), "RECREATE");
-
-                BOOST_FOREACH( const ModuleConfig & conf, getEntries() ) {
-                   conf.PrintCutFlows(); 
-                   conf.WriteCutFlowHists( cutflowfile );
-                }
-            }
 
             if( options.transferToStorage ) {
                 std::string storage_dir = options.storagePath;
@@ -158,15 +150,20 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                     std::cout << mkdir_cmd << std::endl;
                     system( mkdir_cmd.c_str() );
                     // copy the configuration script to this directory for future reference
-                    std::string cpy_cmd = eos + " cp " + options.config_file + " " + options.storagePath + "/" + options.config_file ;
+                    std::vector<std::string> conf_file_tok = Tokenize( options.config_file, "/" );
+                    std::string conf_file_name = conf_file_tok[conf_file_tok.size()-1];
+
+                    std::string cpy_cmd = eos + " cp " + options.config_file + " " + options.storagePath + "/" + conf_file_name ;
+                    std::cout << cpy_cmd << std::endl;
                     system( cpy_cmd.c_str() );
                 }
-                if( total_njobs > 1 ) {
-                    storage_dir += "/" + jobstr;
-                    std::string mkdir_cmd = eos + " mkdir " + storage_dir;
-                    std::cout << mkdir_cmd << std::endl;
-                    system( mkdir_cmd.c_str() );
-                }
+                //if( total_njobs > 1 || jobid != 0 ) {}
+                // update the output directory to the job directory
+                // this now happens in all cases.  
+                storage_dir += "/" + jobstr;
+                std::string mkdir_cmd = eos + " mkdir " + storage_dir;
+                std::cout << mkdir_cmd << std::endl;
+                system( mkdir_cmd.c_str() );
 
                 BOOST_FOREACH( const std::string & path, output_files ) {
                     std::string copy_cmd = eos + " cp " + path + " " + storage_dir + "/" + options.outputFile;
@@ -254,7 +251,6 @@ CutConfig::CutConfig( const std::string &cut_str ) {
     while( loc = val_str.find("||"), loc != std::string::npos ) {
         val_str.erase(loc, 1);
     }
-    std::cout << "val_str is now " << val_str << std::endl;
 
     std::vector<Cut> conf_cut;
 
@@ -382,6 +378,11 @@ bool CutConfig::PassFloat(const std::string &name, const float cutval ) const {
     BOOST_FOREACH( const Cut & cut, GetCuts() ) {
         bool pass = true;
 
+        //if( name == "cut_abseta_crack" ) {
+        //    std::cout << "val = " << cutval << std::endl;
+        //    cut.Print();
+        //}
+
         if( cut.type != CutType::FLOAT && cut.type != CutType::INT ) {
           std::cout << "CutConfig::PassFloat - ERROR : Float cut requested for cut " << name << " but cut was not configured as a float " << std::endl;
           pass = false;
@@ -396,9 +397,15 @@ bool CutConfig::PassFloat(const std::string &name, const float cutval ) const {
         }
         if( cut.op == CutType::GREATER_THAN ) {
           if( !(cutval > cut.val_float) ) pass = false;
+          //if( name == "cut_abseta_crack" ) {
+          //  std::cout << "CutType::GREATER_THAN, pass? " << pass << std::endl;
+          //}
         }
         if( cut.op == CutType::LESS_THAN ) {
           if( !(cutval < cut.val_float) ) pass = false;
+          //if( name == "cut_abseta_crack" ) {
+          //  std::cout << "CutType::LESS_THAN, pass? " << pass << std::endl;
+          //}
         }
         if( cut.op == CutType::EQUAL_TO ) {
           if( !(cutval == cut.val_float) ) pass = false;
@@ -412,6 +419,9 @@ bool CutConfig::PassFloat(const std::string &name, const float cutval ) const {
         if( cut.comp == CutType::OR ) {
             pass_cuts |= pass;
         }
+        //if( name == "cut_abseta_crack" ) {
+        //    std::cout << "Pass cut? " << pass_cuts << std::endl;
+        //}
     }
 
     if( GetIsInverted() ) {
@@ -780,7 +790,7 @@ void CutFlowModule::Print() const {
     std::cout << std::string(line_width, '-') << std::endl;
     std::cout << "Cut flow : " << name << std::endl;
     std::cout << std::string(line_width, '-') << std::endl;
-    std::cout << std::setw(max_width) << std::setfill(' ') << std::setiosflags(std::ios::left) << "Total" << " : " << total << std::endl;
+    std::cout << std::setw(max_width) << std::setfill(' ') << std::setiosflags(std::ios::left) << std::fixed << "Total" << " : " << total << std::endl;
     BOOST_FOREACH( const std::string & name, order ) {
         
         std::cout << std::setw(max_width) << std::setfill(' ') << std::setiosflags(std::ios::left) << name << " : " << counts.find(name)->second << std::endl;
@@ -794,13 +804,11 @@ AnaConfig ParseConfig( const std::string & fname, CmdOptions & options ) {
     AnaConfig ana_config;
 
     std::ifstream file(fname.c_str());
-    std::cout << "Read file " << fname << std::endl;
     std::string line;
     if( file.is_open() ) {
         
         bool read_modules = false;
         while( getline(file, line) ) {
-            std::cout << "Got line " << line << std::endl;
 
             // __Modules__ line indicates the beginning of modules
             // when this line is encountered, don't parse the line, just
@@ -956,10 +964,8 @@ void ParseFiles( const std::string & files_val, CmdOptions & options ) {
     // [file1,file2,file3][0:(0-10),1:(10-20)];[file4,file5][2:(0-10)]
     //
     // first split into individual [files][jobs] entries with a ;
-  std::cout << "Got files_val " << files_val << std::endl;
     std::vector<std::string> file_map_entries = Tokenize( files_val, ";");
     BOOST_FOREACH( const std::string & file_map, file_map_entries ) {
-        std::cout << "Got file map " << file_map << std::endl;
      
         // First check that the string begins with [ and ends with ] 
         if( !(file_map[0] == '[' and file_map[file_map.size()-1] == ']' ) ) {
@@ -980,18 +986,19 @@ void ParseFiles( const std::string & files_val, CmdOptions & options ) {
         std::vector<std::string> job_list = Tokenize( file_map_split[1], "," );
 
         // vector to collect the job info.  Map the job id to an event range
-        std::vector< std::pair< std::string, std::pair< int, int > > > out_job_list;
+        std::vector< std::pair< int, std::pair< int, int > > > out_job_list;
         int jobidx = -1;
         BOOST_FOREACH( const std::string event_vals, job_list ) {
             jobidx++;
             // the entry is like 0:(0-500) 
             std::vector<std::string> job_evtrange = Tokenize( event_vals, ":" );
-            std::string jobid = job_evtrange[0];
+            std::string jobidstr = job_evtrange[0];
+            // trim jobid and convert to integer
+            boost::algorithm::trim(jobidstr);
+            std::stringstream jobidss(jobidstr);
+            int jobid;
+            jobidss >> jobid;
             
-            // Transform the job id into a string.  Eg job #0 -> Job_0000
-            std::stringstream jobstr("");
-            jobstr << "Job_" << std::setw(4) << std::setfill('0') << jobidx;
-
             // Strip the ( ) from the entry
             std::string event_vals_mod = job_evtrange[1].substr( 1, job_evtrange[1].size() - 2 );
 
@@ -1013,7 +1020,7 @@ void ParseFiles( const std::string & files_val, CmdOptions & options ) {
 
             // store the configuration
             std::pair<int, int> evt_range( minval, maxval );
-            out_job_list.push_back( std::make_pair( jobstr.str(), evt_range ) );
+            out_job_list.push_back( std::make_pair( jobid, evt_range ) );
         }
 
         std::cout << "Add files " << file_map_split[0] << std::endl;
@@ -1048,7 +1055,6 @@ CmdOptions ParseOptions( int argc, char **argv )
       switch (iarg) {
         case 'c' : 
           {
-          std::cout << "Got config file " << optarg << std::endl;
           options.config_file = optarg;
           break;
           }

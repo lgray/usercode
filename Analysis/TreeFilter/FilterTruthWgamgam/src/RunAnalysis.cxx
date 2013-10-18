@@ -1,4 +1,4 @@
-#include "FilterTruthWgamgam/RunAnalysis.h"
+#include "include/RunAnalysis.h"
 
 #include <iostream>
 #include <iomanip>
@@ -11,8 +11,8 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "FilterTruthWgamgam/BranchDefs.h"
-#include "FilterTruthWgamgam/BranchInit.h"
+#include "include/BranchDefs.h"
+#include "include/BranchInit.h"
 
 #include "Core/Util.h"
 

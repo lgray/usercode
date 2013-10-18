@@ -34,5 +34,5 @@ def config_analysis( alg_list ) :
     alg_list.append(evt_filt)
 
     trig_filt = Filter('FilterTrigger')
-    trig_filt.cut_trigger = '== 17 '
+    trig_filt.cut_trigger = '== 18 | == 19'
     alg_list.append(trig_filt)

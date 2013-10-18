@@ -1,4 +1,4 @@
-#include "BasicFilter/RunAnalysis.h"
+#include "include/RunAnalysis.h"
 
 #include <iostream>
 #include <fstream>
@@ -7,8 +7,8 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "BasicFilter/BranchDefs.h"
-#include "BasicFilter/BranchInit.h"
+#include "include/BranchDefs.h"
+#include "include/BranchInit.h"
 
 #include "TFile.h"
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, 
+void RunModule::Run( TChain * chain, TTree * outtree, TFile * outfile,
           std::vector<ModuleConfig> & configs, const CmdOptions & options,
           int minevt, int maxevt ) const {
 

@@ -28,9 +28,9 @@ if workarea is None :
     print 'Did not locate WorkArea environment variable.  Please set it to the root of the package'
     sys.exit(-1)
 
-def_file_name = workarea + '/FilterTruthWgamgam/FilterTruthWgamgam/BranchDefs.h'
-header_file_name = workarea + '/FilterTruthWgamgam/FilterTruthWgamgam/BranchInit.h'
-source_file_name = workarea + '/FilterTruthWgamgam/src/BranchInit.cxx'
+def_file_name = workarea    + '/TreeFilter/FilterTruthWgamgam/FilterTruthWgamgam/BranchDefs.h'
+header_file_name = workarea + '/TreeFilter/FilterTruthWgamgam/FilterTruthWgamgam/BranchInit.h'
+source_file_name = workarea + '/TreeFilter/FilterTruthWgamgam/src/BranchInit.cxx'
 
 def main(**kwargs) :
 
@@ -95,7 +95,7 @@ def main(**kwargs) :
     exe_path = None
 
     if workarea is not None :
-        exe_path = '%s/FilterTruthWgamgam/RunAnalysis' %workarea
+        exe_path = '%s/TreeFilter/FilterTruthWgamgam/RunAnalysis' %workarea
 
     if exe_path is None :
         print ('Did not find executable through the WorkArea environment variable. '

@@ -17,7 +17,7 @@ LD      = g++
 BIN_DIR = ./
 OBJ_DIR = ./
 SRC_DIR = src/
-INC_DIR = FilterRecoWgamgam
+INC_DIR = ${PWD}
 
 #ROOTCINT     = $(ROOTSYS)/bin/rootcint
 #ROOTCONFIG   = $(ROOTSYS)/bin/root-config
@@ -27,8 +27,8 @@ ROOTCXXFLAGS = $(shell $(ROOTCONFIG) --cflags)
 ROOTLIBS     = $(shell $(ROOTCONFIG) --libs) -lTreePlayer -lTMVA #-lBoost
 BOOSTFLAGS   = -I/afs/cern.ch/sw/lcg/external/Boost/1.50.0_python2.7/x86_64-slc5-gcc43-opt/include/boost-1_50
 
-COREINC = -I$(WorkArea)/Core/
-COREOBJ = $(WorkArea)/Core/obj/AnalysisBase.o $(WorkArea)/Core/obj/Util.o
+COREINC = -I$(WorkArea)/TreeFilter/Core/
+COREOBJ = $(WorkArea)/TreeFilter/Core/obj/AnalysisBase.o $(WorkArea)/TreeFilter/Core/obj/Util.o
 
 # we need to link against an additional library if using root>5.24
 NEWROOTVERSION  = $(shell $(ROOTCONFIG) --version | grep -c "5.24" )
