@@ -50,11 +50,15 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     // Set defaults for added output variables
     // *************************
     OUT::isBlinded = 0;
+    OUT::ph_medium_n = 0;
+    OUT::el_medium_n = 0;
 
     // *************************
     // Declare Branches
     // *************************
     outtree->Branch("isBlinded", &OUT::isBlinded );
+    outtree->Branch("ph_medium_n", &OUT::ph_medium_n);
+    outtree->Branch("el_medium_n", &OUT::el_medium_n);
 
     // *************************
     // Begin loop over the input tree
@@ -166,6 +170,9 @@ bool RunModule::FilterEvent( ModuleConfig & config ) const {
         if( IN::ph_passTight->at(pidx) ) nPh_tight++;
 
     }
+
+    OUT::ph_medium_n = nPh_medium;
+    OUT::el_medium_n = nEl_medium;
 
     // blind bit
     if( nPh_medium > 1 ) OUT::isBlinded = true;

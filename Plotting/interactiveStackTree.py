@@ -17,6 +17,8 @@ p.add_argument('--samplesConf',  default=None,           dest='samplesConf',    
                                                                                        'as this script, if a path is given, use that path' ) )
 
                                                                                        
+p.add_argument('--xsFile',     default=None,  type=str ,        dest='xsFile',         help='path to cross section file.  When calling AddSample in the configuration module, set useXSFile=True to get weights from the provided file')
+p.add_argument('--lumi',     default=None,  type=float ,        dest='lumi',         help='Integrated luminosity (to use with xsFile)')
 p.add_argument('--mcweight',     default=None,  type=float ,        dest='mcweight',         help='Weight to apply to MC samples')
 p.add_argument('--outputDir',     default=None,  type=str ,        dest='outputDir',         help='output directory for histograms')
 
@@ -40,7 +42,7 @@ samples = None
 def main() :
 
     global samples
-    samples = SampleManager(options.baseDir, options.mcweight, options.treeName, options.treeNameModel, options.fileName, base_path_model=options.baseDirModel)
+    samples = SampleManager(options.baseDir, options.mcweight, options.treeName, options.treeNameModel, options.fileName, base_path_model=options.baseDirModel, xsFile=options.xsFile, lumi=options.lumi)
 
 
     if options.samplesConf is not None :
