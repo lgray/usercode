@@ -1,0 +1,6 @@
+files : [/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_10_20/job_summer12_ZZ_2l2q/Job_0000/tree.root][0:(0-425074),];
+treeName : ggNtuplizer/EventTree
+outputDir : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaWithBlind_2013_10_20/job_summer12_ZZ_2l2q
+outputFile : tree.root
+__Modules__
+FilterEvent : cut_nLep_muTight_elMed [ > 1 ] ; 

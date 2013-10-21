@@ -484,10 +484,14 @@ class SampleManager :
 
     def MakeStack(self, varexp, selection, histpars=None, doratio=False, showBackgroundTotal=False, backgroundLabel='AllBkg', removeFromBkg=[], addToBkg=[], useModel=False, treeHist=None, treeSelection=None ) :
 
+        print 'GOTHERE1'
+        print [s.name for s in self.samples]
         self.clear_all()
         for sample in self.samples :
             self.create_hist( sample, varexp, selection, histpars )
 
+        print 'GOTHERE2'
+        print [s.name for s in self.samples]
         if useModel :
             for sample in self.modelSamples :
                 self.create_hist( sample, treeHist, treeSelection, histpars, isModel=True )
@@ -556,10 +560,14 @@ class SampleManager :
         self.curr_stack = ROOT.THStack(varexp, '')
 
         # reverse so that the stack is in the correct order
+        print 'stack order'
+        print self.stack_order
+        print [s.name for s in self.samples]
         reversed_samples = reversed( self.get_samples(self.stack_order) )
         for samp in reversed_samples :              
             samp.hist.SetFillColor( samp.color )
             samp.hist.SetLineColor( ROOT.kBlack )
+            print 'Add histogram ', samp.name
             self.curr_stack.Add(samp.hist, 'HIST')
 
         for samp in self.get_signal_samples() :
@@ -568,11 +576,11 @@ class SampleManager :
         # additional formatting
         data_samp = self.get_samples('Data')
         if data_samp :
-            #self.samples['Data'].hist.SetMarkerStyle(20)
-            #self.samples['Data'].hist.SetMarkerSize(1.2)
-            #self.samples['Data'].hist.SetLineWidth(2)
+            self.get_samples(['Data'])[0].hist.SetMarkerStyle(20)
+            self.get_samples(['Data'])[0].hist.SetMarkerSize(1.2)
+            self.get_samples(['Data'])[0].hist.SetLineWidth(2)
+            self.get_samples(['Data'])[0].hist.SetStats(0)
             data_samp[0].hist.SetLineColor(ROOT.kBlack)
-            #self.samples['Data'].hist.SetStats(0)
 
         # make the legend
         # In placing the legend move the bottom down 0.05 for each entry
@@ -834,7 +842,7 @@ class SampleManager :
                 sample.hist.Add( msamp.hist )
                 sample.hist.Draw()
             sample.hist.Scale(sample.scale)
-            self.modelSamples.append(sample)
+            #self.modelSamples.append(sample)
         else :
             subsamps = self.get_samples(subsamps)
             sample.hist = subsamps[0].hist.Clone()
@@ -842,7 +850,7 @@ class SampleManager :
                 sample.hist.Add( samp.hist )
                 sample.hist.Draw()
             sample.hist.Scale(sample.scale)
-            self.samples.append(sample)
+            #self.samples.append(sample)
 
 
 

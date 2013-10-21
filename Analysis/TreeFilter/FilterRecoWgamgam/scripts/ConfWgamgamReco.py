@@ -10,9 +10,9 @@ def get_keep_filter() :
 
 def config_analysis( alg_list ) :
 
-    alg_list.append( build_electron( do_cutflow=True, do_hists=True ) )
-    alg_list.append( build_muon( do_cutflow=True, do_hists=True ) )
-    alg_list.append( build_photon( do_cutflow=True, do_hists=True ) )
+    alg_list.append( build_electron( do_cutflow=False, do_hists=False ) )
+    alg_list.append( build_muon( do_cutflow=False, do_hists=False ) )
+    alg_list.append( build_photon( do_cutflow=False, do_hists=False ) )
 
     alg_list.append( Filter('BuildEvent'   ) )
 
