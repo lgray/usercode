@@ -438,8 +438,10 @@ def get_file_evt_map( input_files, nsplit, nFilesPerJob, treeName ) :
     elif nFilesPerJob == 0 and nsplit > 0 :
         # split by the number of files
         nFilesPerSplit = int(math.ceil(float(len(input_files))/nsplit))
+
+    # by default put all the files into one job
     if nFilesPerSplit == 0 :
-        nFilesPerSplit = 1
+        nFilesPerSplit = len(input_files)
     # split into sub-lists based on the number of jobs.  last job may have fewer files
 
     split_files = [input_files[i:i+nFilesPerSplit] for i in range(0, len(input_files), nFilesPerSplit)]
