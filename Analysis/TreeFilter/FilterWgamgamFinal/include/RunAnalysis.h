@@ -47,6 +47,8 @@ class RunModule : public virtual RunModuleBase {
 // Declare any output variables that you'll fill here
 namespace OUT {
 
+    Int_t  ph_medium_n;
+    Int_t  el_medium_n;
     Bool_t isBlinded;
 
     //Examples

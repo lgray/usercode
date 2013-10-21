@@ -97,7 +97,7 @@ class Sample :
 class SampleManager :
     """ Manage input samples and drawn histograms """
 
-    def __init__(self, base_path, mcweight, treeName, treeNameModel='events', filename='ntuple.root', base_path_model=None) :
+    def __init__(self, base_path, mcweight, treeName, treeNameModel='events', filename='ntuple.root', base_path_model=None, xsFile=None, lumi=None) :
 
         #
         # This plotting module assumes that root files are 
@@ -148,6 +148,9 @@ class SampleManager :
         # are stacked in this order
         self.stack_order                 = []
 
+        # if the cross section file is given, open it
+        # and grab the cross section map out of it
+        self.weightMap = self.read_xsfile( xsFile, lumi )
 
         self.grouped_samples       = {}
         self.grouped_samples_model = {}
@@ -247,8 +250,38 @@ class SampleManager :
         samp.temporary = True
         self.samples.append(samp)
 
+    def read_xsfile( self, file, lumi ) :
+        weightMap = {}
+        if file is None :
+            return weightMap
+        if lumi is None :
+            print 'Cannot calculate weights without a luminosity'
+            return weightMap
+        if not os.path.isfile( file ) :
+            print 'Could not locate cross section file.  No values will be loaded.'
+            return weightMap
+
+        ofile = open( file )
+        xsdict = eval( ofile.read() )
+        for name, values in xsdict.iteritems() :
+
+            lumi_sample_den = values['cross_section']*values['gen_eff']*values['k_factor']
+            if lumi_sample_den == 0 :
+                print 'Cannot calculate cross section for %s.  It will receive a weight of 1.' %name
+                lumi_sample = lumi
+            else :
+                lumi_sample = values['n_evt']/lumi_sample_den
+
+            lumi_scale = lumi/lumi_sample;
+
+            weightMap[name] = lumi_scale
+
+        return weightMap
+
+
+
     #--------------------------------
-    def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False) :
+    def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False, useXSFile=True) :
         """ Create an entry for this sample """
 
         # get all root files under this sample
@@ -284,6 +317,10 @@ class SampleManager :
             # multply by scale provided to this function
             if scale is not None :
                 thisscale *= scale
+
+            if useXSFile :
+                if name in self.weightMap :
+                    thisscale *= self.weightMap[name]
 
             thisSample = Sample(name, isActive=(not disableDraw), isData=isData, isSignal=isSignal, color=plotColor, drawRatio=drawRatio, scale=thisscale)
             thisSample.AddFiles( self.treeName, input_files )

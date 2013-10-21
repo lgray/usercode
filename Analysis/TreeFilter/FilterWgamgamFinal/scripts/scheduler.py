@@ -62,5 +62,5 @@ jobs = [
 
 for base, job in jobs :
 
-    command = 'python scripts/filter.py  --filesDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_10_20/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaWithBlind_2013_10_20/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfDiLeptonFilter.py --nFilesPerJob 1 --nproc 5' %( job, job ) 
+    command = 'python scripts/filter.py  --filesDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_10_20/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaWithBlind_2013_10_20/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfLepGammaFilter.py --nFilesPerJob 1 --nproc 5' %( job, job ) 
     os.system(command)
