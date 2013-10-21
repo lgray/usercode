@@ -503,17 +503,21 @@ class SampleManager :
 
         self.variable_rebinning(histpars) 
 
+        #--------------------------
+        # Disable background sum
+        # it is no longer used
+        #--------------------------
         ## Get background total
-        bkg_name = '__AllBkg__'
-        bkg_sample = Sample( bkg_name )
-        bkg_sample.disableDraw=True
-        
-        stack_samples = self.get_samples(self.stack_order)
-        bkg_sample.hist = stack_samples[0].hist.Clone(bkg_name)
-        for samp in stack_samples[1:] :
-            bkg_sample.hist.Add(samp.hist)
+        #bkg_name = '__AllBkg__'
+        #bkg_sample = Sample( bkg_name )
+        #bkg_sample.disableDraw=True
+        #
+        #stack_samples = self.get_samples(self.stack_order)
+        #bkg_sample.hist = stack_samples[0].hist.Clone(bkg_name)
+        #for samp in stack_samples[1:] :
+        #    bkg_sample.hist.Add(samp.hist)
 
-        self.samples.append(bkg_sample)
+        #self.samples.append(bkg_sample)
 
         if doratio :
             # when stacking, the ratio is made with respect to the data.  Find the sample that
@@ -565,6 +569,7 @@ class SampleManager :
         for samp in self.get_signal_samples() :
             samp.hist.SetLineColor( samp.color )
 
+
         # additional formatting
         data_samp = self.get_samples('Data')
         if data_samp :
@@ -599,7 +604,10 @@ class SampleManager :
         if not isinstance(reqsamples, list) :
             reqsamples = [reqsamples]
 
-        samples = self.get_samples(reqsamples)
+        samples = []
+        for rsamp in reqsamples :
+            samples += self.get_samples(rsamp) 
+        # to make sure we get duplicate samples
 
         assert len(selections) == len(samples), 'selections and samples must have same length'
 
@@ -921,8 +929,8 @@ class SampleManager :
             histymin = 0.0001
 
         if isinstance(topcan, ROOT.THStack ) :
-            topcan.SetMaximum(histymax)
-            topcan.SetMinimum(histymin) #to avoid error when setting log scale
+            #topcan.SetMaximum(histymax)
+            #topcan.SetMinimum(histymin) #to avoid error when setting log scale
             topcan.Draw()
             if doratio : # canvas sizes differ for ratio, so title, label sizes are different
                 topcan.GetHistogram().GetYaxis().SetTitleSize(0.06)
@@ -945,6 +953,7 @@ class SampleManager :
 
         sigsamps = self.get_samples(sighists)
         for samp in sighists : 
+            samp.hist.SetLineWidth(2)
             samp.hist.Draw('HIST same')
 
         #if self.curr_legend is not None :
@@ -1060,7 +1069,7 @@ class SampleManager :
             if colors :
                 print 'Size of colors input does not match size of vars input!'
 
-            colors = [ s.color for s in self.get_samples(reqsamples) ]
+            colors = [ self.get_samples(s)[0].color for s in reqsamples ]
 
         if not same :
             self.clear_all()
@@ -1257,15 +1266,22 @@ class SampleManager :
         for label in labels :
             data_row = [label]
             for sampname in samples :
-                data_row.append( data[label][sampname][0] )
-                data_row.append( data[label][sampname][0]/float(data['Total'][sampname][0]))
+                data_val = data[label][sampname][0]
+                data_err = data[label][sampname][1]
+                total_val = data['Total'][sampname][0]
+                total_err = data['Total'][sampname][1]
+
+                ratio_val = data_val / float(total_val)
+                ratio_err = ratio_val * math.sqrt( ( data_err/ data_val )*( data_err/ data_val ) + ( total_err / total_val )*( total_err / total_val ) )
+                data_row.append( (data_val, data_err) )
+                data_row.append( (ratio_val, ratio_err) )
             table_entries.append(data_row)
 
         print table_entries
 
         table_text = self.MakeLatexFidAcceptTable(table_entries)
     
-        self.MakeLatexDocument(tables=[table_entries])
+        #self.MakeLatexDocument(tables=[table_text])
             
         
 
@@ -1335,11 +1351,57 @@ class SampleManager :
 
         self.MakeLatexDocument(tables=[table_text_1, table_text_2])
 
-    def MakeLatexFidAcceptTable(self, entries, options={}) :
+    def MakeLatexFidAcceptTable(self, table_entries, options={}) :
 
         table = []
-        for row in itertools.product(entries) :
-            print 'row = ', row
+        for row in table_entries :
+            table_row = []
+            for col_val in row :
+                print col_val
+                if isinstance(col_val, str) :
+                    table_row.append(col_val)
+                elif isinstance(col_val, tuple) :
+                    err_scale = int( math.log10(col_val[1]) )
+                    print 'err_Scale'
+                    print err_scale
+                    if err_scale < -3 :
+                        table_row.append('{val:.{valwid}e} $\pm$ {err:.{errwid}e} '.format (val=col_val[0], valwid=abs(err_scale)-1, err=col_val[1], errwid=abs(err_scale)-3 ) )
+                    elif err_scale > 0 :
+                        table_row.append('{val:0{valwid}d} $\pm$ {err:0{errwid}d} '.format (val=int(col_val[0]), valwid=abs(err_scale)+1, err=int(col_val[1]), errwid=abs(err_scale)+1 ) )
+                    else :
+                        table_row.append('{val:.{valwid}f} $\pm$ {err:.{errwid}f} '.format (val=col_val[0], valwid=abs(err_scale)+1, err=col_val[1], errwid=abs(err_scale)+1 ) )
+
+                    #if col_val[0] > 1000 :
+                    #    table_row.append(r'%.2e $\pm$ %.2f '  %( col_val[0], col_val[1]) )
+                    #elif col_val[0] < 1 :
+                    #    table_row.append(r'%.1g $\pm$ %.1g '  %( col_val[0], col_val[1]) )
+                    #else :
+                    #    table_row.append(r'%.2f $\pm$ %.2f '  %( col_val[0], col_val[1]) )
+
+            
+            table.append(table_row )
+
+        print table
+        max_widths = [0]*len(table[0])
+        for row in table :
+            for idx, col in enumerate( row ) :
+                width = len(col)
+                if width > max_widths[idx] :
+                    max_widths[idx] = width
+
+        table_text = ''
+        for row in table :
+            row_text = ''
+            for idx, col in enumerate(row) :
+                row_text += col.ljust(max_widths[idx]) + ' & '
+            row_text = row_text.rstrip('& ')
+            row_text += ' \\\\ \n'
+
+            table_text += row_text
+
+        print table_text
+                
+
 
     def LatexCutflowTable(self, entries, roworder, colorder, options={}) :
         print roworder
