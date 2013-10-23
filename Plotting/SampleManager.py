@@ -228,6 +228,7 @@ class SampleManager :
         self.curr_stack            = None
         self.curr_legend           = None
         self.curr_decorations      = []
+        self.curr_ratios           = {}
 
     #--------------------------------
     def clear_hists(self) :
@@ -521,14 +522,10 @@ class SampleManager :
 
     def MakeStack(self, varexp, selection, histpars=None, doratio=False, showBackgroundTotal=False, backgroundLabel='AllBkg', removeFromBkg=[], addToBkg=[], useModel=False, treeHist=None, treeSelection=None ) :
 
-        print 'GOTHERE1'
-        print [s.name for s in self.samples]
         self.clear_all()
         for sample in self.samples :
             self.create_hist( sample, varexp, selection, histpars )
 
-        print 'GOTHERE2'
-        print [s.name for s in self.samples]
         if useModel :
             for sample in self.modelSamples :
                 self.create_hist( sample, treeHist, treeSelection, histpars, isModel=True )
@@ -544,21 +541,18 @@ class SampleManager :
 
         self.variable_rebinning(histpars) 
 
-        #--------------------------
-        # Disable background sum
-        # it is no longer used
-        #--------------------------
-        ## Get background total
-        #bkg_name = '__AllBkg__'
-        #bkg_sample = Sample( bkg_name )
-        #bkg_sample.disableDraw=True
-        #
-        #stack_samples = self.get_samples(self.stack_order)
-        #bkg_sample.hist = stack_samples[0].hist.Clone(bkg_name)
-        #for samp in stack_samples[1:] :
-        #    bkg_sample.hist.Add(samp.hist)
+        # Get background total
+        bkg_name = '__AllBkg__'
+        bkg_sample = Sample( bkg_name )
+        bkg_sample.disableDraw=True
+        bkg_sample.temporary=True
+        
+        stack_samples = self.get_samples(self.stack_order)
+        bkg_sample.hist = stack_samples[0].hist.Clone(bkg_name)
+        for samp in stack_samples[1:] :
+            bkg_sample.hist.Add(samp.hist)
 
-        #self.samples.append(bkg_sample)
+        self.samples.append(bkg_sample)
 
         if doratio :
             # when stacking, the ratio is made with respect to the data.  Find the sample that
@@ -571,30 +565,32 @@ class SampleManager :
                 print 'Found %d data samples, the ratio requires exactly 1 data sample to exist'
                 return
 
-            data_sample = self.get_samples(data_sample_names[0])
+            data_sample = self.get_samples(data_sample_names[0])[0]
 
             self.curr_ratios['ratio'] = Sample( 'ratio', isData=True )
             self.curr_ratios['ratio'].hist = data_sample.hist.Clone( data_sample.name + '_ratio')
             self.curr_ratios['ratio'].hist.Divide( self.get_samples('__AllBkg__')[0].hist )
+            self.curr_ratios['ratio'].hist.SetMarkerStyle(20)
+            self.curr_ratios['ratio'].hist.SetMarkerSize(1.1)
 
-            for name, sample in self.samples.iteritems() :
+            for sample in self.samples :
+                name = sample.name
                 if name in self.get_signal_samples() :
-                    samp = self.samples[name]
-                    if samp.drawRatio :
+                    if sample.drawRatio :
                         self.curr_ratios[name] = Sample( 'ratio', isData=True ) 
                         self.curr_ratios[name].hist = data_sample.hist.Clone( data_sample.name + '_ratio')
-                        self.curr_ratios[name].hist.Divide( samp.hist )
-                        self.curr_ratios[name].hist.SetLineColor( samp.color )
+                        self.curr_ratios[name].hist.Divide( sample.hist )
+                        self.curr_ratios[name].hist.SetLineColor( sample.color )
                         self.curr_ratios[name].hist.GetYaxis().SetNdivisions(509, True)
                         self.curr_ratios[name].isSignal = True
 
-            #for ratio in self.curr_ratios.values() :
-            #    ratio.hist.GetYaxis().SetTitleSize(0.1)
-            #    ratio.hist.GetYaxis().SetLabelSize(0.1)
-            #    ratio.hist.GetXaxis().SetLabelSize(0.1)
-            #    ratio.hist.GetXaxis().SetTitleSize(0.1)
-            #    ratio.hist.SetStats(0)
-            #    ratio.hist.SetTitle('')
+            for ratio in self.curr_ratios.values() :
+                ratio.hist.GetYaxis().SetTitleSize(0.1)
+                ratio.hist.GetYaxis().SetLabelSize(0.1)
+                ratio.hist.GetXaxis().SetLabelSize(0.1)
+                ratio.hist.GetXaxis().SetTitleSize(0.1)
+                ratio.hist.SetStats(0)
+                ratio.hist.SetTitle('')
 
 
         #make the stack and fill
