@@ -164,13 +164,13 @@ def config_samples(samples) :
                            plotColor=ROOT.kGreen,
                           )
 
-    samples.AddSampleGroup( 'Single Photon', legend_name='Single photon', 
-                        input_samples = [
-                                           'gjet_pt20to40_doubleEM'  ,
-                                           'gjet_pt40_doubleEM'      ,
-                        ],
-                           plotColor=ROOT.kYellow,
-                          )
+    #samples.AddSampleGroup( 'Single Photon', legend_name='Single photon', 
+    #                    input_samples = [
+    #                                       'gjet_pt20to40_doubleEM'  ,
+    #                                       'gjet_pt40_doubleEM'      ,
+    #                    ],
+    #                       plotColor=ROOT.kYellow,
+    #                      )
 
 
 def print_examples() :
