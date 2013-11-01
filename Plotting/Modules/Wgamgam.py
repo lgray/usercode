@@ -86,26 +86,26 @@ def config_samples(samples) :
                            isData=True,
                           )
 
+    #samples.AddSampleGroup( 'Single Photon', legend_name='Single photon', 
+    #                    input_samples = [
+    #                                       'gjet_pt20to40_doubleEM'  ,
+    #                                       'gjet_pt40_doubleEM'      ,
+    #                    ],
+    #                       plotColor=ROOT.kYellow,
+    #                      )
+    samples.AddSampleGroup( 'Inclusive W', legend_name='Inclusive W', 
+                            input_samples = [
+                                             'WJetsToLNu1',
+                                             'WJetsToLNu2',
+                                            ],
+                           plotColor=ROOT.kPink,
+                          )
+
     samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma *', 
                             input_samples = [
                                              'DYJetsToLL',
                                             ],
                            plotColor=ROOT.kCyan,
-                          )
-
-    samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
-                            input_samples = [
-                                             'LNuGG_FSR',
-                                             'LNuGG_ISR',
-                                            ],
-                           plotColor=ROOT.kRed,
-                          )
-    samples.AddSampleGroup( 'Inclusive W', legend_name='Inclusive W', 
-                            input_samples = [
-                                             'WJetsToLNu1'
-                                             'WJetsToLNu2'
-                                            ],
-                           plotColor=ROOT.kPink,
                           )
 
     samples.AddSampleGroup( 'Wgamma', legend_name='W#gamma', 
@@ -147,6 +147,15 @@ def config_samples(samples) :
                           ],
                            plotColor=ROOT.kRed-5,
                           )
+    samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
+                            input_samples = [
+                                             'LNuGG_FSR',
+                                             'LNuGG_ISR',
+                                            ],
+                           plotColor=ROOT.kRed,
+                           isSignal=True
+                          )
+
     #samples.AddSampleGroup( 'DiBoson', legend_name='WW/WZ/ZZ', 
     #                       input_samples = [
     #                                       'WW_2l2nu'                ,
@@ -189,13 +198,6 @@ def config_samples(samples) :
                            plotColor=ROOT.kGreen,
                           )
 
-    #samples.AddSampleGroup( 'Single Photon', legend_name='Single photon', 
-    #                    input_samples = [
-    #                                       'gjet_pt20to40_doubleEM'  ,
-    #                                       'gjet_pt40_doubleEM'      ,
-    #                    ],
-    #                       plotColor=ROOT.kYellow,
-    #                      )
 
 
 def print_examples() :

@@ -1,7 +1,11 @@
 {
-                  'DYJetsToLL'             : { 'n_evt' : 30459504 , 'cross_section' : 11050.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
-                  'WJetsToLNu1'            : { 'n_evt' : 27185540 , 'cross_section' : 30400.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
-                  'WJetsToLNu2'            : { 'n_evt' : 3052436 , 'cross_section' : 30400.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  #'DYJetsToLL'             : { 'n_evt' : 30459504 , 'cross_section' : 11050.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  #'DYJetsToLL'             : { 'n_evt' : 30459504 , 'cross_section' : 6911.7 , 'gen_eff' : 1.0 , 'k_factor' : 1.25 },
+                  'DYJetsToLL'             : { 'n_evt' : 30459504 , 'cross_section' : 3503.71 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  #'WJetsToLNu1'            : { 'n_evt' : 27185540 , 'cross_section' : 67812.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  #'WJetsToLNu2'            : { 'n_evt' : 3052436 , 'cross_section' : 67812.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  'WJetsToLNu1'            : { 'n_evt' : 27185540 , 'cross_section' : 6781.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  'WJetsToLNu2'            : { 'n_evt' : 3052436 , 'cross_section' : 6781.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'LNuGG_FSR'              : { 'n_evt' : 1000310  , 'cross_section' : 1.84 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'LNuGG_ISR'              : { 'n_evt' : 1003920  , 'cross_section' : 0.319 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   #'WWW'                    : { 'n_evt' : 220549   , 'cross_section' : 0.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
@@ -10,6 +14,7 @@
                   'WZ_2l2q'                : { 'n_evt' : 3215990  , 'cross_section' : 1.755 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'WZ_3lnu'                : { 'n_evt' : 2017979  , 'cross_section' : 0.8674 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'Wg'                     : { 'n_evt' : 4802358  , 'cross_section' : 461.6 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  'WW_2l2nu'               : { 'n_evt' : 4802358  , 'cross_section' : 4.7 , 'gen_eff' : 1.0 , 'k_factor' : 1.25 },
                   #'ZZZ'                    : { 'n_evt' : 224904   , 'cross_section' : 0.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'ZZ_2e2mu'               : { 'n_evt' : 1497445  , 'cross_section' : 0.1767 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'ZZ_2e2tau'              : { 'n_evt' : 823911   , 'cross_section' : 0.1767 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
@@ -23,7 +28,7 @@
                   'gjet_pt40_doubleEM'     : { 'n_evt' : 5956149  , 'cross_section' : 8840.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.3 },
                   #'ttW'                    : { 'n_evt' : 196046   , 'cross_section' : 0.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   #'ttZ'                    : { 'n_evt' : 210160   , 'cross_section' : 0.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
-                  'ttjets_1l'              : { 'n_evt' : 11149902 , 'cross_section' : 9.38 , 'gen_eff' : 31.5 , 'k_factor' : 1.0 },
-                  'ttjets_2l'              : { 'n_evt' : 12019013 , 'cross_section' : 2.25 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
+                  'ttjets_1l'              : { 'n_evt' : 11149902 , 'cross_section' : 99.66 , 'gen_eff' : 31.5 , 'k_factor' : 1.0 },
+                  'ttjets_2l'              : { 'n_evt' : 12019013 , 'cross_section' : 23.89 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
 
 }
