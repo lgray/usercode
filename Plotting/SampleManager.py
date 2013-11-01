@@ -271,9 +271,10 @@ class SampleManager :
                 print 'Cannot calculate cross section for %s.  It will receive a weight of 1.' %name
                 lumi_sample = lumi
             else :
-                lumi_sample = values['n_evt']/lumi_sample_den
+                lumi_sample = values['n_evt']/float(lumi_sample_den)
 
-            lumi_scale = lumi/lumi_sample;
+            lumi_scale = float(lumi)/lumi_sample;
+            print 'Sample %s : lumi_sample = %f, scale = %f' %( name, lumi_sample, lumi_scale)
 
             weightMap[name] = lumi_scale
 
@@ -394,6 +395,7 @@ class SampleManager :
 
         for samp in input_samples :
             if samp not in self.get_sample_names() :
+                print 'WARNING - Child sample, %s, does not exist!'
                 continue 
             is_a_grouped_sample = ( name in self.get_grouped_sample_names() )
 
@@ -669,6 +671,8 @@ class SampleManager :
             newsamp.name = newname
             newsamp.legendName = samp.name
 
+            print 'TOP create ', newsamp.name
+
             if useModel :
                 self.create_hist( newsamp, treeHist, treeSelection, histpars, isModel=True)
             else :
@@ -710,6 +714,8 @@ class SampleManager :
 
         first = True
         for samp, color in zip(created_samples, colors) :
+            print 'DRAW SAMP'
+            print samp.name
             drawcmd = 'same'
             if first :
                 drawcmd = ''
@@ -756,6 +762,7 @@ class SampleManager :
     def create_hist( self, sample, varexp, selection, histpars, isModel=False, useStoredBinning=False) :
         sampname = sample.name
         print 'Creating hist for %s' %sampname
+        print selection
 
         # check that this histogram hasn't been drawn
         if sample.hist is not None :
@@ -786,14 +793,13 @@ class SampleManager :
 
         # Draw the histogram.  Use histpars as the bin limits if given
         if sample.IsGroupedSample() :
-            for subsamp in sample.groupedSamples :
-                print 'Draw grouped hist %s' %subsamp
-                if isModel :
-                    if subsamp in self.get_model_samples() :
-                        self.create_hist( subsamp, varexp, selection, histpars, isModel=isModel )
-                else :
-                    if subsamp in self.get_samples() :
-                        self.create_hist( subsamp, varexp, selection, histpars, isModel=isModel )
+            for subsampname in sample.groupedSamples :
+                subsamp = self.get_samples( subsampname )[0]
+                print 'Draw grouped hist %s' %subsampname
+                if isModel and subsampname in [s.name for s in self.get_model_samples()] :
+                    self.create_hist( subsamp, varexp, selection, histpars, isModel=isModel )
+                elif subsampname in self.get_sample_names() :
+                    self.create_hist( subsamp, varexp, selection, histpars, isModel=isModel )
 
             self.group_sample( sample, isModel=isModel )
 
@@ -886,6 +892,7 @@ class SampleManager :
             #self.modelSamples.append(sample)
         else :
             subsamps = self.get_samples(subsamps)
+
             sample.hist = subsamps[0].hist.Clone()
             for samp in subsamps[1:] :
                 sample.hist.Add( samp.hist )
