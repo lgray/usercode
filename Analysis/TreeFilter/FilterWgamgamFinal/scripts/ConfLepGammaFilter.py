@@ -1,4 +1,5 @@
 from core import Filter
+from ConfDiLeptonFilter import get_jet_filter,get_electron_filter,get_photon_filter
 
 def get_remove_filter() :
     """ Define list of regex strings to filter input branches to remove from the output.
@@ -27,9 +28,17 @@ def config_analysis( alg_list ) :
     # alg list.  Otherwise you can directly append 
     # a Filter object to the list
     # There is no restriction on the naming or inputs to these funtions
+    #alg_list.append( get_electron_filter( 'medium' ) )
+    alg_list.append( get_photon_filter( 'medium' ) )
+    alg_list.append( get_jet_filter(do_hists=False) )
+
     filter_event = Filter('FilterEvent')
-    filter_event.cut_nLep_muTight_elMed = ' > 0 '
-    filter_event.cut_nPh_medium = ' > 0 '
+    filter_event.cut_nLep25 = ' > 0 '
+    filter_event.cut_nPh = ' > 0 '
 
     alg_list.append( filter_event )
+
+    alg_list.append( Filter( 'CalcEventVars' ) )
+
+
 

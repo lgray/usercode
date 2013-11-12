@@ -1,4 +1,6 @@
 from core import Filter
+from ConfWgamgamReco import build_electron, build_muon
+from ConfWgamgamReco import build_medium_electron
 
 def get_remove_filter() :
 
@@ -10,9 +12,15 @@ def get_keep_filter() :
 
 def config_analysis( alg_list ) :
 
-    alg_list.append( build_electron( do_cutflow=True, do_hists=True ) )
-    #alg_list.append( build_muon( do_cutflow=True, do_hists=True ) )
-    alg_list.append( build_photon( do_cutflow=True, do_hists=True ) )
+    alg_list.append( build_electron( do_cutflow=True, do_hists=True, filtPID='medium' ) )
+    alg_list.append( build_muon( do_cutflow=True, do_hists=True ) )
+    alg_list.append( build_photon( do_cutflow=True, do_hists=True, filtPID='medium' ) )
+
+    ## filter out a lepton 
+    #filter_evt = Filter( 'FilterEvent' )
+    #filter_evt.cut_mu_n = ' > 0 '
+    #alg_list.append(filter_evt)
+
 
     #alg_list.append( Filter('BuildEvent'   ) )
 
@@ -49,7 +57,7 @@ def build_muon( do_cutflow=False, do_hists=False ) :
 
     return filt
 
-def build_electron( do_cutflow=False, do_hists=False ) :
+def build_electron( do_cutflow=False, do_hists=False, filtPID=None ) :
 
     filt = Filter('BuildElectron')
 
@@ -105,7 +113,6 @@ def build_electron( do_cutflow=False, do_hists=False ) :
     #filt.cut_convfit_barrel_veryloose   = ' < 0.000001 ' #no cut
     #filt.cut_misshits_barrel_veryloose  = ' == 0 ' #no cut
 
-    filt.cut_pid_medium = '== True '
 
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )
@@ -124,7 +131,46 @@ def build_electron( do_cutflow=False, do_hists=False ) :
 
     return filt
 
-def build_photon( do_cutflow=False, do_hists=False ) :
+def build_medium_photon( do_cutflow=False, do_hists=False ) :
+
+    filt = Filter('BuildPIDPhoton')
+
+    filt.do_cutflow = do_cutflow
+
+    filt.cut_pt           = ' > 15 '
+    #filt.cut_abseta       = ' < 1.479'
+    #filt.cut_abseta       = ' > 1.566'
+    filt.cut_abseta       = ' < 2.5'
+    filt.cut_abseta_crack = ' > 1.479 & < 1.566 '
+    filt.invert('cut_abseta_crack')
+
+    filt.cut_emfrac       = ' < 0.05'
+    filt.cut_eveto        = ' == False'
+
+    filt.cut_sigmaIEIE_barrel  = ' < 0.011 '
+    filt.cut_chIsoCorr_barrel  = ' < 1.5 '
+    filt.cut_neuIsoCorr_barrel = ' < 1.0 '
+    filt.cut_phoIsoCorr_barrel = ' < 0.7 '
+
+    filt.cut_sigmaIEIE_endcap  = ' < 0.033 '
+    filt.cut_chIsoCorr_endcap  = ' < 1.2 '
+    filt.cut_neuIsoCorr_endcap = ' < 1.5 '
+    filt.cut_phoIsoCorr_endcap = ' < 1.0 '
+
+    if do_hists :
+        filt.add_hist( 'cut_pt', 100, 0, 500 )
+        filt.add_hist( 'cut_abseta', 50, 0, 5 )
+        filt.add_hist( 'cut_abseta_crack', 50, 0, 5 )
+        filt.add_hist( 'cut_emfrac', 50, 0, 0.1 )
+        filt.add_hist( 'cut_eveto', 2, 0, 2 )
+        filt.add_hist( 'cut_sigmaIEIE_barrel', 50, 0, 0.05 )
+        filt.add_hist( 'cut_chIsoCorr_barrel', 50, 0, 5 )
+        filt.add_hist( 'cut_neuIsoCorr_barrel', 50, 0, 5 )
+        filt.add_hist( 'cut_phoIsoCorr_barrel', 50, 0, 5 )
+
+    return filt
+
+def build_photon( do_cutflow=False, do_hists=False, filtPID=None ) :
 
     filt = Filter('BuildPhoton')
 
@@ -168,6 +214,9 @@ def build_photon( do_cutflow=False, do_hists=False ) :
     filt.cut_chIsoCorr_endcap_tight  = ' < 0.5 '
     filt.cut_neuIsoCorr_endcap_tight = ' < 1.5 '
     filt.cut_phoIsoCorr_endcap_tight = ' < 1.0 '
+
+    if filtPID is not None :
+        setattr(filt, 'cut_pid_%s' %filtPID, '== True' )
 
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )

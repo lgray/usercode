@@ -11,38 +11,60 @@
 #include "TChain.h"
 #include "TLorentzVector.h"
 
+// The RunModule inherits from RunModuleBase (an Abstract Base Class )
+// defined in the Core package so that all
+// RunModules present a common interface in a Run function
+// This allows the code defined in this package
+// to be run from the Core package to minimize
+// code duplication in each module
 class RunModule : public virtual RunModuleBase {
 
     public :
 
         RunModule() {}
 
+        // The run function must exist and be defined exactly as this
+        // because it is defined in RunModuleBase 
+        // in src/RunModule.cxx all the analysis is defind in this RunModule function
         void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
 
+        // The ApplyModule function calls any other module defined below
+        // in src/RunModule.cxx.  This funciton is not strictly required
+        // but its a consistent way to apply modules
         bool ApplyModule         ( ModuleConfig & config ) const;
+
+
+        // Define modules below.
+        // There is no restriction on the naming
+        // return values, or inputs to these functions, but
+        // you must of course handle them in the source file
+        // Examples :
         void BuildElectron       ( ModuleConfig & config ) const;
         void BuildMediumElectron ( ModuleConfig & config ) const;
         void BuildMuon           ( ModuleConfig & config ) const;
         void BuildPhoton         ( ModuleConfig & config ) const;
-        void BuildSLPhoton       ( ModuleConfig & config ) const;
         void BuildPIDPhoton      ( ModuleConfig & config ) const;
         void BuildJet            ( ModuleConfig & config ) const;
         void BuildEvent          ( ModuleConfig & config ) const;
+        bool FilterElec          ( ModuleConfig & config ) const;
+        bool FilterMuon          ( ModuleConfig & config ) const;
         bool FilterEvent         ( ModuleConfig & config ) const;
+        bool FilterTauEvent      ( ModuleConfig & config ) const;
+        bool FilterBasicEvent    ( ModuleConfig & config ) const;
 
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR ) const;
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR ) const;
         void calc_corr_iso( float chIso, float phoIso, float neuIso, float rho, float eta, float &chisoCorr, float &phoIsoCorr, float &neuIsoCorr ) const;
-        void RunPhotonTruthMatching( const TLorentzVector & phlv ) const;
+
 };
 
-
+// Ouput namespace 
+// Declare any output variables that you'll fill here
 namespace OUT {
 
     Int_t              el_n;
     Int_t              mu_n;
     Int_t              ph_n;
-    Int_t              ph_sl_n;
     Int_t              jet_n;
     Int_t              vtx_n;
 
@@ -87,7 +109,6 @@ namespace OUT {
     std::vector<float>  *ph_chIsoCorr;
     std::vector<float>  *ph_neuIsoCorr;
     std::vector<float>  *ph_phoIsoCorr;
-    std::vector<int>    *ph_eleVeto;
     std::vector<Bool_t> *ph_isConv;
     std::vector<int>    *ph_conv_nTrk;
     std::vector<float>  *ph_conv_vtx_x;
@@ -100,20 +121,9 @@ namespace OUT {
     std::vector<Bool_t> *ph_passTight;
     std::vector<Bool_t> *ph_passMedium;
     std::vector<Bool_t> *ph_passLoose;
-    std::vector<Bool_t> *ph_truthMatch_ph;
-    std::vector<Bool_t> *ph_truthMatch_el;
-    std::vector<Bool_t> *ph_truthMatch_mu;
-    std::vector<Bool_t> *ph_truthMatch_q;
-
-    std::vector<float>  *ph_sl_pt;
-    std::vector<float>  *ph_sl_eta;
-    std::vector<float>  *ph_sl_phi;
-    std::vector<float>  *ph_sl_e;
-    std::vector<float>  *ph_sl_d0;
-    std::vector<float>  *ph_sl_z0;
-    std::vector<int>  *ph_sl_convfit;
-    std::vector<int>  *ph_sl_misshits;
-
+    std::vector<Bool_t> *ph_truthMatch;
+    std::vector<float>  *ph_truthMinDR;
+    std::vector<Bool_t> *ph_hasSLConv;
 
     std::vector<float>  *jet_pt;
     std::vector<float>  *jet_eta;
@@ -121,35 +131,6 @@ namespace OUT {
     std::vector<float>  *jet_e;
 
     Float_t             avgPU; 
-
-    //Float_t             met_et;
-    //Float_t             met_phi;
-    //Float_t             sumet;
-    //Float_t             metsig;
-
-    //Float_t             leadPhot_pt;
-    //Float_t             sublPhot_pt;
-
-    //Float_t             leadPhot_lepDR;
-    //Float_t             sublPhot_lepDR;
-    //Float_t             ph_phDR;
-    //Float_t             phPhot_lepDR;
-    //Float_t             leadPhot_lepDPhi;
-    //Float_t             sublPhot_lepDPhi;
-    //Float_t             ph_phDPhi;
-    //Float_t             phPhot_lepDPhi;
-
-    //Float_t             mt_lep_met;
-    //Float_t             mt_lepph1_met;
-    //Float_t             mt_lepph2_met;
-    //Float_t             mt_lepphph_met;
-
-    //Float_t             m_leplep;
-    //Float_t             m_lepph1;
-    //Float_t             m_lepph2;
-    //Float_t             m_lepphph;
-    //Float_t             m_phph;
-
 };
 
 #endif

@@ -50,24 +50,17 @@ endif
 
 OBJECT_ANA = $(OBJ_DIR)/RunAnalysis.o 
 BRANCH_INIT = $(OBJ_DIR)/BranchInit.o
-LINKDEF = $(OBJ_DIR)/cintLib.so
 
 EXE = $(EXE_DIR)/RunAnalysis
 
 # Main targets
 
-all:   $(EXE) 
-
-$(SRC_DIR)/Dict.cxx: $(INC_DIR)/include/LinkDef.h
-	rootcint -f $@ -c $(CXXFLAGS) -p $^
-
-$(LINKDEF):  $(SRC_DIR)/Dict.cxx
-	g++ -shared -o$@ `root-config --ldflags` $(CXXFLAGS) -I$(ROOTSYS)/include $^
+all:   $(EXE)
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cxx
 	g++ $(CXXFLAGS) -c $^ -o $@ -I../$(INC_DIR)
 
-$(EXE): $(OBJECT_ANA) $(BRANCH_INIT) $(LINKDEF) 
+$(EXE): $(OBJECT_ANA) $(BRANCH_INIT)
 	g++ $(CXXFLAGS) -o $@ -g $^ $(COREOBJ) $(LIBS) -I../$(INC_DIR)
 clean:
 	@echo -e "\n\n===> cleaning directories"

@@ -8,6 +8,7 @@ import ROOT
 import copy
 import uuid
 import itertools
+import eos_utilities
 from array import array
 
 ROOT.gROOT.SetBatch(False)
@@ -348,22 +349,37 @@ class SampleManager :
         if base_path is None or path_list is None or not path_list :
             return input_files
 
+        print base_path
+        print path_list
         for subpath in path_list :
             fullpath = base_path + '/' + subpath
             # if files have been provided, read them directly
             if os.path.isfile(fullpath) :
                 input_files.append(fullpath)
             else : #otherwise search directories for the needed files
-                for top, dirs, files in os.walk( base_path +'/' + subpath ) :
-                    for file in files :
-                        if filekey is not None :
-                            if file.count(filekey) == 0 : 
+                if base_path.count( 'root://eoscms' ) :
+                    for top, dirs, files, sizes in eos_utilities.walk_eos( base_path + '/' + subpath ) :
+                        for file in files :
+                            if filekey is not None :
+                                if file.count(filekey) == 0 : 
+                                    continue
+                            elif file.count(self.fileName) == 0 :
                                 continue
-                        elif file.count(self.fileName) == 0 :
-                            continue
-                        paths_used.append(top)
-                        subpaths_used.append(subpath)
-                        input_files.append(top+'/'+file)
+                            paths_used.append(top)
+                            subpaths_used.append(subpath)
+                            input_files.append(top+'/'+file)
+                            
+                else : # local directories
+                    for top, dirs, files in os.walk( base_path +'/' + subpath ) :
+                        for file in files :
+                            if filekey is not None :
+                                if file.count(filekey) == 0 : 
+                                    continue
+                            elif file.count(self.fileName) == 0 :
+                                continue
+                            paths_used.append(top)
+                            subpaths_used.append(subpath)
+                            input_files.append(top+'/'+file)
 
         return input_files
 

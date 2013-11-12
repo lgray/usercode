@@ -21,7 +21,6 @@
 int main(int argc, char **argv)
 {
 
-    //TH1::AddDirectory(kFALSE);
     CmdOptions options = ParseOptions( argc, argv );
 
     // Parse the text file and form the configuration object
@@ -47,7 +46,7 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     InitOUTTree( outtree );
     
     // *************************
-    // Declare added output variables
+    // Set defaults for added output variables
     // *************************
     OUT::el_pt             = 0;
     OUT::el_eta            = 0;
@@ -86,7 +85,6 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     OUT::ph_chIsoCorr      = 0;
     OUT::ph_neuIsoCorr     = 0;
     OUT::ph_phoIsoCorr     = 0;
-    OUT::ph_eleVeto        = 0;
     OUT::ph_isConv         = 0;
     OUT::ph_conv_nTrk      = 0;
     OUT::ph_conv_vtx_x     = 0;
@@ -99,29 +97,21 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     OUT::ph_passTight      = 0;
     OUT::ph_passMedium     = 0;
     OUT::ph_passLoose      = 0;
-    OUT::ph_truthMatch_ph  = 0;
-    OUT::ph_truthMatch_el  = 0;
-    OUT::ph_truthMatch_mu  = 0;
-    OUT::ph_truthMatch_q   = 0;
-
-    OUT::ph_sl_pt       = 0;
-    OUT::ph_sl_eta      = 0;
-    OUT::ph_sl_phi      = 0;
-    OUT::ph_sl_e        = 0;
-    OUT::ph_sl_d0       = 0;
-    OUT::ph_sl_z0       = 0;
-    OUT::ph_sl_convfit  = 0;
-    OUT::ph_sl_misshits = 0;
+    OUT::ph_truthMatch     = 0;
+    OUT::ph_truthMinDR     = 0;
+    OUT::ph_hasSLConv      = 0;
 
     OUT::jet_pt             = 0;
     OUT::jet_eta            = 0;
     OUT::jet_phi            = 0;
     OUT::jet_e              = 0;
-    
+
+    // *************************
+    // Declare Branches
+    // *************************
     outtree->Branch("el_n"               , &OUT::el_n  , "el_n/I"                        );
     outtree->Branch("mu_n"               , &OUT::mu_n  , "mu_n/I"                        );
     outtree->Branch("ph_n"               , &OUT::ph_n , "ph_n/I"                         );
-    outtree->Branch("ph_sl_n"            , &OUT::ph_sl_n , "ph_sl_n/I"                         );
     outtree->Branch("jet_n"              , &OUT::jet_n , "jet_n/I"                       );
     outtree->Branch("vtx_n"              , &OUT::vtx_n   , "vtx_n/I"                     );
 
@@ -166,7 +156,6 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("ph_chIsoCorr"     , &OUT::ph_chIsoCorr                              );
     outtree->Branch("ph_neuIsoCorr"    , &OUT::ph_neuIsoCorr                             );
     outtree->Branch("ph_phoIsoCorr"    , &OUT::ph_phoIsoCorr                             );
-    outtree->Branch("ph_eleVeto"       , &OUT::ph_eleVeto                                );
     outtree->Branch("ph_isConv"        , &OUT::ph_isConv                                 );
     outtree->Branch("ph_conv_nTrk"     , &OUT::ph_conv_nTrk                              );
     outtree->Branch("ph_conv_vtx_x"    , &OUT::ph_conv_vtx_x                             );
@@ -179,55 +168,17 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("ph_passTight"     , &OUT::ph_passTight                              );
     outtree->Branch("ph_passMedium"    , &OUT::ph_passMedium                             );
     outtree->Branch("ph_passLoose"     , &OUT::ph_passLoose                              );
-    outtree->Branch("ph_truthMatch_ph" , &OUT::ph_truthMatch_ph                          );
-    outtree->Branch("ph_truthMatch_el" , &OUT::ph_truthMatch_el                          );
-    outtree->Branch("ph_truthMatch_mu" , &OUT::ph_truthMatch_mu                          );
-    outtree->Branch("ph_truthMatch_q"  , &OUT::ph_truthMatch_q                           );
-
-    outtree->Branch("ph_sl_pt"       , &OUT::ph_sl_pt                                    );
-    outtree->Branch("ph_sl_eta"      , &OUT::ph_sl_eta                                   );
-    outtree->Branch("ph_sl_phi"      , &OUT::ph_sl_phi                                   );
-    outtree->Branch("ph_sl_e"        , &OUT::ph_sl_e                                     );
-    outtree->Branch("ph_sl_d0"       , &OUT::ph_sl_d0                                    );
-    outtree->Branch("ph_sl_z0"       , &OUT::ph_sl_z0                                    );
-    outtree->Branch("ph_sl_convfit"  , &OUT::ph_sl_convfit                               );
-    outtree->Branch("ph_sl_misshits" , &OUT::ph_sl_misshits                              );
+    outtree->Branch("ph_truthMatch"    , &OUT::ph_truthMatch                             );
+    outtree->Branch("ph_truthMinDR"    , &OUT::ph_truthMinDR                             );
+    outtree->Branch("ph_hasSLConv"     , &OUT::ph_hasSLConv                              );
     
     outtree->Branch("jet_pt"            , &OUT::jet_pt                                   );
     outtree->Branch("jet_eta"           , &OUT::jet_eta                                  );
     outtree->Branch("jet_phi"           , &OUT::jet_phi                                  );
     outtree->Branch("jet_e"             , &OUT::jet_e                                    );
 
-    outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                        );
+    //outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                        );
 
-    // copy from input tree
-    //outtree->Branch("met_et"             , &OUT::met_et , "met_et/F"                   );
-    //outtree->Branch("met_phi"            , &OUT::met_phi , "met_phi/F"                 );
-    //outtree->Branch("sumet"              , &OUT::sumet, "sumet/F"                      );
-    //outtree->Branch("metsig"             , &OUT::metsig, "metsig/F"                    );
-
-    //outtree->Branch("leadPhot_pt"        , &OUT::leadPhot_pt , "leadPhot_pt/F"           );
-    //outtree->Branch("sublPhot_pt"        , &OUT::sublPhot_pt , "sublPhot_pt/F"           );
-
-    //outtree->Branch("leadPhot_lepDR"     , &OUT::leadPhot_lepDR , "leadPhot_lepDR/F"     );
-    //outtree->Branch("sublPhot_lepDR"     , &OUT::sublPhot_lepDR , "sublPhot_lepDR/F"     );
-    //outtree->Branch("ph_phDR"        , &OUT::ph_phDR , "ph_phDR/F"                       );
-    //outtree->Branch("phPhot_lepDR"     , &OUT::phPhot_lepDR , "phPhot_lepDR/F"           );
-    //outtree->Branch("leadPhot_lepDPhi"   , &OUT::leadPhot_lepDPhi , "leadPhot_lepDPhi/F" );
-    //outtree->Branch("sublPhot_lepDPhi"   , &OUT::sublPhot_lepDPhi , "sublPhot_lepDPhi/F" );
-    //outtree->Branch("ph_phDPhi"      , &OUT::ph_phDPhi , "ph_phDPhi/F"                   );
-    //outtree->Branch("phPhot_lepDPhi"   , &OUT::phPhot_lepDPhi , "phPhot_lepDPhi/F"       );
-
-    //outtree->Branch("mt_lep_met"         , &OUT::mt_lep_met         , "mt_lep_met/F"     );
-    //outtree->Branch("mt_lepph1_met"    , &OUT::mt_lepph1_met    , "mt_lepph1_met/F"      );
-    //outtree->Branch("mt_lepph2_met"    , &OUT::mt_lepph2_met    , "mt_lepph2_met/F"      );
-    //outtree->Branch("mt_lepphph_met" , &OUT::mt_lepphph_met , "mt_lepphph_met/F"         );
-
-    //outtree->Branch("m_leplep"           , &OUT::m_leplep        , "m_leplep/F"          );
-    //outtree->Branch("m_lepph1"         , &OUT::m_lepph1      , "m_lepph1/F"              );
-    //outtree->Branch("m_lepph2"         , &OUT::m_lepph2      , "m_lepph2/F"              );
-    //outtree->Branch("m_lepphph"      , &OUT::m_lepphph   , "m_lepphph/F"                 );
-    //outtree->Branch("m_phph"         , &OUT::m_phph      , "m_phph/F"                    );
 
     // *************************
     // Begin loop over the input tree
@@ -253,8 +204,6 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
         bool save_event = true;
         BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
             save_event &= ApplyModule( mod_conf );
-            // if not saving the event already, don't continue
-            if( !save_event ) break;
         }
 
         if( save_event ) {
@@ -269,7 +218,19 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
 
 bool RunModule::ApplyModule( ModuleConfig & config ) const {
 
+    // This bool is used for filtering
+    // If a module implements an event filter
+    // update this variable and return it
+    // to apply the filter
     bool keep_evt = true;
+
+    // This part is a bit hacked.  For each module that
+    // you write below, you have to put a call to that
+    // function with a matching name here.
+    // The name is used to match the name used
+    // in the python configuration.
+    // There are fancy ways to do this, but it
+    // would require the code to be much more complicated
     
     if( config.GetName() == "BuildElectron" ) {
         BuildElectron( config );
@@ -286,12 +247,15 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     if( config.GetName() == "BuildPIDPhoton" ) {
         BuildPIDPhoton( config );
     }
-    if( config.GetName() == "BuildSLPhoton" ) {
-        BuildSLPhoton( config );
-    }
     if( config.GetName() == "BuildJet" ) {
         BuildJet( config );
     }
+
+    // If the module applies a filter the filter decision
+    // is passed back to here.  There is no requirement
+    // that a function returns a bool, but
+    // if you want the filter to work you need to do this
+    //
     if( config.GetName() == "FilterEvent" ) {
         keep_evt &= FilterEvent( config );
     }
@@ -299,6 +263,13 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     return keep_evt;
 
 }
+
+// ***********************************
+//  Define modules here
+//  The modules can do basically anything
+//  that you want, fill trees, fill plots, 
+//  caclulate an event filter
+// ***********************************
 
 void RunModule::BuildMuon( ModuleConfig & config ) const {
 
@@ -317,26 +288,26 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::nMu; ++idx ) {
        
-        float pt = IN::muPt[idx];
-        float eta = IN::muEta[idx];
-        float phi = IN::muPhi[idx];
+        float pt = IN::muPt->at(idx);
+        float eta = IN::muEta->at(idx);
+        float phi = IN::muPhi->at(idx);
         unsigned int GlobalMuon = 1<<1;
-        //unsigned int PFMuon =  1<<5;
-        bool is_global_muon = IN::muType[idx] & GlobalMuon;
-        bool is_pf_muon = IN::muType[idx] & GlobalMuon;
+        unsigned int PFMuon =  1<<5;
+        bool is_global_muon = IN::muType->at(idx) & GlobalMuon;
+        bool is_pf_muon = IN::muType->at(idx) & GlobalMuon;
 
-        float chi2       = IN::muChi2NDF[idx];
-        //int   nHits      = IN::muNumberOfValidMuonHits[idx];
-        int   nTrkLayers = IN::muNumberOfValidTrkLayers[idx];
-        int   muStations = IN::muStations[idx];
-        int   nPixHit    = IN::muNumberOfValidPixelHits[idx];
-        float d0         = IN::muD0GV[idx];
-        float z0         = IN::muDzGV[idx];
-        float tkIso      = IN::muIsoTrk[idx];
-        float muPFIsoCH  = IN::muPFIsoR04_CH[idx];
-        float muPFIsoNH  = IN::muPFIsoR04_NH[idx];
-        float muPFIsoPho = IN::muPFIsoR04_Pho[idx];
-        float muPFIsoPU  = IN::muPFIsoR04_PU[idx];
+        float chi2       = IN::muChi2NDF->at(idx);
+        int   nHits      = IN::muNumberOfValidMuonHits->at(idx);
+        int   nTrkLayers = IN::muNumberOfValidTrkLayers->at(idx);
+        int   muStations = IN::muStations->at(idx);
+        int   nPixHit    = IN::muNumberOfValidPixelHits->at(idx);
+        float d0         = IN::muD0GV->at(idx);
+        float z0         = IN::muDzGV->at(idx);
+        float tkIso      = IN::muIsoTrk->at(idx);
+        float muPFIsoCH  = IN::muPFIsoR04_CH->at(idx);
+        float muPFIsoNH  = IN::muPFIsoR04_NH->at(idx);
+        float muPFIsoPho = IN::muPFIsoR04_Pho->at(idx);
+        float muPFIsoPU  = IN::muPFIsoR04_PU->at(idx);
 
         // isolation calculation
         float sum_neu = muPFIsoNH + muPFIsoPho - 0.5*muPFIsoPU;
@@ -402,25 +373,25 @@ void RunModule::BuildMediumElectron( ModuleConfig & config ) const {
     OUT::el_n             = 0;
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
-        float dEtaIn    = fabs(IN::eledEtaAtVtx[idx]);
-        float dPhiIn    = fabs(IN::eledPhiAtVtx[idx]);
-        float sigmaIEIE = IN::eleSigmaIEtaIEta[idx];
-        float d0        = fabs(IN::eleD0GV[idx]);
-        float z0        = fabs(IN::eleDzGV[idx]);
-        float hovere    = IN::eleHoverE[idx];
-        //float eoverp    = IN::eleEoverP[idx];
-        float pfiso30   = IN::elePFChIso03[idx];
-        float convfit   = IN::eleConvVtxFit[idx];
-        int misshits    = IN::eleMissHits[idx];
+        float dEtaIn    = fabs(IN::eledEtaAtVtx->at(idx));
+        float dPhiIn    = fabs(IN::eledPhiAtVtx->at(idx));
+        float sigmaIEIE = IN::eleSigmaIEtaIEta->at(idx);
+        float d0        = fabs(IN::eleD0GV->at(idx));
+        float z0        = fabs(IN::eleDzGV->at(idx));
+        float hovere    = IN::eleHoverE->at(idx);
+        //float eoverp    = IN::eleEoverP->at(idx);
+        float pfiso30   = IN::elePFChIso03->at(idx);
+        float convfit   = IN::eleConvVtxFit->at(idx);
+        int misshits    = IN::eleMissHits->at(idx);
 
-        float pt        = IN::elePt[idx];
-        float eta       = IN::eleEta[idx];
-        float sceta     = IN::eleSCEta[idx];
-        float phi       = IN::elePhi[idx];
-        float en        = IN::eleEn[idx];
-        float p         = en/(IN::eleEoverP[idx]);
+        float pt        = IN::elePt->at(idx);
+        float eta       = IN::eleEta->at(idx);
+        float sceta     = IN::eleSCEta->at(idx);
+        float phi       = IN::elePhi->at(idx);
+        float en        = IN::eleEn->at(idx);
+        float p         = en/(IN::eleEoverP->at(idx));
         float eoverp    = fabs( (1/en) - (1/p) );
-        float mva       = IN::eleIDMVATrig[idx];
+        float mva       = IN::eleIDMVATrig->at(idx);
 
         if( !config.PassFloat( "cut_pt"  , pt  ) ) continue;
         if( !config.PassFloat( "cut_abseta"         , fabs(eta) ) ) continue;
@@ -508,35 +479,35 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
 
-        float dEtaIn    = fabs(IN::eledEtaAtVtx[idx]);
-        float dPhiIn    = fabs(IN::eledPhiAtVtx[idx]);
-        float sigmaIEIE = IN::eleSigmaIEtaIEta[idx];
-        float d0        = fabs(IN::eleD0GV[idx]);
-        float z0        = fabs(IN::eleDzGV[idx]);
-        float hovere    = IN::eleHoverE[idx];
-        //float eoverp    = IN::eleEoverP[idx];
-        float pfiso30   = IN::elePFChIso03[idx];
-        float convfit   = IN::eleConvVtxFit[idx];
-        int misshits    = IN::eleMissHits[idx];
+        float dEtaIn    = fabs(IN::eledEtaAtVtx->at(idx));
+        float dPhiIn    = fabs(IN::eledPhiAtVtx->at(idx));
+        float sigmaIEIE = IN::eleSigmaIEtaIEta->at(idx);
+        float d0        = fabs(IN::eleD0GV->at(idx));
+        float z0        = fabs(IN::eleDzGV->at(idx));
+        float hovere    = IN::eleHoverE->at(idx);
+        //float eoverp    = IN::eleEoverP->at(idx);
+        float pfiso30   = IN::elePFChIso03->at(idx);
+        float convfit   = IN::eleConvVtxFit->at(idx);
+        int misshits    = IN::eleMissHits->at(idx);
 
-        float pt        = IN::elePt[idx];
-        float eta       = IN::eleEta[idx];
-        float sceta     = IN::eleSCEta[idx];
-        float phi       = IN::elePhi[idx];
-        float en        = IN::eleEn[idx];
-        float p         = en/(IN::eleEoverP[idx]);
+        float pt        = IN::elePt->at(idx);
+        float eta       = IN::eleEta->at(idx);
+        float sceta     = IN::eleSCEta->at(idx);
+        float phi       = IN::elePhi->at(idx);
+        float en        = IN::eleEn->at(idx);
+        float p         = en/(IN::eleEoverP->at(idx));
         float eoverp    = fabs( (1/en) - (1/p) );
-        float mva       = IN::eleIDMVATrig[idx];
-        float ecalIso30 = IN::eleIsoEcalDR03[idx];
-        float hcalIso30 = IN::eleIsoHcalDR03[idx];
-        float trkIso30  = IN::eleIsoTrkDR03[idx];
+        float mva       = IN::eleIDMVATrig->at(idx);
+        float ecalIso30 = IN::eleIsoEcalDR03->at(idx);
+        float hcalIso30 = IN::eleIsoHcalDR03->at(idx);
+        float trkIso30  = IN::eleIsoTrkDR03->at(idx);
 
         if( !config.PassFloat( "cut_pt"  , pt  ) ) continue;
 
         if( !config.PassFloat( "cut_abseta"         , fabs(eta) ) ) continue;
         if( !config.PassFloat( "cut_abseta_crack"   , fabs(eta) ) ) continue;
-        if( !config.PassFloat( "cut_abssceta"       , fabs(sceta) ) ) continue;
-        if( !config.PassFloat( "cut_abssceta_crack" , fabs(sceta) ) ) continue;
+        if( !config.PassFloat( "cut_abssceta"       , fabs(eta) ) ) continue;
+        if( !config.PassFloat( "cut_abssceta_crack" , fabs(eta) ) ) continue;
 
         if( !config.PassFloat( "cut_mva" , mva ) ) continue;
 
@@ -737,70 +708,13 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::nJet; ++idx ) {
         
-        float pt  = IN::jetPt[idx];
-        float eta = IN::jetEta[idx];
-        float phi = IN::jetPhi[idx];
-        float en  = IN::jetEn[idx];
-
-        TLorentzVector jetlv;
-        jetlv.SetPtEtaPhiE( pt, eta, phi,en );
+        float pt  = IN::jetPt->at(idx);
+        float eta = IN::jetEta->at(idx);
+        float phi = IN::jetPhi->at(idx);
+        float en  = IN::jetEn->at(idx);
 
         if( !config.PassFloat( "cut_pt", pt ) ) continue;
         if( !config.PassFloat( "cut_abseta", eta ) ) continue;
-
-        bool keep_jet = true;
-        if( config.HasCut( "cut_jet_ele_dr" ) ) {
-            for( int eidx = 0; eidx < OUT::el_n; eidx++ ) {
-                TLorentzVector ellv;
-                ellv.SetPtEtaPhiE( OUT::el_pt->at(eidx), 
-                                   OUT::el_eta->at(eidx),
-                                   OUT::el_phi->at(eidx),
-                                   OUT::el_e->at(eidx)
-                                  );
-
-                //delta R 
-                float dr = ellv.DeltaR( jetlv );
-                if( !config.PassFloat( "cut_jet_ele_dr", dr ) ) keep_jet = false;
-            }
-        }
-
-        // don't continue if the jet should be rejected
-        if( !keep_jet ) continue;
-
-        if( config.HasCut( "cut_jet_ph_dr" ) ) {
-            for( int pidx = 0; pidx < OUT::ph_n; pidx++ ) {
-                TLorentzVector phlv;
-                phlv.SetPtEtaPhiE( OUT::ph_pt->at(pidx), 
-                                   OUT::ph_eta->at(pidx),
-                                   OUT::ph_phi->at(pidx),
-                                   OUT::ph_e->at(pidx)
-                                  );
-
-                //delta R 
-                float dr = phlv.DeltaR( jetlv );
-                if( !config.PassFloat( "cut_jet_ph_dr", dr ) ) keep_jet = false;
-            }
-        }
-        // don't continue if the jet should be rejected
-        if( !keep_jet ) continue;
-
-        if( config.HasCut( "cut_jet_mu_dr" ) ) {
-            for( int midx = 0; midx < OUT::mu_n; midx++ ) {
-                TLorentzVector mulv;
-                mulv.SetPtEtaPhiE( OUT::mu_pt->at(midx), 
-                                   OUT::mu_eta->at(midx),
-                                   OUT::mu_phi->at(midx),
-                                   OUT::mu_e->at(midx)
-                                  );
-
-                //delta R 
-                float dr = mulv.DeltaR( jetlv );
-                if( !config.PassFloat( "cut_jet_mu_dr", dr ) ) keep_jet = false;
-            }
-        }
-
-        // don't continue if the jet should be rejected
-        if( !keep_jet ) continue;
 
         OUT::jet_pt        -> push_back(pt);
         OUT::jet_eta       -> push_back(eta);
@@ -813,51 +727,53 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
 
 void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
 
-    OUT::ph_pt            -> clear();
-    OUT::ph_eta           -> clear();
-    OUT::ph_phi           -> clear();
-    OUT::ph_e             -> clear();
-    OUT::ph_HoverE        -> clear();
-    OUT::ph_sigmaIEIE     -> clear();
-    OUT::ph_chIsoCorr     -> clear();
-    OUT::ph_neuIsoCorr    -> clear();
-    OUT::ph_phoIsoCorr    -> clear();
-    OUT::ph_eleVeto       -> clear();
-    OUT::ph_isConv        -> clear();
-    OUT::ph_conv_nTrk     -> clear();
-    OUT::ph_conv_vtx_x    -> clear();
-    OUT::ph_conv_vtx_y    -> clear();
-    OUT::ph_conv_vtx_z    -> clear();
-    OUT::ph_conv_ptin1    -> clear();
-    OUT::ph_conv_ptin2    -> clear();
-    OUT::ph_conv_ptout1   -> clear();
-    OUT::ph_conv_ptout2   -> clear();
-    OUT::ph_passLoose     -> clear();
-    OUT::ph_passMedium    -> clear();
-    OUT::ph_passTight     -> clear();
-    OUT::ph_truthMatch_ph -> clear();
-    OUT::ph_truthMatch_el -> clear();
-    OUT::ph_truthMatch_mu -> clear();
-    OUT::ph_truthMatch_q  -> clear();
+    OUT::ph_pt         -> clear();
+    OUT::ph_eta        -> clear();
+    OUT::ph_phi        -> clear();
+    OUT::ph_e          -> clear();
+    OUT::ph_HoverE     -> clear();
+    OUT::ph_sigmaIEIE  -> clear();
+    OUT::ph_chIsoCorr  -> clear();
+    OUT::ph_neuIsoCorr -> clear();
+    OUT::ph_phoIsoCorr -> clear();
+    OUT::ph_isConv     -> clear();
+    OUT::ph_conv_nTrk  -> clear();
+    OUT::ph_conv_vtx_x -> clear();
+    OUT::ph_conv_vtx_y -> clear();
+    OUT::ph_conv_vtx_z -> clear();
+    OUT::ph_conv_ptin1 -> clear();
+    OUT::ph_conv_ptin2 -> clear();
+    OUT::ph_conv_ptout1-> clear();
+    OUT::ph_conv_ptout2-> clear();
+    OUT::ph_passLoose  -> clear();
+    OUT::ph_passMedium -> clear();
+    OUT::ph_passTight  -> clear();
+    OUT::ph_truthMatch -> clear();
+    OUT::ph_truthMinDR -> clear();
     OUT::ph_n          = 0;
 
     for( int idx = 0; idx < IN::nPho; ++idx ) {
-        float pt        = IN::phoEt[idx];
-        float eta       = IN::phoEta[idx];
-        float sceta     = IN::phoSCEta[idx];
-        float phi       = IN::phoPhi[idx];
-        float en        = IN::phoE[idx];
+        float pt        = IN::phoEt->at(idx);
+        float eta       = IN::phoEta->at(idx);
+        float sceta     = IN::phoSCEta->at(idx);
+        float phi       = IN::phoPhi->at(idx);
+        float en        = IN::phoE->at(idx);
+        int   isConv    = IN::phoIsConv->at(idx);
 
         float rho = IN::rho2012;
 
-        int   eleVeto   = IN::phoEleVeto[idx];
-        float hovere    = IN::phoHoverE[idx];
-        float sigmaIEIE = IN::phoSigmaIEtaIEta[idx];
-        //int   pixseed   = IN::phohasPixelSeed[idx];
+        int   eleVeto   = IN::phoEleVeto->at(idx);
+        float hovere    = IN::phoHoverE->at(idx);
+        float sigmaIEIE = IN::phoSigmaIEtaIEta->at(idx);
+        int   pixseed   = IN::phohasPixelSeed->at(idx);
 
-        float pfChIso     = IN::phoPFChIso[idx];
-        float pfNeuIso    = IN::phoPFNeuIso[idx];
-        float pfPhoIso    = IN::phoPFPhoIso[idx];
+        float isohollow40 = IN::phoTrkIsoHollowDR04->at(idx);
+        float ecaliso40   = IN::phoEcalIsoDR04->at(idx);
+        float hcaliso40   = IN::phoHcalIsoDR04->at(idx);
+
+        float pfChIso     = IN::phoPFChIso->at(idx);
+        float pfNeuIso    = IN::phoPFNeuIso->at(idx);
+        float pfPhoIso    = IN::phoPFPhoIso->at(idx);
 
         float pfChIsoRhoCorr = 0.0;
         float pfNeuIsoRhoCorr = 0.0;
@@ -873,6 +789,8 @@ void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
         if( !config.PassFloat( "cut_abseta_crack"    , fabs(sceta)       ) ) continue;
         if( !config.PassFloat( "cut_emfrac"    , hovere ) ) continue;
         if( !config.PassBool ( "cut_eveto"     , eleVeto) ) continue;
+
+        bool pass = true;
 
         if( fabs(sceta) < 1.479 ) { // barrel
 
@@ -902,24 +820,23 @@ void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
         OUT::ph_chIsoCorr  -> push_back(pfChIsoPtRhoCorr);
         OUT::ph_neuIsoCorr -> push_back(pfNeuIsoPtRhoCorr);
         OUT::ph_phoIsoCorr -> push_back(pfPhoIsoPtRhoCorr);
-        OUT::ph_eleVeto    -> push_back(eleVeto);
 
         // fill conversion info
         // the ntuples fill default values when the
         // photon is not converted, so just keep that
 
-        OUT::ph_isConv     -> push_back(IN::phoIsConv[idx]);
-        OUT::ph_conv_nTrk  -> push_back(IN::phoConvNTrks[idx]);
-        OUT::ph_conv_vtx_x -> push_back(IN::phoConvVtx[idx][0]);
-        OUT::ph_conv_vtx_y -> push_back(IN::phoConvVtx[idx][1]);
-        OUT::ph_conv_vtx_z -> push_back(IN::phoConvVtx[idx][2]);
+        OUT::ph_isConv     -> push_back(IN::phoIsConv->at(idx));
+        OUT::ph_conv_nTrk  -> push_back(IN::phoConvNTrks->at(idx));
+        OUT::ph_conv_vtx_x -> push_back(IN::phoConvVtx_x->at(idx));
+        OUT::ph_conv_vtx_y -> push_back(IN::phoConvVtx_y->at(idx));
+        OUT::ph_conv_vtx_z -> push_back(IN::phoConvVtx_z->at(idx));
         // get the individual track pt
         // i'm not sure if its pt sorted, so lets
         // do that now to be sure
-        float ptin_idx0 = IN::phoConvTrkPin[idx][0];
-        float ptin_idx1 = IN::phoConvTrkPin[idx][1];
-        float ptout_idx0 = IN::phoConvTrkPout[idx][0];
-        float ptout_idx1 = IN::phoConvTrkPout[idx][1];
+        float ptin_idx0 = IN::phoConvTrkPin_x->at(idx);
+        float ptin_idx1 = IN::phoConvTrkPin_y->at(idx);
+        float ptout_idx0 = IN::phoConvTrkPout_x->at(idx);
+        float ptout_idx1 = IN::phoConvTrkPout_y->at(idx);
         if( ptin_idx0 > ptin_idx1 ) {
             OUT::ph_conv_ptin1 -> push_back(ptin_idx0);
             OUT::ph_conv_ptin2 -> push_back(ptin_idx1);
@@ -936,13 +853,8 @@ void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
             OUT::ph_conv_ptout2 -> push_back(ptout_idx0);
             OUT::ph_conv_ptout1 -> push_back(ptout_idx1);
         }
-
-        // truth matching
-        TLorentzVector phlv;
-        phlv.SetPtEtaPhiE( pt, eta, phi, en );
-        RunPhotonTruthMatching( phlv );
     }
-
+            
 }        
 void RunModule::BuildPhoton( ModuleConfig & config ) const {
 
@@ -955,7 +867,6 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
     OUT::ph_chIsoCorr  -> clear();
     OUT::ph_neuIsoCorr -> clear();
     OUT::ph_phoIsoCorr -> clear();
-    OUT::ph_eleVeto    -> clear();
     OUT::ph_isConv     -> clear();
     OUT::ph_conv_nTrk  -> clear();
     OUT::ph_conv_vtx_x -> clear();
@@ -968,29 +879,33 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
     OUT::ph_passLoose  -> clear();
     OUT::ph_passMedium -> clear();
     OUT::ph_passTight  -> clear();
-    OUT::ph_truthMatch_ph -> clear();
-    OUT::ph_truthMatch_el -> clear();
-    OUT::ph_truthMatch_mu -> clear();
-    OUT::ph_truthMatch_q  -> clear();
+    OUT::ph_truthMatch -> clear();
+    OUT::ph_truthMinDR -> clear();
+    OUT::ph_hasSLConv  -> clear();
     OUT::ph_n          = 0;
 
     for( int idx = 0; idx < IN::nPho; ++idx ) {
-        float pt        = IN::phoEt[idx];
-        float eta       = IN::phoEta[idx];
-        float sceta     = IN::phoSCEta[idx];
-        float phi       = IN::phoPhi[idx];
-        float en        = IN::phoE[idx];
+        float pt        = IN::phoEt->at(idx);
+        float eta       = IN::phoEta->at(idx);
+        float sceta     = IN::phoSCEta->at(idx);
+        float phi       = IN::phoPhi->at(idx);
+        float en        = IN::phoE->at(idx);
+        int   isConv    = IN::phoIsConv->at(idx);
 
         float rho = IN::rho2012;
 
-        int   eleVeto   = IN::phoEleVeto[idx];
-        float hovere    = IN::phoHoverE[idx];
-        float sigmaIEIE = IN::phoSigmaIEtaIEta[idx];
-        //int   pixseed   = IN::phohasPixelSeed[idx];
+        int   eleVeto   = IN::phoEleVeto->at(idx);
+        float hovere    = IN::phoHoverE->at(idx);
+        float sigmaIEIE = IN::phoSigmaIEtaIEta->at(idx);
+        int   pixseed   = IN::phohasPixelSeed->at(idx);
 
-        float pfChIso     = IN::phoPFChIso[idx];
-        float pfNeuIso    = IN::phoPFNeuIso[idx];
-        float pfPhoIso    = IN::phoPFPhoIso[idx];
+        float isohollow40 = IN::phoTrkIsoHollowDR04->at(idx);
+        float ecaliso40   = IN::phoEcalIsoDR04->at(idx);
+        float hcaliso40   = IN::phoHcalIsoDR04->at(idx);
+
+        float pfChIso     = IN::phoPFChIso->at(idx);
+        float pfNeuIso    = IN::phoPFNeuIso->at(idx);
+        float pfPhoIso    = IN::phoPFPhoIso->at(idx);
 
         float pfChIsoRhoCorr = 0.0;
         float pfNeuIsoRhoCorr = 0.0;
@@ -1050,6 +965,7 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         if( !config.PassBool( "cut_pid_medium"   , pass_medium    ) ) continue;
         if( !config.PassBool( "cut_pid_loose"    , pass_loose     ) ) continue;
 
+
         OUT::ph_n++;
 
         OUT::ph_pt         -> push_back(pt);
@@ -1064,24 +980,24 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         OUT::ph_passTight  -> push_back(pass_tight);
         OUT::ph_passMedium -> push_back(pass_medium);
         OUT::ph_passLoose  -> push_back(pass_loose);
-        OUT::ph_eleVeto    -> push_back(eleVeto);
 
         // fill conversion info
         // the ntuples fill default values when the
         // photon is not converted, so just keep that
 
-        OUT::ph_isConv     -> push_back(IN::phoIsConv[idx]);
-        OUT::ph_conv_nTrk  -> push_back(IN::phoConvNTrks[idx]);
-        OUT::ph_conv_vtx_x -> push_back(IN::phoConvVtx[idx][0]);
-        OUT::ph_conv_vtx_y -> push_back(IN::phoConvVtx[idx][1]);
-        OUT::ph_conv_vtx_z -> push_back(IN::phoConvVtx[idx][2]);
+        OUT::ph_isConv     -> push_back(IN::phoIsConv->at(idx));
+        OUT::ph_conv_nTrk  -> push_back(IN::phoConvNTrks->at(idx));
+        OUT::ph_conv_vtx_x -> push_back(IN::phoConvVtx_x->at(idx));
+        OUT::ph_conv_vtx_y -> push_back(IN::phoConvVtx_y->at(idx));
+        OUT::ph_conv_vtx_z -> push_back(IN::phoConvVtx_z->at(idx));
+        OUT::ph_hasSLConv  -> push_back(IN::pho_hasSLConvPf->at(idx));
         // get the individual track pt
         // i'm not sure if its pt sorted, so lets
         // do that now to be sure
-        float ptin_idx0 = IN::phoConvTrkPin[idx][0];
-        float ptin_idx1 = IN::phoConvTrkPin[idx][1];
-        float ptout_idx0 = IN::phoConvTrkPout[idx][0];
-        float ptout_idx1 = IN::phoConvTrkPout[idx][1];
+        float ptin_idx0 = IN::phoConvTrkPin_x->at(idx);
+        float ptin_idx1 = IN::phoConvTrkPin_y->at(idx);
+        float ptout_idx0 = IN::phoConvTrkPout_x->at(idx);
+        float ptout_idx1 = IN::phoConvTrkPout_y->at(idx);
         if( ptin_idx0 > ptin_idx1 ) {
             OUT::ph_conv_ptin1 -> push_back(ptin_idx0);
             OUT::ph_conv_ptin2 -> push_back(ptin_idx1);
@@ -1099,231 +1015,24 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
             OUT::ph_conv_ptout1 -> push_back(ptout_idx1);
         }
 
-        // truth matching
         TLorentzVector phlv;
         phlv.SetPtEtaPhiE( pt, eta, phi, en );
-        RunPhotonTruthMatching( phlv );
+        std::vector<int> matchPID;
+        matchPID.push_back(22);
 
-        
+        float minTruthDR = 100.0;
+        bool match = HasTruthMatch( phlv, matchPID, 0.1, minTruthDR );
+        OUT::ph_truthMatch->push_back( match  );
+        OUT::ph_truthMinDR->push_back( minTruthDR );
     }
             
 }        
 
-void RunModule::RunPhotonTruthMatching( const TLorentzVector & phlv ) const {
-
-    std::vector<int> matchPIDEl;
-    std::vector<int> matchPIDMu;
-    std::vector<int> matchPIDPh;
-    std::vector<int> matchPIDQ;
-
-    matchPIDEl.push_back(11);
-    matchPIDEl.push_back(-11);
-    matchPIDMu.push_back(13);
-    matchPIDMu.push_back(-13);
-    matchPIDPh.push_back(22);
-    matchPIDQ.push_back( 111);
-    matchPIDQ.push_back( 211 );
-
-    bool has_match_el = HasTruthMatch( phlv, matchPIDEl, 0.2);
-    bool has_match_mu = HasTruthMatch( phlv, matchPIDMu, 0.2);
-    bool has_match_ph = HasTruthMatch( phlv, matchPIDPh, 0.2);
-    bool has_match_q = HasTruthMatch( phlv, matchPIDQ, 0.2);
-    OUT::ph_truthMatch_el->push_back( has_match_el );
-    OUT::ph_truthMatch_mu->push_back( has_match_mu );
-    OUT::ph_truthMatch_ph->push_back( has_match_ph );
-    OUT::ph_truthMatch_q ->push_back( has_match_q  );
-
-}
-
-void RunModule::BuildSLPhoton( ModuleConfig & config ) const {
-
-    OUT::ph_sl_n = 0;
-    OUT::ph_sl_pt       -> clear();
-    OUT::ph_sl_eta      -> clear();
-    OUT::ph_sl_phi      -> clear();
-    OUT::ph_sl_e        -> clear();
-    OUT::ph_sl_d0       -> clear();
-    OUT::ph_sl_z0       -> clear();
-    OUT::ph_sl_convfit  -> clear();
-    OUT::ph_sl_misshits -> clear();
-
-    for( int idx = 0; idx < IN::nEle; idx++) {
-        float sigmaIEIE = IN::eleSigmaIEtaIEta[idx];
-        float hovere    = IN::eleHoverE[idx];
-        float pfiso30   = IN::elePFChIso03[idx];
-
-        float pt        = IN::elePt[idx];
-        float eta       = IN::eleEta[idx];
-        float sceta     = IN::eleSCEta[idx];
-        float phi       = IN::elePhi[idx];
-
-        if( !config.PassFloat( "cut_sl_pt"  , pt  ) ) continue;
-
-        if( !config.PassFloat( "cut_sl_abssceta"       , fabs(sceta) ) ) continue;
-        if( !config.PassFloat( "cut_sl_abssceta_crack" , fabs(sceta) ) ) continue;
-
-        if( fabs(sceta) < 1.479 ) { // barrel
-            
-            // Medium cuts
-            if( !config.PassFloat( "cut_sl_sigmaIEIE_barrel_medium" , sigmaIEIE    ) ) continue;
-            if( !config.PassFloat( "cut_sl_hovere_barrel_medium"    , hovere       ) ) continue;
-            if( !config.PassFloat( "cut_sl_pfIso30_barrel_medium"   , pfiso30/pt   ) ) continue;
-
-        }
-        else { // endcap
-
-            // Medium cuts
-            if( !config.PassFloat( "cut_sl_sigmaIEIE_endcap_medium" , sigmaIEIE    ) ) continue;
-            if( !config.PassFloat( "cut_sl_hovere_endcap_medium"    , hovere       ) ) continue;
-            if( pt < 20 ) {
-                if( !config.PassFloat( "cut_sl_pfIso30_endcap_lowPt_medium"   , pfiso30/pt   ) ) continue;
-            }
-            else {
-                if( !config.PassFloat( "cut_sl_pfIso30_endcap_highPt_medium"   , pfiso30/pt   ) ) continue;
-            }
-            
-        }
-
-        OUT::ph_sl_n++;
-
-        OUT::ph_sl_pt         -> push_back(pt);
-        OUT::ph_sl_eta        -> push_back(eta);
-        OUT::ph_sl_phi        -> push_back(phi);
-        OUT::ph_sl_e          -> push_back(pt*cosh(eta));
-        OUT::ph_sl_d0         -> push_back( fabs(IN::eleD0GV[idx]) );
-        OUT::ph_sl_z0         -> push_back( fabs(IN::eleDzGV[idx]) );
-        OUT::ph_sl_convfit    -> push_back( IN::eleConvVtxFit[idx] );
-        OUT::ph_sl_misshits  -> push_back( IN::eleMissHits[idx] );
-
-
-    }
-}
-
-// do this later, after PID has been applied
-//void RunModule::BuildEvent( ModuleConfig & /*config*/ ) const {
-//
-//    std::vector<TLorentzVector> leptons;
-//    std::vector<TLorentzVector> photons;
-//    TLorentzVector metlv;
-//    metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
-//
-//    for( int idx = 0; idx < OUT::el_n; ++idx ) {
-//        TLorentzVector lep;
-//        lep.SetPtEtaPhiE( OUT::el_pt->at(idx), 
-//                          OUT::el_eta->at(idx),
-//                          OUT::el_phi->at(idx),
-//                          OUT::el_e->at(idx)
-//                        );
-//        leptons.push_back(lep);
-//    }
-//
-//    for( int idx = 0; idx < OUT::mu_n; ++idx ) {
-//        TLorentzVector lep;
-//        lep.SetPtEtaPhiE( OUT::mu_pt->at(idx), 
-//                          OUT::mu_eta->at(idx),
-//                          OUT::mu_phi->at(idx),
-//                          OUT::mu_e->at(idx)
-//                        );
-//        leptons.push_back(lep);
-//    }
-//
-//    std::vector<std::pair<float, int> > sorted_photons;
-//    for( int idx = 0; idx < OUT::ph_n; ++idx ) {
-//        TLorentzVector phot;
-//        phot.SetPtEtaPhiE(  OUT::ph_pt->at(idx), 
-//                            OUT::ph_eta->at(idx),
-//                            OUT::ph_phi->at(idx),
-//                            OUT::ph_e->at(idx)
-//                        );
-//        photons.push_back(phot);
-//        sorted_photons.push_back(std::make_pair( phot.Pt(), idx ));
-//    }
-//
-//
-//    // sort the list of photon momenta in descending order
-//    std::sort(sorted_photons.rbegin(), sorted_photons.rend());
-//
-//    if( photons.size() > 1 ) { 
-//        OUT::leadPhot_pt = sorted_photons[0].first;
-//        OUT::sublPhot_pt = sorted_photons[1].first;
-//
-//        int leadidx = sorted_photons[0].second;
-//        int sublidx = sorted_photons[1].second;
-//        OUT::m_phph = ( photons[leadidx] + photons[sublidx] ).M();
-//    }
-//    else if ( photons.size() == 1 ) {
-//        OUT::leadPhot_pt = sorted_photons[0].first;
-//        OUT::sublPhot_pt = 0;
-//    }
-//
-//    if( leptons.size() == 2 ) {
-//        OUT::m_leplep = ( leptons[0] + leptons[1] ).M();
-//    }
-//
-//    if( leptons.size() == 1 ) {
-//       
-//        OUT::mt_lep_met = calc_mt( leptons[0], metlv );
-//
-//        if( photons.size() > 1 ) { 
-//
-//            int leadidx = sorted_photons[0].second;
-//            int sublidx = sorted_photons[1].second;
-//
-//            OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
-//            OUT::sublPhot_lepDR = photons[sublidx].DeltaR(leptons[0]);
-//            OUT::ph_phDR    = photons[leadidx].DeltaR(photons[sublidx]);
-//            OUT::phPhot_lepDR = (photons[leadidx]+photons[sublidx]).DeltaR(photons[sublidx]);
-//            
-//            OUT::leadPhot_lepDPhi = photons[leadidx].DeltaPhi(leptons[0]);
-//            OUT::sublPhot_lepDPhi = photons[sublidx].DeltaPhi(leptons[0]);
-//            OUT::ph_phDPhi    = photons[leadidx].DeltaPhi(photons[sublidx]);
-//            OUT::phPhot_lepDPhi = (photons[leadidx]+photons[sublidx]).DeltaPhi(photons[sublidx]);
-//            
-//            OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
-//            OUT::mt_lepph2_met = calc_mt( leptons[0] + photons[sublidx], metlv );
-//
-//            OUT::mt_lepphph_met = calc_mt( leptons[0] + photons[leadidx] + photons[sublidx], metlv );
-//
-//            OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
-//            OUT::m_lepph2 = ( leptons[0] + photons[sublidx] ).M();
-//            OUT::m_lepphph = ( leptons[0] + photons[leadidx] + photons[sublidx] ).M();
-//        }
-//        else if( photons.size() == 1 ) {
-//
-//            int leadidx = sorted_photons[0].second;
-//            OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
-//
-//            OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
-//
-//            OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
-//
-//        }
-//            
-//            
-//    }
-//
-//}
-
-    
-
 bool RunModule::FilterEvent( ModuleConfig & config ) const {
-
-    int nlep = 0;
-    int nlep25 = 0;
-    for( int i = 0; i < OUT::el_n; i++ ) {
-        nlep++;
-        if( OUT::el_pt->at(i) > 25 ) nlep25++;
-    }
-    for( int i = 0; i < OUT::mu_n; i++ ) {
-        nlep++;
-        if( OUT::mu_pt->at(i) > 25 ) nlep25++;
-    }
 
     bool keep_event = true;
     if( !config.PassInt("cut_el_n", OUT::el_n ) ) keep_event = false;
     if( !config.PassInt("cut_mu_n", OUT::mu_n ) ) keep_event = false;
-    if( !config.PassInt("cut_lep_n", nlep     ) ) keep_event = false;
-    if( !config.PassInt("cut_lep25_n", nlep25 ) ) keep_event = false;
 
     return keep_event;
 
@@ -1345,14 +1054,14 @@ bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<i
     #ifdef EXISTS_nMC
     for( int mcidx = 0; mcidx < IN::nMC; mcidx++ ) {
         
-        if( std::find( matchPID.begin(), matchPID.end(), IN::mcPID[mcidx] ) == matchPID.end() ) continue;
+        if( std::find( matchPID.begin(), matchPID.end(), IN::mcPID->at(mcidx) ) == matchPID.end() ) continue;
 
         #ifdef EXISTS_mcStatus
-        if( IN::mcStatus[mcidx] != 1 ) continue;
+        if( IN::mcStatus->at(mcidx) != 1 ) continue;
         #endif
 
         TLorentzVector mclv;
-        mclv.SetPtEtaPhiE( IN::mcPt[mcidx], IN::mcEta[mcidx], IN::mcPhi[mcidx], IN::mcE[mcidx] );
+        mclv.SetPtEtaPhiE( IN::mcPt->at(mcidx), IN::mcEta->at(mcidx), IN::mcPhi->at(mcidx), IN::mcE->at(mcidx) );
         float dr = mclv.DeltaR( objlv );
         if( dr < maxDR) {
             match = true;
@@ -1426,3 +1135,13 @@ void RunModule::calc_corr_iso( float chIso, float phoIso, float neuIso, float rh
     }
 
 }
+//
+// ***********************************
+// This is an example of a module that applies an
+// event filter.  Note that it returns a bool instead
+// of a void.  In principle the modules can return any
+// type of variable, you just have to handle it
+// in the ApplyModule function
+// ***********************************
+
+

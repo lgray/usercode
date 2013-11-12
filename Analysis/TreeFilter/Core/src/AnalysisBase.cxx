@@ -92,12 +92,12 @@ void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) 
                 // and put the tree in there
                 for( unsigned i = 0; i < name_tok.size()-1; i++ ) {
                     dir_path = dir_path + name_tok[i]+"/";
-                    std::cout << " TFile::mkdir " << dir_path << std::endl;
                     outfile->mkdir(dir_path.c_str());
                 }
                 outfile->cd(dir_path.c_str());
 
                 std::string name = name_tok[name_tok.size()-1];
+                std::cout << " Create output tree in " << dir_path << "/" << name << std::endl;
             
                 outtree = new TTree(name.c_str(), name.c_str());
                 //outtree->SetDirectory(outfile->GetDirectory( dir_path.c_str() ));
@@ -853,7 +853,6 @@ void ReadModuleLine( const std::string & line, AnaConfig & config ) {
     std::vector<CutConfig> module_cuts;
     BOOST_FOREACH( const std::string & cut, cut_split ) {
         ReadCut( cut, this_module );
-
     }
 
     config.AddModule( this_module );
@@ -870,8 +869,12 @@ void ReadCut( const std::string &cut, ModuleConfig & module ) {
         return;
     }
     // if valie is hist parse the histogram parameters
-    else if( cut.find("hist") != std::string::npos ) {
+    else if( cut.find("hist") == 0 ) {
         ParseHistPars( cut, module );
+        return;
+    }
+    else if( cut.find("data") == 0 ) {
+        ParseDataEntry( cut, module );
         return;
     }
     else {
@@ -907,6 +910,32 @@ void ParseHistPars( const std::string & cut, ModuleConfig & module ) {
     xmaxstr >> xmax;
     // add histogram
     module.AddHist( name, nbins, xmin, xmax );
+
+}
+void ParseDataEntry( const std::string & cut_str, ModuleConfig & module ) {
+
+    // cut string should have the format name [val]
+    // find the location of the brackets
+    std::size_t posbeg = cut_str.find("[");
+    std::size_t posend = cut_str.find("]");
+
+    // throw an error if the formatting is incorrect
+    if( posbeg == std::string::npos || posend == std::string::npos ) {
+
+      std::cout << "CutConfig - ERROR : cut string should have the format name [val]"
+                << "Instead got " << cut_str << std::endl;
+      return;
+    }
+
+    // get the cut name values
+    std::string name    = cut_str.substr( 0, posbeg);
+    std::string val_str = cut_str.substr( posbeg+1, posend-posbeg-1 );
+
+    // remove whitespace from the name
+    boost::algorithm::trim(name);
+    boost::algorithm::trim(val_str);
+
+    module.AddData( name, val_str );
 
 }
 

@@ -1,5 +1,5 @@
 import os
-base = '/eos/cms/store/user/jkunkle/Wgamgam/OutputS2NoEleVetoLowLepPt_2013_11_08'
+base = '/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10/'
 
 
 jobs_data = [
@@ -67,29 +67,30 @@ jobs_mc = [
 #output_name = 'LepGamma_2013_11_04'
 
 top_configs = [ { 
-                  'module_mc'   : 'ConfDiLeptonFilter.py',
-                  'module_data' : 'ConfDiLeptonFilter.py',
-                  'output_name' : 'DiLepton_2013_11_10',
-                  'tag'         : 'll',
-                },
-                { 
-                  'module_mc'   : 'ConfLepGammaFilter.py',
-                  'module_data' : 'ConfLepGammaFilter_Data.py',
-                  'output_name' : 'LepGamma_2013_11_10',
+                  'module_mc'   : 'ConfUpdate.py',
+                  'module_data' : 'ConfUpdate.py',
+                  'output_name' : 'LepGammaUpdate_2013_11_10',
                   'tag'         : 'lg',
                 },
 ]
 
 
+first = True
 for config in top_configs :
 
     for base, job in jobs_data :
     
-        command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 1 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_data'], config['tag'], job ) 
+        command = 'python scripts/filter.py  --filesDir %s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 1 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_data'], config['tag'], job ) 
+        if not first :
+            command += ' --noCompile '
         os.system(command)
+        first = False
     
     for base, job in jobs_mc :
     
-        command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 1 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_mc'], config['tag'], job ) 
+        command = 'python scripts/filter.py  --filesDir %s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 5 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_mc'], config['tag'], job ) 
+        if not first :
+            command += ' --noCompile '
     
         os.system(command)
+        first = False

@@ -146,10 +146,12 @@ class ModuleConfig {
         bool HasCut( const std::string &name ) const;
 
         const std::vector<CutConfig> & GetAllCuts() const { return configs; }
+        const std::map<std::string, std::string > & GetData() const { return data; }
 
         void AddCutFlow( const std::string & name );
         void AddCut( CutConfig config );
         void AddHist( const std::string & name, int nbin, float xmin, float xmax );
+        void AddData( const std::string &name, const std::string &val ) { data[name]=val ;}
 
         void PrintCutFlows() const;
         void WriteCutFlowHists( TFile *) const;
@@ -162,6 +164,7 @@ class ModuleConfig {
 
         std::string name;
         std::vector<CutConfig> configs;
+        std::map<std::string, std::string> data;
 
         // For now assume 1 cutflow per module
         // but use a vector in case this
@@ -231,6 +234,7 @@ AnaConfig ParseConfig( const std::string & fname, CmdOptions & options );
 void ReadModuleLine( const std::string & line, AnaConfig& config);
 void ReadCut( const std::string & line, ModuleConfig& module);
 void ParseHistPars( const std::string & line, ModuleConfig& module);
+void ParseDataEntry( const std::string & line, ModuleConfig& module);
 void ReadHeaderLine( const std::string & line, CmdOptions & options);
 void ParseFiles( const std::string & line, CmdOptions& options);
 

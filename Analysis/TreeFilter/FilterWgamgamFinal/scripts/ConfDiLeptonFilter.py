@@ -21,15 +21,52 @@ def get_keep_filter() :
 def config_analysis( alg_list ) :
     """ Configure analysis modules. Order is preserved """
 
+    # lepton and photon filters must be run 
+    # before the jet filter
+    #alg_list.append( get_electron_filter( 'medium' ) )
+    alg_list.append( get_photon_filter( 'medium' ) )
+    alg_list.append( get_jet_filter(do_hists=False) )
     
-    # for complicated configurations, define a function
-    # that returns the Filter object and append it to the
-    # alg list.  Otherwise you can directly append 
-    # a Filter object to the list
-    # There is no restriction on the naming or inputs to these funtions
     filter_event = Filter('FilterEvent')
-    filter_event.cut_nLep_muTight_elMed = ' > 1 '
-    #filter_event.cut_nPh_medium = ' > 0 '
+    filter_event.cut_nLep25 = ' > 1 '
+    #filter_event.cut_nPh = ' > 0 '
 
     alg_list.append( filter_event )
+
+    alg_list.append( Filter( 'CalcEventVars' ) )
+    
+
+def get_jet_filter( do_hists = False ) :
+
+    filt = Filter ( 'FilterJet' ) 
+
+    # redo overlap rm with photons and muons
+    filt.cut_jet_ele_dr = ' > 0.4 '
+    filt.cut_jet_ph_dr = ' > 0.4 '
+    filt.cut_jet_mu_dr = ' > 0.4 '
+
+    filt.do_cutflow = False
+
+    if do_hists :
+        filt.add_hist('cut_jet_ele_dr', 50, 0, 5)
+        filt.add_hist('cut_jet_ph_dr', 50, 0, 5)
+        filt.add_hist('cut_jet_mu_dr', 50, 0, 5)
+
+    return filt
+
+def get_electron_filter ( id ) :
+
+    filt = Filter( 'FilterElectron' )
+    setattr( filt, 'cut_el_%s' %id, 'True' )
+
+    return filt
+
+def get_photon_filter ( id ) :
+
+    filt = Filter( 'FilterPhoton' )
+    filt.cut_ph_eleVeto = ' == False'
+    filt.cut_el_ph_dr = ' > 0.2 '
+    #setattr( filt, 'cut_ph_%s' %id, 'True' )
+
+    return filt
 

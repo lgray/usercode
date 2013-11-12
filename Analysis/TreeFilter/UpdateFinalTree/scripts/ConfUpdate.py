@@ -1,5 +1,4 @@
 from core import Filter
-from ConfDiLeptonFilter import get_jet_filter,get_electron_filter,get_photon_filter
 
 def get_remove_filter() :
     """ Define list of regex strings to filter input branches to remove from the output.
@@ -22,20 +21,16 @@ def get_keep_filter() :
 def config_analysis( alg_list ) :
     """ Configure analysis modules. Order is preserved """
 
-    
-    # for complicated configurations, define a function
-    # that returns the Filter object and append it to the
-    # alg list.  Otherwise you can directly append 
-    # a Filter object to the list
-    # There is no restriction on the naming or inputs to these funtions
-    #alg_list.append( get_electron_filter( 'medium' ) )
-    alg_list.append( get_photon_filter( 'medium' ) )
-    alg_list.append( get_jet_filter(do_hists=False) )
+    alg_list.append( Filter('CalcEventVars') )
 
-    filter_event = Filter('FilterEvent')
-    filter_event.cut_nLep25 = ' > 0 '
-    filter_event.cut_nPh = ' == 1 '
+    alg_list.append( add_Z_event_weight() )
 
-    alg_list.append( filter_event )
-    alg_list.append( Filter( 'CalcEventVars' ) )
+def add_Z_event_weight() :
 
+    filt = Filter('AddEventWeight')
+
+    filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/UpdateFinalTree/data/EFakeGammaScaleFactorPt.root' )
+    filt.add_var( 'hist_name', 'pt')
+    file.add_var( 'sample_key', 'DYJetsToLL' )
+
+    return filt

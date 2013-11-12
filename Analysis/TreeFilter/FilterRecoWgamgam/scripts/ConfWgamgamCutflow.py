@@ -10,7 +10,7 @@ def get_keep_filter() :
 
 def config_analysis( alg_list ) :
 
-    alg_list.append( build_electron( do_cutflow=True, do_hists=True ) )
+    alg_list.append( build_medium_electron( do_cutflow=True, do_hists=True ) )
     alg_list.append( build_muon( do_cutflow=True, do_hists=True ) )
     alg_list.append( build_photon( do_cutflow=True, do_hists=True ) )
 
@@ -97,17 +97,18 @@ def build_photon( do_cutflow=False, do_hists=False ) :
 
     return filt
 
-def build_electron( do_cutflow=False, do_hists=False ) :
+def build_medium_electron( do_cutflow=False, do_hists=False ) :
 
     filt = Filter('BuildMediumElectron')
 
     filt.do_cutflow = do_cutflow
 
     filt.cut_pt = ' > 25'
-    #filt.cut_abseta       = ' <2.5 '
-    #filt.cut_abseta_crack = ' > 1.44 & < 1.57 '
-    #filt.invert('cut_abseta_crack')
-    filt.cut_abssceta       = ' >= 1.479 & < 2.5'
+    #filt.cut_abssceta       = ' > 1.57 '
+    #filt.cut_abssceta       = ' < 1.479 '
+    filt.cut_abssceta       = ' < 2.5 '
+    filt.cut_abssceta_crack = ' > 1.479 & < 1.57 '
+    filt.invert('cut_abssceta_crack')
 
     filt.cut_dEtaIn_barrel    = ' < 0.004 '
     filt.cut_dPhiIn_barrel    = ' < 0.06 '

@@ -12,17 +12,31 @@ def main() :
     
     parser.add_argument('--originalDS', dest='originalDS', default=None, required=True,help='Path to original dataset')
     parser.add_argument('--filteredDS', dest='filteredDS', default=None, required=True,help='Path to filtered dataset')
-    parser.add_argument('--treeName',   dest='treeName',   default=None, required=True, help='Name of tree (assume same in both orignal and filtered)')
+    parser.add_argument('--treeNameOrig',   dest='treeNameOrig',   default=None, required=False, help='Name of tree in original sample.  Use --treeNameOrig to read events from the tree or --histNameOrig to read from the histogram')
+    parser.add_argument('--treeNameFilt',   dest='treeNameFilt',   default=None, required=False, help='Name of tree in filtered sample.  Use --treeNameFilt to read events from the tree or --histNameFilt to read from the histogram')
+    parser.add_argument('--histNameOrig',   dest='histNameOrig',   default=None, required=False, help='Name of hist in original sample.  Use --treeNameOrig to read events from the tree or --histNameOrig to read from the histogram')
+    parser.add_argument('--histNameFilt',   dest='histNameFilt',   default=None, required=False, help='Name of hist in filtered sample.  Use --treeNameFilt to read events from the tree or --histNameFilt to read from the histogram')
     parser.add_argument('--fileKeyOrig', dest='fileKeyOrig', default=None, help='key to match orginal files' )
     parser.add_argument('--fileKeyFilt', dest='fileKeyFilt', default=None, help='key to match filtered files' )
     
     options = parser.parse_args()
 
-    orig_nevt, filt_nevt = check_dataset_completion( options.originalDS, options.filteredDS, options.treeName, options.fileKeyOrig, options.fileKeyFilt )
+    orig_nevt, filt_nevt = check_dataset_completion( options.originalDS, options.filteredDS, options.treeNameOrig, options.treeNameFilt, options.histNameOrig, options.histNameFilt, options.fileKeyOrig, options.fileKeyFilt )
 
     print '%s : Orignal = %d events, filtered = %d events.  Difference = %d' %( options.filteredDS, orig_nevt, filt_nevt, orig_nevt-filt_nevt)
 
-def check_dataset_completion( originalDS, filteredDS, treeName, fileKeyOrig=None, fileKeyFilt=None ) :
+def check_dataset_completion( originalDS, filteredDS, treeNameOrig=None, treeNameFilt=None, histNameOrig=None, histNameFilt=None, fileKeyOrig=None, fileKeyFilt=None ) :
+
+    print 'treeNameOrig', treeNameOrig
+    print 'treeNameFilt', treeNameFilt
+    print 'histNameOrig', histNameOrig
+    print 'histNameFilt', histNameFilt
+
+    assert treeNameOrig is not None or histNameOrig is not None, 'Must provide a histogram or tree name for original samples'
+    assert treeNameFilt is not None or histNameFilt is not None, 'Must provide a histogram or tree name for filtered samples'
+
+    assert not (treeNameOrig is not None and histNameOrig is not None), 'Must provide a histogram or tree name for original samples, not both'
+    assert not (treeNameFilt is not None and histNameFilt is not None), 'Must provide a histogram or tree name for filtered samples, not both'
 
     orig_nevt = 0
     filt_nevt = 0
@@ -31,9 +45,13 @@ def check_dataset_completion( originalDS, filteredDS, treeName, fileKeyOrig=None
 
             if fileKeyOrig is not None and not file.count(fileKeyOrig) : continue
 
-            ofile = ROOT.TFile.Open( top+'/'+file )
-            otree = ofile.Get(treeName)
-            orig_nevt += otree.GetEntries()
+            ofile = ROOT.TFile.Open( 'root://eoscms/' + top+'/'+file )
+            if treeNameOrig is not None :
+                otree = ofile.Get(treeNameOrig)
+                orig_nevt += otree.GetEntries()
+            if histNameOrig is not None :
+                ohist = ofile.Get(histNameOrig)
+                orig_nevt += ohist.GetBinContent(1)
 
     if not orig_nevt :
         print 'Did not get any original events.  Check the path'
@@ -45,9 +63,13 @@ def check_dataset_completion( originalDS, filteredDS, treeName, fileKeyOrig=None
 
             if fileKeyFilt is not None and not file.count(fileKeyFilt) : continue
 
-            ofile = ROOT.TFile.Open( top+'/'+file )
-            ohist = ofile.Get('filter')
-            filt_nevt += ohist.GetBinContent(1)
+            ofile = ROOT.TFile.Open( 'root://eoscms/' + top+'/'+file )
+            if treeNameFilt is not None :
+                otree = ofile.Get(treeNameFilt)
+                filt_nevt += otree.GetEntries()
+            if histNameFilt is not None :
+                ohist = ofile.Get(histNameFilt)
+                filt_nevt += ohist.GetBinContent(1)
 
     return orig_nevt, filt_nevt
 
