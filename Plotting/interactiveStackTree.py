@@ -272,8 +272,10 @@ def DrawFormatted(varexp, selection, histpars=None ) :
     luminosity.Draw()
 
 #---------------------------------------
-def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binning=[], xlabel=None, ylabel=None, ymin=None, ymax=None, label=None ) :
+def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binning=[], xlabel=None, ylabel=None, ymin=None, ymax=None, label=None, normalize=False ) :
     global samples
+
+    samples.clear_all()
 
     if not isinstance(sample, list) :
         sample = [sample]
@@ -282,15 +284,24 @@ def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binnin
     den_hists = {}
 
     for idx, samp in enumerate(sample) :
+        print 'SAMP ', samp
         use_stored_first = False
         if idx > 0 :
             use_stored_first = True
 
-        samples.MakeSameCanvas([samp], varexp, num_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=use_stored_first )
-        num_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_num' %samp)
-        samples.MakeSameCanvas([samp], varexp, den_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=True)
-        den_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_den' %samp)
-        
+        samples.MakeSameCanvas([samp], varexp, num_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=use_stored_first, preserve_hists=True )
+        num_hists[samp] = samples.get_samples(samp+'0')[0].hist.Clone('%s_TAndP_num' %samp)
+        samples.clear_hists()
+        #num_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_num' %samp)
+        samples.MakeSameCanvas([samp], varexp, den_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=True, preserve_hists=True)
+        den_hists[samp] = samples.get_samples(samp+'0')[0].hist.Clone('%s_TAndP_den' %samp)
+        #den_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_den' %samp)
+        samples.clear_hists()
+
+        if normalize :
+            num_hists[samp].Scale( 1.0/num_hists[samp].Integral() )
+            den_hists[samp].Scale( 1.0/den_hists[samp].Integral() )
+
         samples.curr_ratios[samp] = num_hists[samp].Clone('%s_ratio' %samp)
         if xlabel is not None :
             samples.curr_ratios[samp].GetXaxis().SetTitle( xlabel )
@@ -304,7 +315,9 @@ def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binnin
 
     plot_ymax = 0.0
     plot_ymin = 100.0
+
     for ratio in samples.curr_ratios.values() :
+        ratio.SetTitle('')
         max = ratio.GetMaximum()
         min = ratio.GetMinimum()
         if max > plot_ymax :
@@ -327,6 +340,7 @@ def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binnin
     samples.curr_canvases['ratiocan'] = ROOT.TCanvas( 'ratiocan', 'ratiocan' )
     samples.curr_canvases['ratiocan'].SetBottomMargin(0.13)
     samples.curr_canvases['ratiocan'].SetLeftMargin(0.13)
+    samples.curr_canvases['ratiocan'].SetTitle('')
 
     for idx, ratio in enumerate( samples.curr_ratios.values() ) :
         drawcmd = ''
