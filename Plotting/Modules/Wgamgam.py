@@ -25,6 +25,7 @@ def config_samples(samples) :
     samples.AddSample('muon_2012d_PRv1'                  , path='job_muon_2012d_PRv1'                  , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('muon_2012d_PRv11'                 , path='job_muon_2012d_PRv11'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, useXSFile=True );
+    #samples.AddSample('Zgammastar'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=False, useXSFile=True );
     samples.AddSample('LNuGG_FSR'               , path='job_summer12_LNuGG_FSR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('LNuGG_ISR'               , path='job_summer12_LNuGG_ISR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('WJetsToLNu1'             , path='job_summer12_WJetsToLNu1'             , filekey='tree.root', disableDraw=True, useXSFile=True );
@@ -192,7 +193,7 @@ def config_samples(samples) :
                                            #'ttW'                     ,
                                            #'ttZ'                     ,
                                            #'ttg'                     ,
-                                           'ttjets_1l'               ,
+                                           #'ttjets_1l'               ,
                                            'ttjets_2l'               ,
                            ],
                            plotColor=ROOT.kGreen,
