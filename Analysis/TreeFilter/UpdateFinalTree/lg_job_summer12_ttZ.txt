@@ -1,6 +1,0 @@
-files : [/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_ttZ/Job_0000/tree.root][0:(0-1533),];
-treeName : ggNtuplizer/EventTree
-outputDir : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaUpdate_2013_11_10/job_summer12_ttZ
-outputFile : tree.root
-__Modules__
-CalcEventVars : 
