@@ -214,6 +214,16 @@ class SampleManager :
     #--------------------------------
     def clear_all(self) :
         """ clear all objects """
+        self.clear_hists()
+
+        self.curr_canvases         = {}
+        self.curr_stack            = None
+        self.curr_legend           = None
+        self.curr_decorations      = []
+        self.curr_ratios           = {}
+
+    #--------------------------------
+    def clear_hists(self) :
         rm_samples = []
         for idx, samp in enumerate(self.samples) :
             samp.hist=None
@@ -223,18 +233,6 @@ class SampleManager :
         for samp in rm_samples:
             self.samples.remove(samp)
 
-        for samp in self.modelSamples :
-            samp.hist=None
-        self.curr_canvases         = {}
-        self.curr_stack            = None
-        self.curr_legend           = None
-        self.curr_decorations      = []
-        self.curr_ratios           = {}
-
-    #--------------------------------
-    def clear_hists(self) :
-        for samp in self.samples :
-            samp.hist=None
         for samp in self.modelSamples :
             samp.hist=None
 
@@ -280,8 +278,6 @@ class SampleManager :
             weightMap[name] = lumi_scale
 
         return weightMap
-
-
 
     #--------------------------------
     def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False, useXSFile=True) :
@@ -412,7 +408,6 @@ class SampleManager :
         for samp in input_samples :
             if samp not in self.get_sample_names() :
                 print 'WARNING - Child sample, %s, does not exist!' %samp
-                print self.get_sample_names()
                 continue 
             is_a_grouped_sample = ( name in self.get_grouped_sample_names() )
 
@@ -766,8 +761,6 @@ class SampleManager :
 
             samp.hist.Draw(drawcmd+'goff')
 
-                
-
         if doratio :
             rname = created_samples[0].name + '_ratio'
             self.curr_ratios['ratio'] = Sample( rname, isData=False )
@@ -807,6 +800,9 @@ class SampleManager :
             thishist.Sumw2()
         else :
             print 'No histogram parameters were passed'
+
+        if thishist is not None :
+            thishist.SetTitle( sampname )
 
         # Draw the histogram.  Use histpars as the bin limits if given
         if sample.IsGroupedSample() :
@@ -915,7 +911,8 @@ class SampleManager :
                 sample.hist.Add( samp.hist )
                 sample.hist.Draw()
             sample.hist.Scale(sample.scale)
-            #self.samples.append(sample)
+
+        sample.hist.SetTitle( sample.name)
 
 
 
@@ -1271,6 +1268,30 @@ class SampleManager :
             
         self.DrawCanvas(self.curr_canvases['same'], ylabel=ylabel, xlabel=xlabel, doratio=doratio)
 
+    def DumpStack( self ) :
+
+        stack_entries = {}
+
+        for prim in self.curr_canvases['top'].GetListOfPrimitives() :
+            if isinstance( prim, ROOT.TH1 ) :
+                err = ROOT.Double()
+                integral = prim.IntegralAndError( 1, prim.GetNbinsX(), err )
+                stack_entries[prim.GetTitle()] = ( integral, err )
+
+            if isinstance( prim, ROOT.THStack ) :
+                hist_list = prim.GetHists()
+                for hist in hist_list :
+                    err = ROOT.Double()
+                    integral = hist.IntegralAndError( 1, hist.GetNbinsX(), err )
+                    stack_entries[hist.GetTitle()] = ( integral, err )
+
+
+        order = self.stack_order
+        if 'Data' in stack_entries :
+            order.insert(0, 'Data')
+
+        for nm in order :
+            print '%s : \t %f +- %f' %( nm, stack_entries[nm][0], stack_entries[nm][1] )
 
     def MakeFidAcceptTable(self, var, cut_selection, labels, samples, histpars, useModel=False, useTreeModel=False) :
 
