@@ -1,0 +1,6 @@
+files : [/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_tbar_t/Job_0002/tree.root,/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_tbar_t/Job_0004/tree.root,/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_tbar_t/Job_0001/tree.root,/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_tbar_t/Job_0003/tree.root,/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_11_10//job_summer12_tbar_t/Job_0000/tree.root][0:(0-1052),];
+treeName : ggNtuplizer/EventTree
+outputDir : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaUpdate_2013_11_10/job_summer12_tbar_t
+outputFile : tree.root
+__Modules__
+CalcEventVars : 

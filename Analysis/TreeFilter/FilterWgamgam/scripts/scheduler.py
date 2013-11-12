@@ -3,7 +3,7 @@ base_mc1='/eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-11'
 base_mc2='/eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-05'
 base_data='/eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-06'
 job_conf = [
-          #(base_mc1,'job_summer12_DYJetsToLL',400),
+          (base_mc1,'job_summer12_DYJetsToLL',400),
           #(base_mc1,'job_summer12_LNuGG_FSR',15),
           #(base_mc1,'job_summer12_LNuGG_ISR',15),
           #(base_mc1,'job_summer12_WWW',4),
@@ -57,13 +57,13 @@ job_conf = [
           #RERUN SOME
           #(base_data, 'job_muon_2012c_PRv21', 250),
           #RERUN SOME
-          (base_data, 'job_muon_2012d_PRv1', 200),
-          (base_data, 'job_muon_2012d_PRv11', 300),
+          #(base_data, 'job_muon_2012d_PRv1', 200),
+          #(base_data, 'job_muon_2012d_PRv11', 300),
 
 
 ]
 
-base_cmd = 'python scripts/filter.py  --files root://eoscms/%s/%s.root  --outputDir /tmp/jkunkle/%s  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamBasicFilter.py --enableRemoveFilter --nsplit %d --storagePath /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/%s ; python ../../Util/scripts/copy_histograms.py --file root://eoscms/%s/%s.root  --output /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples/%s'
+base_cmd = 'python scripts/filter.py  --files root://eoscms/%s/%s.root  --outputDir /tmp/jkunkle/%s  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamBasicFilter.py --enableRemoveFilter --nsplit %d --storagePath /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesTest/%s ; python ../../Util/scripts/copy_histograms.py --file root://eoscms/%s/%s.root  --output /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesTest/%s'
 
 for base, name, nsp in job_conf :
 

@@ -28,12 +28,12 @@ def config_analysis( alg_list ) :
     # alg list.  Otherwise you can directly append 
     # a Filter object to the list
     # There is no restriction on the naming or inputs to these funtions
-    alg_list.append( get_electron_filter( 'medium' ) )
+    #alg_list.append( get_electron_filter( 'medium' ) )
     alg_list.append( get_photon_filter( 'medium' ) )
     alg_list.append( get_jet_filter(do_hists=False) )
 
     filter_event = Filter('FilterEvent')
-    filter_event.cut_nLep = ' > 0 '
+    filter_event.cut_nLep25 = ' > 0 '
     filter_event.cut_nPh = ' == 1 '
 
     alg_list.append( filter_event )

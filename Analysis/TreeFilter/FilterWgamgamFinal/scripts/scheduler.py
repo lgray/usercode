@@ -1,28 +1,30 @@
 import os
-base = '/eos/cms/store/user/jkunkle/Wgamgam/Output'
+base = '/eos/cms/store/user/jkunkle/Wgamgam/OutputS2NoEleVetoLowLepPt_2013_11_08'
 
 
-jobs = [
-        #(base, 'job_1electron_2012b_Jul13rereco_run1'),
-        #(base, 'job_1electron_2012b_Jul13rereco_run2'),
-        #(base, 'job_1electron_2012c_Aug24rereco'),
-        #(base, 'job_1electron_2012c_Dec11rereco'),
-        #(base, 'job_1electron_2012c_PRv2_part1'),
-        #(base, 'job_1electron_2012c_PRv2_part2'),
-        #(base, 'job_1electron_2012c_PRv2_part3'),
-        #(base, 'job_1electron_2012d_PRv1_part1'),
-        #(base, 'job_1electron_2012d_PRv1_part2'),
-        #(base, 'job_electron_2012a_Aug6rereco'),
-        #(base, 'job_electron_2012a_Jul13rereco'),
-        #(base, 'job_muon_2012a_Aug6rereco'),
-        #(base, 'job_muon_2012a_Jul13rereco'),
-        #(base, 'job_muon_2012b_Jul13rereco'),
-        #(base, 'job_muon_2012c_Aug24rereco'),
-        #(base, 'job_muon_2012c_Dec11rereco'),
-        #(base, 'job_muon_2012c_PRv2'),
-        #(base, 'job_muon_2012c_PRv21'),
-        #(base, 'job_muon_2012d_PRv1'),
-        #(base, 'job_muon_2012d_PRv11'),
+jobs_data = [
+        (base, 'job_1electron_2012b_Jul13rereco_run1'),
+        (base, 'job_1electron_2012b_Jul13rereco_run2'),
+        (base, 'job_1electron_2012c_Aug24rereco'),
+        (base, 'job_1electron_2012c_Dec11rereco'),
+        (base, 'job_1electron_2012c_PRv2_part1'),
+        (base, 'job_1electron_2012c_PRv2_part2'),
+        (base, 'job_1electron_2012c_PRv2_part3'),
+        (base, 'job_1electron_2012d_PRv1_part1'),
+        (base, 'job_1electron_2012d_PRv1_part2'),
+        (base, 'job_electron_2012a_Aug6rereco'),
+        (base, 'job_electron_2012a_Jul13rereco'),
+        (base, 'job_muon_2012a_Aug6rereco'),
+        (base, 'job_muon_2012a_Jul13rereco'),
+        (base, 'job_muon_2012b_Jul13rereco'),
+        (base, 'job_muon_2012c_Aug24rereco'),
+        (base, 'job_muon_2012c_Dec11rereco'),
+        (base, 'job_muon_2012c_PRv2'),
+        (base, 'job_muon_2012c_PRv21'),
+        (base, 'job_muon_2012d_PRv1'),
+        (base, 'job_muon_2012d_PRv11'),
+]
+jobs_mc = [
         (base, 'job_summer12_DYJetsToLL'),
         (base, 'job_summer12_LNuGG_FSR'),
         (base, 'job_summer12_LNuGG_ISR'),
@@ -60,7 +62,34 @@ jobs = [
 
 ]
 
-for base, job in jobs :
+#module_mc   = 'ConfLepGammaFilter.py'
+#module_data = 'ConfLepGammaFilter_Data.py'
+#output_name = 'LepGamma_2013_11_04'
 
-    command = 'python scripts/filter.py  --filesDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGamma_2013_10_20/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/LepGammaWithBlind_2013_10_20/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfLepGammaFilter.py --nFilesPerJob 1 --nproc 5' %( job, job ) 
-    os.system(command)
+top_configs = [ { 
+                  'module_mc'   : 'ConfDiLeptonFilter.py',
+                  'module_data' : 'ConfDiLeptonFilter.py',
+                  'output_name' : 'DiLepton_2013_11_10',
+                  'tag'         : 'll',
+                },
+                { 
+                  'module_mc'   : 'ConfLepGammaFilter.py',
+                  'module_data' : 'ConfLepGammaFilter_Data.py',
+                  'output_name' : 'LepGamma_2013_11_10',
+                  'tag'         : 'lg',
+                },
+]
+
+
+for config in top_configs :
+
+    for base, job in jobs_data :
+    
+        command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 1 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_data'], config['tag'], job ) 
+        os.system(command)
+    
+    for base, job in jobs_mc :
+    
+        command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s --fileKey tree.root --outputDir /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/%s/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/%s --nFilesPerJob 1 --nproc 8 --confFileName %s_%s.txt' %( base, job, config['output_name'], job, config['module_mc'], config['tag'], job ) 
+    
+        os.system(command)

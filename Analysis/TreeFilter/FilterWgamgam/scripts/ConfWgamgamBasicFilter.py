@@ -19,20 +19,20 @@ def config_analysis( alg_list ) :
     jet_filt.cut_pt = '> 15'
     alg_list.append(jet_filt)
 
-    ele_filt = Filter('FilterElec') 
-    ele_filt.cut_pt = '> 15'
-    alg_list.append(ele_filt)
+    #ele_filt = Filter('FilterElec') 
+    #ele_filt.cut_pt = '> 15'
+    #alg_list.append(ele_filt)
 
-    mu_filt = Filter('FilterMuon') 
-    mu_filt.cut_pt = '> 15'
-    alg_list.append(mu_filt)
+    #mu_filt = Filter('FilterMuon') 
+    #mu_filt.cut_pt = '> 15'
+    #alg_list.append(mu_filt)
 
-    evt_filt = Filter('FilterEvent')
-    evt_filt.cut_nLep = '> 0'
-    #evt_filt.cut_nPho = '> 0'
+    #evt_filt = Filter('FilterEvent')
+    #evt_filt.cut_nLep = '> 0'
+    ##evt_filt.cut_nPho = '> 0'
 
-    alg_list.append(evt_filt)
+    #alg_list.append(evt_filt)
 
     trig_filt = Filter('FilterTrigger')
-    trig_filt.cut_trigger = '== 18 | == 19'
+    trig_filt.cut_trigger = '==17 | == 18 | == 19'
     alg_list.append(trig_filt)

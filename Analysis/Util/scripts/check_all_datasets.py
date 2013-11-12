@@ -4,8 +4,9 @@ from check_dataset_completion import check_dataset_completion
 
 base_mc1      ='root://eoscms//eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-11'
 base_mc2      ='root://eoscms//eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-05'
-base_data     ='root://eoscms//eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-06'
-base_filtered ='root://eoscms//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples'
+#base_data     ='root://eoscms//eos/cms/store/group/phys_egamma/ymaravin/ggNtuples/V05-03-07-06'
+base_data     ='root://eoscms//eos/cms/store/user/jkunkle/Wgamgam/FilteredSamples'
+base_filtered ='root://eoscms//eos/cms/store/user/abelloni/Wgamgam/FilteredSamples'
 job_conf = [
           #(base_mc1,'job_summer12_DYJetsToLL'),
           #(base_mc1,'job_summer12_LNuGG_FSR'),
@@ -51,15 +52,15 @@ job_conf = [
           #(base_data, 'job_1electron_2012d_PRv1_part2'),
           #(base_data, 'job_electron_2012a_Aug6rereco'),
           #(base_data, 'job_electron_2012a_Jul13rereco'),
-          #(base_data, 'job_muon_2012a_Aug6rereco'),
-          #(base_data, 'job_muon_2012a_Jul13rereco'),
-          #(base_data, 'job_muon_2012b_Jul13rereco'),
-          #(base_data, 'job_muon_2012c_Aug24rereco'),
-          #(base_data, 'job_muon_2012c_Dec11rereco'),
+          (base_data, 'job_muon_2012a_Aug6rereco'),
+          (base_data, 'job_muon_2012a_Jul13rereco'),
+          (base_data, 'job_muon_2012b_Jul13rereco'),
+          (base_data, 'job_muon_2012c_Aug24rereco'),
+          (base_data, 'job_muon_2012c_Dec11rereco'),
           (base_data, 'job_muon_2012c_PRv2'),
-          #(base_data, 'job_muon_2012c_PRv21'),
+          (base_data, 'job_muon_2012c_PRv21'),
           (base_data, 'job_muon_2012d_PRv1'),
-          #(base_data, 'job_muon_2012d_PRv11'),
+          (base_data, 'job_muon_2012d_PRv11'),
 
 
 ]

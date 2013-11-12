@@ -99,10 +99,6 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
 
     bool keep_evt = true;
     
-    if( config.GetName() == "BuildElec" ) {
-        BuildElec( config );
-    }
-
     if( config.GetName() == "FilterElec" ) {
         keep_evt &= FilterElec( config );
     }
@@ -120,21 +116,6 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     }
 
     return keep_evt;
-
-}
-
-void RunModule::BuildElec( ModuleConfig & config ) const {
-
-    //std::cout << "EVENT " << std::endl;
-
-    //for( int idx = 0; idx < IN::nEle; ++idx ) {
-    //    std::cout << "ELE " << std::endl;
-    //    for( int vidx = 0; vidx < IN::nVtx; ++vidx) {
-    //        std::cout << "EleD0Vtx = " << IN::eleD0Vtx[idx][vidx] << std::endl;
-    //    }
-    //    std::cout << "Next vtx = " << IN::eleD0Vtx[idx][IN::nVtx] << std::endl;
-    //}
-    
 
 }
 

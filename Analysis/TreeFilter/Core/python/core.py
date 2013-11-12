@@ -32,6 +32,8 @@ def ParseArgs() :
     parser.add_argument('--module', dest='module', default=None, help='<Required> name of the module to import')
     
     parser.add_argument('--confFileName', dest='confFileName', default='analysis_config.txt', help='Name of the configuration file.  Default : analysis_config.txt')
+
+    parser.add_argument('--sample', dest='sample', default=None, help='Name of sample.  May be used in cases where the sample name must be known to the c++ code')
     
     parser.add_argument('--nproc', dest='nproc', type=int, default=1, help='Number of processors to use.  If set to > 1, use multiprocessing')
     
@@ -77,7 +79,8 @@ def config_and_run( options, package_name ) :
     if options.files is not None :
         input_files = options.files.split(',')
     elif options.filesDir is not None :
-        input_files = collect_input_files( options.filesDir, options.fileKey )
+        for eachdir in options.filesDir.split(',') :
+            input_files += collect_input_files( eachdir, options.fileKey )
 
     # remove any blank entries
     while '' in input_files :
@@ -104,13 +107,14 @@ def config_and_run( options, package_name ) :
 
     if not options.noCompile :
 
-        def_file_name = '%s/TreeFilter/%s/include/BranchDefs.h' %( workarea, package_name )
+        brdef_file_name = '%s/TreeFilter/%s/include/BranchDefs.h' %( workarea, package_name )
         header_file_name = '%s/TreeFilter/%s/include/BranchInit.h' %( workarea, package_name )
         source_file_name = '%s/TreeFilter/%s/src/BranchInit.cxx' %(workarea, package_name )
+        linkdef_file_name = '%s/TreeFilter/%s/include/LinkDef.h' %(workarea, package_name )
 
         # Write the c++ files having the branch definitions and 
         # SetBranchAddress calls
-        write_branchdef_file(def_file_name, branches, branches_to_keep )
+        write_header_files(brdef_file_name, linkdef_file_name, branches, branches_to_keep )
 
         write_source_file(source_file_name, header_file_name, branches, branches_to_keep )
 
@@ -131,9 +135,6 @@ def config_and_run( options, package_name ) :
         logging.info('  Complilation Finished ')
         logging.info('********************************')
 
-    # Stop here if not running
-    if options.noRun :
-        return
 
     # Get the path of the executable.  First try the
     # WorkArea environment variable which will give
@@ -165,10 +166,14 @@ def config_and_run( options, package_name ) :
     logging.info('Will run a total of %d processes, %d at a time' %(len(file_evt_list), options.nproc) )
     logging.info('********************************')
 
-
     if options.nproc > 1 : #multiprocessing!
 
         commands = generate_multiprocessing_commands( file_evt_list, alg_list, exe_path, options )
+
+        # Stop here if not running
+        if options.noRun :
+            logging.info('Not runnning.  Stop here')
+            return
 
         pool = multiprocessing.Pool(options.nproc)
         logging.info('********************************')
@@ -180,10 +185,16 @@ def config_and_run( options, package_name ) :
     else :
 
         output_file = '%s/%s' %(options.outputDir, options.outputFile )
-        if not os.path.isdir( options.outputDir ) and options.outputDir.count('root://') != -1 :
-            os.makedirs( options.outputDir )
         write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath ) 
         command = make_exe_command( exe_path, options.confFileName )
+
+        # Stop here if not running
+        if options.noRun :
+            logging.info('Not runnning.  Stop here')
+            return
+
+        if not os.path.isdir( options.outputDir ) and options.outputDir.count('root://') != -1 :
+            os.makedirs( options.outputDir )
 
         logging.info('********************************')
         logging.info( 'Executing ' + command )
@@ -211,7 +222,7 @@ def collect_input_files_local( filesDir, filekey='.root' ) :
 
 def collect_input_files_eos( filesDir, filekey='.root' ) :
     
-    logging.info('Getting list of input files from eos')
+    logging.info('Getting list of input files from eos in %s' %filesDir)
     input_files = []
     for top, dirs, files, sizes in eosutil.walk_eos(filesDir) :
         for f in files :
@@ -541,6 +552,9 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
                     inv_str = '!'
                 conf_string += '%s %s[%s] ; ' %(name, inv_str, val)
 
+        for name, val in alg.vars.iteritems() :
+            conf_string += '%s [%s] ; ' %( name, val )
+
         if alg.do_cutflow :
             conf_string += 'do_cutflow [] ; '
 
@@ -553,9 +567,9 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
 
     cfile.close()
 
-def write_branchdef_file( name, branches, keep_branches=[] ) :
+def write_header_files( brdefname, linkdefname, branches, keep_branches=[] ) :
 
-    branch_header = open(name, 'w')
+    branch_header = open(brdefname, 'w')
     branch_header.write('#ifndef BRANCHDEFS_H\n')
     branch_header.write('#define BRANCHDEFS_H\n')
     branch_header.write('#include "TTree.h"\n')
@@ -567,7 +581,7 @@ def write_branchdef_file( name, branches, keep_branches=[] ) :
                         '//If this happens, the code will not compile because the\n'
                         '//branch is not written in the header file.  To fix this problem\n'
                         '//simply surround the offending code with #ifdef EXISTS_MYVAR ... #endif\n'
-                        '//and if the variable does not exist the preprocessor will ignore that code')
+                        '//and if the variable does not exist the preprocessor will ignore that code\n')
 
     for conf in branches :
         name = conf['name']
@@ -613,6 +627,38 @@ def write_branchdef_file( name, branches, keep_branches=[] ) :
 
     branch_header.close()
 
+    # this file is used to create root dictionaries
+    # for vector<vector<>> types.  It will always be
+    # created and if no such types exist it will
+    # still be compiled, but will do nothing
+
+    # first collect a list of all the types that need to be added
+    link_types = []
+    for conf in branches :
+        if conf['type'].count('vector') > 0 :
+            modtype = conf['type'].replace('vector','std::vector')
+            link_types.append( modtype )
+
+    # remove duplicates
+    link_types = set( link_types )
+
+    link_header = open(linkdefname, 'w')
+    link_header.write('#ifdef __CINT__\n')
+    link_header.write('#pragma link off all globals;  \n')
+    link_header.write('#pragma link off all classes;  \n')
+    link_header.write('#pragma link off all functions;\n')
+    link_header.write('#pragma link C++ nestedclasses;\n\n')
+
+    for type in link_types :
+        link_header.write('#pragma link C++ class %s+;\n' %type)
+
+    link_header.write('#endif\n\n')
+
+    link_header.close()
+    
+
+
+
 
 def write_source_file(source_file_name, header_file_name, branches, keep_branches=[], debugCode=False) :
 
@@ -623,7 +669,20 @@ def write_source_file(source_file_name, header_file_name, branches, keep_branche
     branch_header.write('#include "TChain.h"\n')
     branch_header.write('void InitINTree( TChain * tree );\n')
     branch_header.write('void InitOUTTree( TTree * tree );\n')
-    branch_header.write('void CopyInputVarsToOutput();\n')
+    branch_header.write('void CopyInputVarsToOutput(std::string prefix = std::string() );\n')
+    branch_header.write('void CopyPrefixBranchesInToOut( const std::string & prefix );\n' )
+    branch_header.write('void CopyPrefixIndexBranchesInToOut( const std::string & prefix, unsigned index );\n')
+    branch_header.write('void ClearOutputPrefix ( const std::string & prefix );\n')
+    for br in branches :
+        name = br['name']
+        if name not in keep_branches :
+            continue
+        branch_header.write('void Copy%sInToOut( std::string prefix = std::string() ); \n' %name)
+
+        if br['type'].count('vector') :
+            branch_header.write('void Copy%sInToOutIndex( unsigned index, std::string prefix = std::string() ); \n' %name)
+            branch_header.write('void ClearOutput%s( std::string prefix ); \n' %name)
+
     branch_header.write('#endif\n')
     branch_header.close()
 
@@ -706,17 +765,74 @@ def write_source_file(source_file_name, header_file_name, branches, keep_branche
 
     branch_setting.write('}\n')
 
-    branch_setting.write('void CopyInputVarsToOutput() {\n')
+    branch_setting.write('void CopyInputVarsToOutput( std::string prefix) {\n')
 
     for conf in branches :
 
         name = conf['name']
-
         if name not in keep_branches :
             continue
+
+        branch_setting.write('    Copy%sInToOut( prefix ); \n' %name )
+
+    branch_setting.write('}\n\n')
+
+    branch_setting.write('// The next set of functions allows one to copy \n')
+    branch_setting.write('// input variables to the outputs based on a key\n')
+    branch_setting.write('// A copy function is generated for each pair of variables\n')
+    branch_setting.write('// The copy function holds the name of the function to compare\n')
+    branch_setting.write('// to the input key.  If the variables are vectors, a second function\n')
+    branch_setting.write('// is generated that allows one to copy all variables matching a given key\n')
+    branch_setting.write('// at a certain index and pushes that back on the output variable\n\n')
+
+    branch_setting.write('void CopyPrefixBranchesInToOut( const std::string & prefix ) {\n' )
+    branch_setting.write('// Just call each copy function with the prefix \n\n')
+
+    for conf in branches :
+        name = conf['name']
+        if name not in keep_branches :
+            continue
+
+        branch_setting.write( '    Copy%sInToOut( prefix );\n' %name)
+
+    branch_setting.write('}; \n\n' )
+    
+    branch_setting.write('void CopyPrefixIndexBranchesInToOut( const std::string & prefix, unsigned index ) { \n\n')
+
+    branch_setting.write('// Just call each copy function with the prefix \n\n')
+
+    for conf in branches :
+        name = conf['name']
+        if name not in keep_branches :
+            continue
+
         if conf['type'].count('vector') :
-            set_line = '  OUT::%s = IN::%s;\n' %(name, name)
-            branch_setting.write(set_line)
+            branch_setting.write( '    Copy%sInToOutIndex( index, prefix );\n' %name)
+
+    branch_setting.write('}; \n\n' )
+
+    branch_setting.write('void ClearOutputPrefix ( const std::string & prefix ) {\n')
+    for conf in branches :
+        name = conf['name']
+        if name not in keep_branches :
+            continue
+
+        if conf['type'].count('vector') :
+            branch_setting.write( '    ClearOutput%s( prefix );\n' %name)
+
+    branch_setting.write('}; \n\n' )
+    
+    for conf in branches :
+        name = conf['name']
+        if name not in keep_branches :
+            continue
+
+        # determine how to copy the variable based on
+        # its type
+        set_line = ''
+        if conf['type'].count('vector') :
+            modtype = conf['type'].replace('vector', 'std::vector')
+            set_line = '  *OUT::%s = %s(*IN::%s);\n' %(name, modtype, name)
         else :
             if conf['totSize'] > 1 :
                 #set_line = '  memcpy(OUT::%s, IN::%s, %d);\n' %(name, name, conf['totSize'])
@@ -733,13 +849,43 @@ def write_source_file(source_file_name, header_file_name, branches, keep_branche
 
                     # code crashes when copying large arrays the only solution I've found is to do it manually
 
-                branch_setting.write(set_line)
             else :
                 set_line = '  OUT::%s = IN::%s;\n' %(name, name)
-                branch_setting.write(set_line)
 
+        branch_setting.write('void Copy%sInToOut( std::string prefix ) { \n\n' %name)
+        branch_setting.write('    std::string my_name = "%s";\n' %name)
+        branch_setting.write('    std::size_t pos = my_name.find( prefix ); \n')
+        branch_setting.write('    // if the filter is given only continue if its matched at the beginning \n' )
+        branch_setting.write('    if( prefix != "" &&  pos != 0 ) return; \n' )
+        branch_setting.write(set_line )
+        branch_setting.write('}; \n\n ')
 
-    branch_setting.write('}\n')
+        if conf['type'].count('vector') :
+            branch_setting.write('void Copy%sInToOutIndex( unsigned index, std::string  prefix ) { \n\n' %name)
+            branch_setting.write('    std::string my_name = "%s";\n' %name)
+            branch_setting.write('    std::size_t pos = my_name.find( prefix ); \n')
+            branch_setting.write('    std::size_t pos2 = my_name.find( "ph_sl" ); \n')
+            branch_setting.write('    if( pos2 != std::string::npos ) return; \n')
+            branch_setting.write('    // if the filter is given only continue if its matched at the beginning \n' )
+            branch_setting.write('    if( prefix != "" &&  pos != 0 ) return; \n' )
+            branch_setting.write('    if( index >= IN::%s->size() ) {\n ' %name)
+            branch_setting.write('        std::cout << "Vector size exceeded for branch IN::%s" << std::endl;\n ' %name)
+            branch_setting.write('        return; \n ')
+            branch_setting.write('    }; \n\n ')
+            branch_setting.write('    //std::cout << "Copy varaible %s" << " at index " << index << ", prefix = " << prefix << std::endl; \n ' %name)
+            branch_setting.write('    OUT::%s->push_back( IN::%s->at(index) ); \n ' %(name, name))
+            branch_setting.write('}; \n\n ')
+
+            branch_setting.write('void ClearOutput%s( std::string  prefix ) { \n\n' %name)
+            branch_setting.write('    std::string my_name = "%s";\n' %name)
+            branch_setting.write('    std::size_t pos = my_name.find( prefix ); \n')
+            branch_setting.write('    std::size_t pos2 = my_name.find( "ph_sl" ); \n')
+            branch_setting.write('    if( pos2 != std::string::npos ) return; \n')
+            branch_setting.write('    // if the filter is given only continue if its matched at the beginning \n' )
+            branch_setting.write('    if( prefix != "" &&  pos != 0 ) return; \n' )
+            branch_setting.write('    //std::cout << "Clear varaible %s, prefix = " << prefix << std::endl; \n ' %name)
+            branch_setting.write('    OUT::%s->clear(); \n ' %name)
+            branch_setting.write('}; \n\n ')
 
     branch_setting.close()
 
@@ -777,12 +923,16 @@ class Filter :
         self.name = name
         self.do_cutflow = False
         self.hists = []
+        self.vars = {}
 
     def invert(self, name) :
         self.invert_list.append(name)
 
     def is_inverted(self, name) :
         return name in self.invert_list
+
+    def add_var(self, name, val) :
+        self.vars[name] = val
 
     def add_hist(self, name, nbin, xmin, xmax ) :
         self.hists.append( {'name':name, 'nbin':nbin, 'xmin':xmin, 'xmax':xmax } )
