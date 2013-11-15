@@ -646,7 +646,8 @@ class SampleManager :
             self.curr_legend.AddEntry(samp.hist, samp.legendName,  'F')
 
         for samp in self.get_signal_samples() :
-            self.curr_legend.AddEntry(samp.hist, samp.legendName, 'L')
+            if samp.isActive :
+                self.curr_legend.AddEntry(samp.hist, samp.legendName, 'L')
 
 
     #----------------------------------------------------
@@ -865,7 +866,7 @@ class SampleManager :
         if not samples:
             samples = self.stack_order
 
-        # variable rebinning
+        # variable r
         if len(histpars) == 4 : 
             threshold = histpars[3]
 
@@ -1015,8 +1016,9 @@ class SampleManager :
 
         sigsamps = self.get_samples(sighists)
         for samp in sighists : 
-            samp.hist.SetLineWidth(2)
-            samp.hist.Draw('HIST same')
+            if samp.isActive :
+                samp.hist.SetLineWidth(2)
+                samp.hist.Draw('HIST same')
 
         #if self.curr_legend is not None :
         #    if doratio :
@@ -1290,8 +1292,24 @@ class SampleManager :
         if 'Data' in stack_entries :
             order.insert(0, 'Data')
 
+        # get signal samples
+        for samp in self.get_samples() :
+            if samp.isSignal :
+                if samp.name in stack_entries :
+                    order.append( samp.name )
+        
+
+        bkg_sum = 0.0
+        for name, vals in stack_entries.iteritems() :
+            if name != 'Data' :
+                bkg_sum += vals[0]
+
         for nm in order :
             print '%s : \t %f +- %f' %( nm, stack_entries[nm][0], stack_entries[nm][1] )
+
+        print 'MC Sum : \t %f ' %bkg_sum
+
+        return
 
     def MakeFidAcceptTable(self, var, cut_selection, labels, samples, histpars, useModel=False, useTreeModel=False) :
 
@@ -1397,45 +1415,51 @@ class SampleManager :
 
                 self.create_hist( samp, var, selection, histpars )
 
-                # get the histogram
-                if samp.isSignal :
-                    self.curr_signals[samp.name] = samp.hist.Clone()
-                else :
-                    self.curr_hists[samp.name] = samp.hist.Clone()
+                ## get the histogram
+                #if samp.isSignal :
+                #    self.curr_signals[samp.name] = samp.hist.Clone()
+                #else :
+                #    self.curr_hists[samp.name] = samp.hist.Clone()
 
             
             mcsum = 0.0
             mcerrsq = 0.0
-            for name, hist in self.curr_hists.iteritems() :
-                val = hist.GetBinContent(1)
-                err = hist.GetBinError(1)
-                table_entries[label][name] = (val, err)
-                if name is not 'Data' :
-                    mcsum += val
-                    mcerrsq += err*err
+            for samp in self.get_samples() :
+                if samp.isActive :
+                    val = samp.hist.GetBinContent(1)
+                    err = samp.hist.GetBinError(1)
+                    table_entries[label][samp.name] = (val, err)
+                    if samp.name is not 'Data' :
+                        mcsum += val
+                        mcerrsq += err*err
             table_entries[label]['MC'] = (mcsum, math.sqrt(mcerrsq))
-            if 'Data' in self.curr_hists :
-                dataval = table_entries[label]['Data'][0]
-                dataerr = table_entries[label]['Data'][1]
-                ratioval = dataval/mcsum
-                ratioerr = dataval/mcsum * math.sqrt( ( dataerr/dataval )*( dataerr/dataval ) + ( mcerrsq/(mcsum*mcsum) ) )
-                table_entries[label]['Data/MC'] = (ratioval, ratioerr)
+
+            #if 'Data' in  :
+            #    dataval = table_entries[label]['Data'][0]
+            #    dataerr = table_entries[label]['Data'][1]
+            #    ratioval = dataval/mcsum
+            #    ratioerr = dataval/mcsum * math.sqrt( ( dataerr/dataval )*( dataerr/dataval ) + ( mcerrsq/(mcsum*mcsum) ) )
+            #    table_entries[label]['Data/MC'] = (ratioval, ratioerr)
 
         for name in labels :
             print table_entries[name]
+        
 
-        second_table = {}
-        for cut, table in table_entries.iteritems() :
-            second_table.setdefault(cut, {})
+        #second_table = {}
+        #for cut, table in table_entries.iteritems() :
+        #    second_table.setdefault(cut, {})
 
-            if 'Data' in self.curr_hists :
-                for samp in ['Data','MC', 'Data/MC'] :
-                    second_table[cut][samp] = table_entries[cut].pop(samp)
+        #    if 'Data' in self.curr_hists :
+        #        for samp in ['Data','MC', 'Data/MC'] :
+        #            second_table[cut][samp] = table_entries[cut].pop(samp)
 
-        table_text_1 = self.LatexCutflowTable(table_entries, cut_order, self.stack_order)
-        table_text_2 = self.LatexCutflowTable(second_table, cut_order, ['MC', 'Data', 'Data/MC'])
+        signal_samples = [ s.name for s in self.get_signal_samples() if s.isActive ]
 
-        self.MakeLatexDocument(tables=[table_text_1, table_text_2])
+        table_text_1 = self.LatexCutflowTable(table_entries, labels , self.stack_order+signal_samples)
+        #table_text_2 = self.LatexCutflowTable(second_table, labels , ['MC', 'Data', 'Data/MC'])
+
+        #self.MakeLatexDocument(tables=[table_text_1, table_text_2])
+        self.MakeLatexDocument(tables=[table_text_1])
 
     def MakeLatexFidAcceptTable(self, table_entries, options={}) :
 
@@ -1490,8 +1514,6 @@ class SampleManager :
 
 
     def LatexCutflowTable(self, entries, roworder, colorder, options={}) :
-        print roworder
-        print entries
 
         table = []
         header = []

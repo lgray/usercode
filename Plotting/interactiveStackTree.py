@@ -365,7 +365,8 @@ def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binnin
 
     for name in sample :
         ratio = samples.curr_ratios[name]
-        leg.AddEntry( ratio, name, 'LPE' )
+        samp_leg = samples.get_samples(name)[0].legendName
+        leg.AddEntry( ratio, samp_leg, 'LPE' )
 
     samples.curr_canvases['ratiocan'].cd()
     leg.Draw()
