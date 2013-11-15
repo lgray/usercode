@@ -691,6 +691,8 @@ class SampleManager :
             else :
                 self.create_hist( newsamp, varexp, sel, histpars)
 
+            newsamp.hist.Draw()
+
             self.add_temp_sample(newsamp)
             created_hists.append(newsamp.name)
 
@@ -727,8 +729,6 @@ class SampleManager :
 
         first = True
         for samp, color in zip(created_samples, colors) :
-            print 'DRAW SAMP'
-            print samp.name
             drawcmd = 'same'
             if first :
                 drawcmd = ''
