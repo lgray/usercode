@@ -37,7 +37,7 @@ const ModuleConfig AnaConfig::getEntry( unsigned int i ) const {
 
 
 
-void AnaConfig::Run( const RunModuleBase & runmod, const CmdOptions & options ) {
+void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
 
     int total_njobs = 0;
     for( unsigned fidx = 0; fidx < options.files.size(); ++fidx ) {
@@ -979,6 +979,11 @@ void ReadHeaderLine( const std::string & line, CmdOptions & options ) {
     else if( header_key.find("nevt") != std::string::npos ) {
         std::stringstream ss(header_val);
         ss >> options.nevt;
+    }
+    else if( header_key.find("sample") != std::string::npos ) {
+        std::stringstream ss(header_val);
+        options.sample = header_val;
+        boost::algorithm::trim(options.sample);
     }
     
 }

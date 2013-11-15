@@ -194,6 +194,7 @@ struct CmdOptions {
     std::vector< FileEntry > files;
     int nevt;
     bool transferToStorage;
+    std::string sample;
 
 };
 
@@ -203,7 +204,7 @@ class RunModuleBase {
 
     public : 
 
-        virtual void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) const = 0;
+        virtual void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) = 0;
 
 };
 
@@ -215,7 +216,7 @@ class AnaConfig {
 
         void AddModule( ModuleConfig module );
 
-        void Run( const RunModuleBase & base, const CmdOptions & options);
+        void Run( RunModuleBase & base, const CmdOptions & options);
 
         int size() const { return confs.size(); }
 

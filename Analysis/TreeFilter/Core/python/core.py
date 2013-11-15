@@ -185,7 +185,7 @@ def config_and_run( options, package_name ) :
     else :
 
         output_file = '%s/%s' %(options.outputDir, options.outputFile )
-        write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath ) 
+        write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath, options.sample ) 
         command = make_exe_command( exe_path, options.confFileName )
 
         # Stop here if not running
@@ -435,7 +435,7 @@ def generate_multiprocessing_commands( file_evt_list, alg_list, exe_path, option
         if not os.path.isdir( outputDir ) :
             os.makedirs( outputDir )
         
-        write_config(alg_list, conf_file, options.treeName, outputDir, options.outputFile, [file_split], options.storagePath, idx )
+        write_config(alg_list, conf_file, options.treeName, outputDir, options.outputFile, [file_split], options.storagePath, options.sample, idx )
         commands.append( make_exe_command( exe_path, conf_file ) )
 
     return commands
@@ -514,7 +514,7 @@ def get_file_evt_map( input_files, nsplit, nFilesPerJob, treeName ) :
 
     return split_files_evt_match
 
-def write_config( alg_list, filename, treeName, outputDir, outputFile, files_list, storage_path, start_idx=0 ) :
+def write_config( alg_list, filename, treeName, outputDir, outputFile, files_list, storage_path, sample, start_idx=0 ) :
 
     cfile = open( filename, 'w')
 
@@ -536,6 +536,8 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
     cfile.write( 'outputFile : %s\n' %( outputFile ) )
     if storage_path != 'None' :
         cfile.write( 'storagePath : %s\n' %storage_path )
+    if sample is not None :
+        cfile.write( 'sample : %s\n' %sample )
 
     cfile.write( '__Modules__\n' )
 

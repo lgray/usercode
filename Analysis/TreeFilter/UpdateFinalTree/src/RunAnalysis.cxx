@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
 void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
           std::vector<ModuleConfig> & configs, const CmdOptions & options,
-          int minevt, int maxevt ) const {
+          int minevt, int maxevt ) {
 
     // *************************
     // initialize trees
@@ -55,8 +55,8 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     // Declare Branches
     // *************************
 
-    outtree->Branch("mu_pt25_n"        , &OUT::mu_pt25_n        , "mu_pt25_n/I"   );
-    outtree->Branch("el_pt25_n"        , &OUT::el_pt25_n        , "el_pt25_n/I"   );
+    //outtree->Branch("mu_pt25_n"        , &OUT::mu_pt25_n        , "mu_pt25_n/I"   );
+    //outtree->Branch("el_pt25_n"        , &OUT::el_pt25_n        , "el_pt25_n/I"   );
     outtree->Branch("EventWeight"      , &OUT::EventWeight      , "EventWeight/F" );
 
     // *************************
@@ -95,7 +95,7 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
 
 }
 
-bool RunModule::ApplyModule( ModuleConfig & config, const CmdOptions & options) const {
+bool RunModule::ApplyModule( ModuleConfig & config, const CmdOptions & options) {
 
     // This bool is used for filtering
     // If a module implements an event filter
@@ -138,7 +138,7 @@ bool RunModule::ApplyModule( ModuleConfig & config, const CmdOptions & options) 
 //
 // Examples :
 
-void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & options ) const {
+void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & options ) {
 
     OUT::EventWeight = 1.0;
 
@@ -170,10 +170,46 @@ void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & option
         return;
     }
 
+    if( !options.sample.empty() ) { // if the string is not empty, then try to match
+        
+        // if no match, then return, otherwise get the histo
+        if( options.sample.find( sample_key ) == std::string::npos ) {
+            return;
+        }
 
+        // check if the file has already been opened.  If not, open it and get the histogram
+        if( rfile == 0 ) {
 
+            rfile = TFile::Open( root_file.c_str() );
+            rhist = dynamic_cast<TH1F*>(rfile->Get( hist_name.c_str() ) );
+            rfile->Close();
+            rfile=0;
 
+        }
 
+        // Require two electrons
+        if( OUT::el_n != 2 ) return;
+
+        std::vector<float> scale_factors;
+        for( int i = 0; i < OUT::el_n; ++i ) {
+            float pt = OUT::el_pt->at(i);
+
+            scale_factors.push_back(rhist->GetBinContent( rhist->FindBin( pt ) ));
+        }
+
+        // the probability for either the first or the second electron to fake is
+        // determined by constructing the total probability
+        // 1 = P(No fake, No fake) + P( one fake ) + P( both fakes )
+        // P( one fake ) = 1 - P(No fake, No fake) - P( both fake )
+        // P( one fake ) = 1 - ( 1 - sf1 )*(1-sf2) - sf1*sf2
+        // P( one fake ) = 1 - ( 1 - sf1 - sf2 + sf1*sf2 ) - sf1*sf2
+        // P( one fake ) = sf1 + sf2 -2*sf1*sf2
+        float event_factor = scale_factors[0] + scale_factors[1] - 2.*scale_factors[0]*scale_factors[1];
+        std::cout << "Scale factor 1 = " << scale_factors[0] << " scale factor 2 = " << scale_factors[1] << " event_factor = " << event_factor << std::endl;
+
+        OUT::EventWeight *= event_factor;
+    }
+}
 
 void RunModule::CalcEventVars( ModuleConfig & config ) const {
 
@@ -367,3 +403,9 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
 
 }
 
+
+RunModule::RunModule() :
+    rfile(0),
+    rhist(0)
+{
+}

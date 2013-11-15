@@ -7,7 +7,7 @@ def get_remove_filter() :
         If both filters are used, all branches in keep_filter are used
         except for those in remove_filter """
 
-    return []
+    return ['.*']
 
 def get_keep_filter() :
     """ Define list of regex strings to filter input branches to retain in the output.  
@@ -21,16 +21,17 @@ def get_keep_filter() :
 def config_analysis( alg_list ) :
     """ Configure analysis modules. Order is preserved """
 
-    alg_list.append( Filter('CalcEventVars') )
+    
+    # for complicated configurations, define a function
+    # that returns the Filter object and append it to the
+    # alg list.  Otherwise you can directly append 
+    # a Filter object to the list
+    # There is no restriction on the naming or inputs to these funtions
+    filter_event = Filter('FilterEvent')
+    filter_event.cut_n_elph = ' == 2 '
 
-    #alg_list.append( add_Z_event_weight() )
+    alg_list.append( filter_event )
 
-def add_Z_event_weight() :
+    alg_list.append( Filter( 'MakeNtuple' ) )
 
-    filt = Filter('AddEventWeight')
 
-    filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/UpdateFinalTree/data/EFakeGammaScaleFactorPt.root' )
-    filt.add_var( 'hist_name', 'pt')
-    file.add_var( 'sample_key', 'DYJetsToLL' )
-
-    return filt

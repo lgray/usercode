@@ -1,0 +1,7 @@
+files : [/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output//DiLepton_2013_11_07/job_summer12_ttg/Job_0000/tree.root,/afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output//LepGamma_2013_11_06/job_summer12_ttg/Job_0000/tree.root][0:(0-8515),];
+treeName : ggNtuplizer/EventTree
+outputDir : /afs/cern.ch/work/j/jkunkle/private/CMS/Wgamgam/Output/TAndP_2013_11_11/job_summer12_ttg
+outputFile : tree.root
+__Modules__
+FilterEvent : cut_n_elph [ == 2 ] ; 
+MakeNtuple : 

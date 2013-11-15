@@ -119,6 +119,7 @@ namespace OUT {
     std::vector<float>  *jet_eta;
     std::vector<float>  *jet_phi;
     std::vector<float>  *jet_e;
+    std::vector<float>  *jet_ph_minDR;
 
     Float_t             avgPU; 
 

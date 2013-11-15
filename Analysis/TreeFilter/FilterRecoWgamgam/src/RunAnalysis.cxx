@@ -117,6 +117,7 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     OUT::jet_eta            = 0;
     OUT::jet_phi            = 0;
     OUT::jet_e              = 0;
+    OUT::jet_ph_minDR       = 0;
     
     outtree->Branch("el_n"               , &OUT::el_n  , "el_n/I"                        );
     outtree->Branch("mu_n"               , &OUT::mu_n  , "mu_n/I"                        );
@@ -197,6 +198,7 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("jet_eta"           , &OUT::jet_eta                                  );
     outtree->Branch("jet_phi"           , &OUT::jet_phi                                  );
     outtree->Branch("jet_e"             , &OUT::jet_e                                    );
+    outtree->Branch("jet_ph_minDR"      , &OUT::jet_ph_minDR                             );
 
     outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                        );
 
@@ -734,6 +736,7 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
     OUT::jet_phi       -> clear();
     OUT::jet_e         -> clear();
     OUT::jet_n          = 0;
+    OUT::jet_ph_minDR  -> clear();
 
     for( int idx = 0; idx < IN::nJet; ++idx ) {
         
@@ -767,7 +770,8 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
         // don't continue if the jet should be rejected
         if( !keep_jet ) continue;
 
-        if( config.HasCut( "cut_jet_ph_dr" ) ) {
+        float min_dr = 100.0;
+        //if( config.HasCut( "cut_jet_ph_dr" ) ) {
             for( int pidx = 0; pidx < OUT::ph_n; pidx++ ) {
                 TLorentzVector phlv;
                 phlv.SetPtEtaPhiE( OUT::ph_pt->at(pidx), 
@@ -778,9 +782,12 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
 
                 //delta R 
                 float dr = phlv.DeltaR( jetlv );
+                if( dr < min_dr ) {
+                    min_dr = dr;
+                }
                 if( !config.PassFloat( "cut_jet_ph_dr", dr ) ) keep_jet = false;
             }
-        }
+        //}
         // don't continue if the jet should be rejected
         if( !keep_jet ) continue;
 
@@ -806,6 +813,7 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
         OUT::jet_eta       -> push_back(eta);
         OUT::jet_phi       -> push_back(phi);
         OUT::jet_e         -> push_back(en);
+        OUT::jet_ph_minDR  -> push_back(min_dr);
         OUT::jet_n++;
     }
             

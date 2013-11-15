@@ -72,6 +72,8 @@ class Sample :
         # when clear_all is called
         self.temporary = False
 
+        self.failed_draw = False
+
 
     def AddFiles( self, treeName, files ) :
         """ Add one or more files and grab the tree named treeName """
@@ -618,7 +620,6 @@ class SampleManager :
         for samp in reversed_samples :              
             samp.hist.SetFillColor( samp.color )
             samp.hist.SetLineColor( ROOT.kBlack )
-            print 'Add histogram ', samp.name
             self.curr_stack.Add(samp.hist, 'HIST')
 
         for samp in self.get_signal_samples() :
@@ -636,17 +637,20 @@ class SampleManager :
 
         # make the legend
         # In placing the legend move the bottom down 0.05 for each entry
-        step = len(self.stack_order)
+        # calculate the step using only the samples that were drawn
+        drawn_samples = [ samp.name for samp in self.get_samples( self.stack_order ) if not samp.failed_draw ]
+        step = len(drawn_samples)
         self.curr_legend = self.create_standard_legend(step, doratio)
 
         if data_samp :
             self.curr_legend.AddEntry(data_samp[0].hist, data_samp[0].legendName, 'PE')
 
-        for samp in self.get_samples(self.stack_order) :
+        for samp in self.get_samples(drawn_samples) :
             self.curr_legend.AddEntry(samp.hist, samp.legendName,  'F')
 
         for samp in self.get_signal_samples() :
-            self.curr_legend.AddEntry(samp.hist, samp.legendName, 'L')
+            if samp in drawn_samples :
+                self.curr_legend.AddEntry(samp.hist, samp.legendName, 'L')
 
 
     #----------------------------------------------------
@@ -821,6 +825,9 @@ class SampleManager :
         else :
             if sample.chain is not None :
                 sample.chain.Draw(varexp + ' >> ' + histname, full_selection, 'goff' )
+                sample.failed_draw=False
+            else :
+                sample.failed_draw=True
 
         # account for overflow and underflow
         nbins       = thishist.GetNbinsX()

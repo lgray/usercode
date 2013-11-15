@@ -42,7 +42,7 @@ def get_jet_filter( do_hists = False ) :
 
     # redo overlap rm with photons and muons
     filt.cut_jet_ele_dr = ' > 0.4 '
-    filt.cut_jet_ph_dr = ' > 0.4 '
+    #filt.cut_jet_ph_dr = ' > 0.4 '
     filt.cut_jet_mu_dr = ' > 0.4 '
 
     filt.do_cutflow = False
