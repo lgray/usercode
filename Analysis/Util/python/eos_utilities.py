@@ -27,7 +27,7 @@ def parse_eos_dir(path, DEBUG=False) :
     #lines = os.popen("xrd hn.at3f dirlist "+path).readlines()
     #output = str("").join(lines)
 
-    eos = '/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select'
+    eos = '/afs/cern.ch/project/eos/installation/0.3.4/bin/eos.select'
 
     # get directory contents
     cmd = [eos, 'ls -l', path+'/']

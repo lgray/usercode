@@ -13,10 +13,10 @@ def config_analysis( alg_list ) :
     alg_list.append( build_electron( do_cutflow=False, do_hists=False ) )
     alg_list.append( build_muon( do_cutflow=True, do_hists=True) )
 
-    # filter out a lepton 
-    filter_evt = Filter( 'FilterEvent' )
-    filter_evt.cut_mu_n = ' > 0 '
-    alg_list.append(filter_evt)
+    ## filter out a lepton 
+    #filter_evt = Filter( 'FilterEvent' )
+    #filter_evt.cut_mu_n = ' > 0 '
+    #alg_list.append(filter_evt)
 
     alg_list.append( build_photon( do_cutflow=True, do_hists=True) )
     alg_list.append( build_jet( do_cutflow=False, do_hists=False ) )

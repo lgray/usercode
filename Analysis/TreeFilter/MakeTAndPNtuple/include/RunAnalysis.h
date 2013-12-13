@@ -26,7 +26,9 @@ class RunModule : public virtual RunModuleBase {
         // The run function must exist and be defined exactly as this
         // because it is defined in RunModuleBase 
         // in src/RunModule.cxx all the analysis is defind in this RunModule function
-        void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
+        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) ;
+        bool execute( std::vector<ModuleConfig> & config ) ;
+        void finalize( ) {};
 
         // The ApplyModule function calls any other module defined below
         // in src/RunModule.cxx.  This funciton is not strictly required
@@ -36,8 +38,10 @@ class RunModule : public virtual RunModuleBase {
         // There is no restriction on the naming
         // return values, or inputs to these functions, but
         // you must of course handle them in the source file
-        void MakeNtuple ( ModuleConfig & config, TTree* outtree  ) const;
+        void MakeNtuple ( ModuleConfig & config ) const;
         bool FilterEvent( ModuleConfig & config ) const;
+
+        TTree * outtree;
 
 };
 

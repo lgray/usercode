@@ -27,19 +27,16 @@ def main() :
 
 def check_dataset_completion( originalDS, filteredDS, treeNameOrig=None, treeNameFilt=None, histNameOrig=None, histNameFilt=None, fileKeyOrig=None, fileKeyFilt=None ) :
 
-    print 'treeNameOrig', treeNameOrig
-    print 'treeNameFilt', treeNameFilt
-    print 'histNameOrig', histNameOrig
-    print 'histNameFilt', histNameFilt
-
     assert treeNameOrig is not None or histNameOrig is not None, 'Must provide a histogram or tree name for original samples'
     assert treeNameFilt is not None or histNameFilt is not None, 'Must provide a histogram or tree name for filtered samples'
 
-    assert not (treeNameOrig is not None and histNameOrig is not None), 'Must provide a histogram or tree name for original samples, not both'
-    assert not (treeNameFilt is not None and histNameFilt is not None), 'Must provide a histogram or tree name for filtered samples, not both'
+    #assert not (treeNameOrig is not None and histNameOrig is not None), 'Must provide a histogram or tree name for original samples, not both'
+    #assert not (treeNameFilt is not None and histNameFilt is not None), 'Must provide a histogram or tree name for filtered samples, not both'
 
-    orig_nevt = 0
-    filt_nevt = 0
+    orig_nevt_tree = 0
+    orig_nevt_hist = 0
+    filt_nevt_tree = 0
+    filt_nevt_hist = 0
     for top, dirs, files, sizes in eosutil.walk_eos( originalDS ) :
         for file in files :
 
@@ -48,12 +45,12 @@ def check_dataset_completion( originalDS, filteredDS, treeNameOrig=None, treeNam
             ofile = ROOT.TFile.Open( 'root://eoscms/' + top+'/'+file )
             if treeNameOrig is not None :
                 otree = ofile.Get(treeNameOrig)
-                orig_nevt += otree.GetEntries()
+                orig_nevt_tree += otree.GetEntries()
             if histNameOrig is not None :
                 ohist = ofile.Get(histNameOrig)
-                orig_nevt += ohist.GetBinContent(1)
+                orig_nevt_hist += ohist.GetBinContent(1)
 
-    if not orig_nevt :
+    if not orig_nevt_tree and not orig_nevt_hist  :
         print 'Did not get any original events.  Check the path'
         return
         
@@ -66,12 +63,12 @@ def check_dataset_completion( originalDS, filteredDS, treeNameOrig=None, treeNam
             ofile = ROOT.TFile.Open( 'root://eoscms/' + top+'/'+file )
             if treeNameFilt is not None :
                 otree = ofile.Get(treeNameFilt)
-                filt_nevt += otree.GetEntries()
+                filt_nevt_tree += otree.GetEntries()
             if histNameFilt is not None :
                 ohist = ofile.Get(histNameFilt)
-                filt_nevt += ohist.GetBinContent(1)
+                filt_nevt_hist += ohist.GetBinContent(1)
 
-    return orig_nevt, filt_nevt
+    return orig_nevt_tree, orig_nevt_hist, filt_nevt_tree, filt_nevt_hist
 
 
 

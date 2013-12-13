@@ -1,0 +1,7 @@
+files : [test/tree.root][0:(0-1000),];
+treeName : ggNtuplizer/EventTree
+outputDir : /tmp
+outputFile : tree.root
+__Modules__
+BuildPhoton : cut_abseta [ < 2.5] ; cut_abseta_crack ![ > 1.479 & < 1.566 ] ; cut_pt [ > 15 ] ; cut_sigmaIEIE [ < 0.011 ] ; do_cutflow [] ; hist [cut_pt,100,0.000000,500.000000];hist [cut_abseta,50,0.000000,5.000000];hist [cut_abseta_crack,50,0.000000,5.000000];hist [cut_sigmaIEIE,50,0.000000,0.050000];
+FilterEvent : cut_nPho [ > 0 ] ; 

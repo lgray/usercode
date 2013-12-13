@@ -282,7 +282,7 @@ class SampleManager :
         return weightMap
 
     #--------------------------------
-    def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False, useXSFile=True) :
+    def AddSample(self, name, path=None, filekey=None, isData=False, scale=None, isSignal=False, drawRatio=False, plotColor=ROOT.kBlack, lineColor=None, disableDraw=False, useXSFile=False) :
         """ Create an entry for this sample """
 
         # get all root files under this sample
@@ -320,8 +320,9 @@ class SampleManager :
                 thisscale *= scale
 
             if useXSFile :
-                if name in self.weightMap :
+                if name in self.weightMap  :
                     thisscale *= self.weightMap[name]
+                    print 'Update scale for %s' %name
 
             thisSample = Sample(name, isActive=(not disableDraw), isData=isData, isSignal=isSignal, color=plotColor, drawRatio=drawRatio, scale=thisscale)
             thisSample.AddFiles( self.treeName, input_files )
@@ -372,7 +373,7 @@ class SampleManager :
                             input_files.append(top+'/'+file)
                             
                 else : # local directories
-                    for top, dirs, files in os.walk( base_path +'/' + subpath ) :
+                    for top, dirs, files in os.walk( base_path +'/' + subpath , followlinks=True) :
                         for file in files :
                             if filekey is not None :
                                 if file.count(filekey) == 0 : 
@@ -766,6 +767,14 @@ class SampleManager :
             samp.hist.Draw(drawcmd+'goff')
 
         if doratio :
+            #print 'created_samples[0]'
+            #print created_samples[0].name
+            #created_samples[0].hist.Draw()
+            #raw_input('continue')
+            #print 'created_samples[1]'
+            #print created_samples[1].name
+            #created_samples[1].hist.Draw()
+            #raw_input('continue')
             rname = created_samples[0].name + '_ratio'
             self.curr_ratios['ratio'] = Sample( rname, isData=False )
             self.curr_ratios['ratio'].hist = created_samples[0].hist.Clone( rname )
@@ -1032,7 +1041,8 @@ class SampleManager :
         #        self.curr_legend.SetY2( self.curr_legend.GetY2()*1.05 )
         #        self.curr_legend.SetY1( self.curr_legend.GetY1()*0.95 )
             
-        self.curr_legend.Draw()
+        if self.curr_legend is not None :
+            self.curr_legend.Draw()
 
         if not noAtlasLabel :
             atlaslabel = ROOT.TLatex()
@@ -1159,28 +1169,28 @@ class SampleManager :
             print 'No histograms were created'
             return
 
-        hists_tmp = list(created_hists) # create a temporary list that will be modified
+        #hists_tmp = list(created_hists) # create a temporary list that will be modified
 
-        numsample_name = hists_tmp[ratiosamp]
-        numsample = self.get_samples(numsample_name)[0]
-        hists_tmp.pop(ratiosamp)
-        other_samples = self.get_samples(hists_tmp)
-        for idx, samp in enumerate(other_samples) :
-            if idx == 0 :
-                name = 'ratio'
-            else :
-                name = 'ratio' + str(idx)
+        #numsample_name = hists_tmp[ratiosamp]
+        #numsample = self.get_samples(numsample_name)[0]
+        #hists_tmp.pop(ratiosamp)
+        #other_samples = self.get_samples(hists_tmp)
+        #for idx, samp in enumerate(other_samples) :
+        #    if idx == 0 :
+        #        name = 'ratio'
+        #    else :
+        #        name = 'ratio' + str(idx)
 
-            self.curr_ratios[name] = Sample( name, isData=False )
-            self.curr_ratios[name].hist = samp.hist.Clone('ratio')
-            divide_scale = 1.0
-            if normalize :
-                self.curr_ratios[name].hist.Divide( self.curr_ratios[name].hist, samp.hist, 1.0/self.curr_ratios[name].hist.Integral(), 1.0/samp.hist.Integral() )
-            else :
-                self.curr_ratios[name].hist.Divide( self.curr_ratios[name].hist, samp.hist )
+        #    self.curr_ratios[name] = Sample( name, isData=False )
+        #    self.curr_ratios[name].hist = samp.hist.Clone('ratio')
+        #    divide_scale = 1.0
+        #    if normalize :
+        #        self.curr_ratios[name].hist.Divide( self.curr_ratios[name].hist, samp.hist, 1.0/self.curr_ratios[name].hist.Integral(), 1.0/samp.hist.Integral() )
+        #    else :
+        #        self.curr_ratios[name].hist.Divide( self.curr_ratios[name].hist, samp.hist )
 
-            if samp.isSignal :
-                self.curr_ratios[name].isSignal = True
+        #    if samp.isSignal :
+        #        self.curr_ratios[name].isSignal = True
 
         # make the legend
         step = len(created_hists)
@@ -1222,9 +1232,15 @@ class SampleManager :
 
         samp.hist.Draw(drawopts)
 
-    def CompareVars( self, varexps, selection, sample_name, histpars=None, same=False, normalize=False, doratio=False, ylabel=None, xlabel=None, colors=[], labels=[] ) :
+    def CompareVars( self, varexps, selections, sample_names, histpars=None, same=False, normalize=False, doratio=False, ylabel=None, xlabel=None, colors=[], labels=[] ) :
 
         if not isinstance( varexps, list ) : varexps = [varexps]
+        if not isinstance( selections, list ) : selections= [selections]
+        if not isinstance( sample_names, list ) : sample_names= [sample_names]
+
+        if len(selections) < len(varexps) and len(selections)==1 :
+            selections = [selections[0]]*len(varexps)
+
 
         if len(colors) != len( varexps ) :
             if colors :
@@ -1237,9 +1253,15 @@ class SampleManager :
                 print 'Size of labels does not match size of vars input!'
             labels = varexps
 
-        sample = self.get_samples(sample_name)[0]
+        samples = []
+        for sn in sample_names :
+            samples.append( self.get_samples( sn )[0] )
+
+        if len(samples) < len(varexps) and len(samples)==1 :
+            samples = [samples[0]]*len(varexps)
+
         created_hists = []
-        for var in varexps :
+        for var, selection, sample in zip(varexps, selections, samples) :
             self.clear_hists()
             newsamp = copy.copy(sample)
             newsamp.hist = None
@@ -1247,6 +1269,12 @@ class SampleManager :
             created_hists.append(newsamp.name)
             self.create_hist( newsamp, var, selection, histpars)
             self.curr_hists[newsamp.name] = newsamp.hist.Clone(var)
+
+        if doratio :
+            self.curr_ratios['ratio'] = Sample( 'ratio', isData=False )
+            self.curr_ratios['ratio'].hist =self.curr_hists[created_hists[0]].Clone('ratio') 
+            self.curr_ratios['ratio'].hist.Divide(self.curr_hists[created_hists[1]])
+
 
         self.curr_canvases['same'] = ROOT.TCanvas('same', '')
         for idx, name in enumerate( created_hists ) :
@@ -1268,13 +1296,13 @@ class SampleManager :
 
         # make the legend
         # In placing the legend move the bottom down 0.05 for each entry
-        step = len(varexps)
-        self.curr_legend = self.create_standard_legend(step, doratio)
+        #step = len(varexps)
+        #self.curr_legend = self.create_standard_legend(step, doratio)
 
-        for var, lab in zip( varexps, labels ) :
-            histname = '%s_%s' %(sample.name, var)
-            self.curr_legend.AddEntry(self.curr_hists[histname], lab, 'L' )
-            
+        #for var, lab in zip( varexps, labels ) :
+        #    histname = '%s_%s' %(sample.name, var)
+        #    self.curr_legend.AddEntry(self.curr_hists[histname], lab, 'L' )
+        #    
         self.DrawCanvas(self.curr_canvases['same'], ylabel=ylabel, xlabel=xlabel, doratio=doratio)
 
     def DumpStack( self ) :

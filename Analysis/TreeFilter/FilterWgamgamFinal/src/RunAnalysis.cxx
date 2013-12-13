@@ -18,6 +18,8 @@
 
 #include "TFile.h"
 
+
+
 int main(int argc, char **argv)
 {
 
@@ -36,10 +38,8 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
-          std::vector<ModuleConfig> & configs, const CmdOptions & options,
-          int minevt, int maxevt ) const {
-
+void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
+                            const CmdOptions & options ) {
     // *************************
     // initialize trees
     // *************************
@@ -90,39 +90,22 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("pt_secondLepton"  , &OUT::pt_secondLepton  , "pt_secondLepton/F"    );
     outtree->Branch("pt_thirdLepton"   , &OUT::pt_thirdLepton   , "pt_thirdLepton/F"     );
 
-    // *************************
-    // Begin loop over the input tree
-    // *************************
-    if( maxevt == 0 ) {
-        maxevt = chain->GetEntries();
+    outtree->Branch("m_nearestToZ"   , &OUT::m_nearestToZ   , "m_nearestToZ/F"     );
+
+}
+
+bool RunModule::execute( std::vector<ModuleConfig> & configs ) {
+
+    // In BranchInit
+    CopyInputVarsToOutput();
+
+    // loop over configured modules
+    bool save_event = true;
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+        save_event &= ApplyModule( mod_conf );
     }
 
-    int n_saved = 0;
-    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
-    for( int cidx = minevt; cidx < maxevt; cidx++ ) {
-
-        if( cidx % 10000 == 0 ) {
-          std::cout << "Processed " << cidx << " entries " << std::endl;
-        }
-
-        chain->GetEntry(cidx);
-
-        // In BranchInit
-        CopyInputVarsToOutput();
-
-        // loop over configured modules
-        bool save_event = true;
-        BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
-            save_event &= ApplyModule( mod_conf );
-        }
-
-        if( save_event ) {
-            outtree->Fill();
-            n_saved++;
-        }
-    }
-
-    std::cout << "Wrote " << n_saved << " events" << std::endl;
+    return save_event;
 
 }
 
@@ -144,6 +127,9 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     //
     if( config.GetName() == "FilterElectron" ) {
         FilterElectron( config );
+    }
+    if( config.GetName() == "FilterMuon" ) {
+        FilterMuon( config );
     }
     if( config.GetName() == "FilterPhoton" ) {
         FilterPhoton( config );
@@ -191,6 +177,7 @@ void RunModule::FilterElectron( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::el_n; idx++ ) {
 
+        if( !config.PassBool( "cut_el_pt", IN::el_pt->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_loose", IN::el_passLoose->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_medium", IN::el_passMedium->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_tight", IN::el_passTight->at(idx)) ) continue;
@@ -209,7 +196,8 @@ void RunModule::FilterPhoton( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::ph_n; idx++ ) {
 
-        if( !config.PassBool( "cut_ph_eleVeto", IN::ph_eleVeto->at(idx)) ) continue;
+        if( !config.PassFloat( "cut_ph_pt", IN::ph_pt->at(idx)) ) continue;
+        //if( !config.PassBool( "cut_ph_eleVeto", IN::ph_eleVeto->at(idx)) ) continue;
         if( !config.PassBool( "cut_ph_loose", IN::ph_passLoose->at(idx)) ) continue;
         if( !config.PassBool( "cut_ph_medium", IN::ph_passMedium->at(idx)) ) continue;
         if( !config.PassBool( "cut_ph_tight", IN::ph_passTight->at(idx)) ) continue;
@@ -236,8 +224,21 @@ void RunModule::FilterPhoton( ModuleConfig & config ) const {
 
 }
 
+void RunModule::FilterMuon( ModuleConfig & config ) const {
 
+    OUT::mu_n = 0;
+    ClearOutputPrefix("mu_");
 
+    for( int idx = 0; idx < IN::mu_n; idx++ ) {
+
+        if( !config.PassBool( "cut_mu_pt", IN::mu_pt->at(idx)) ) continue;
+
+        CopyPrefixIndexBranchesInToOut( "mu_", idx );
+        OUT::mu_n++;
+
+    }
+
+}
 
 void RunModule::CalcEventVars( ModuleConfig & config ) const {
 
@@ -273,6 +274,7 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
     OUT::pt_leplepph      = 0;
     OUT::pt_secondLepton  = 0;
     OUT::pt_thirdLepton   = 0;
+    OUT::m_nearestToZ     = 0;
 
     TLorentzVector metlv;
     metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
@@ -424,8 +426,31 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
         OUT::m_4lep = ( leptons[0] + leptons[1] + leptons[2] + leptons[3] ).M();
     }
 
-}
+    std::vector<TLorentzVector> objects;
+    objects.insert(objects.begin(), leptons.begin(), leptons.end() );
+    objects.insert(objects.begin(), photons.begin(), photons.end() );
 
+    if( objects.size() > 2 ) {
+        std::vector<float> masses;
+        for( unsigned i = 0; i < objects.size(); ++i ) {
+            for( unsigned j = i+1; j < objects.size(); ++j ) {
+                masses.push_back( (objects[i] + objects[j]).M() );
+            }
+        }
+        masses.push_back( (objects[0]+objects[1]+objects[2]).M() );
+
+        std::vector<std::pair<float, int > > sorted_masses;
+        for( unsigned i = 0; i < masses.size() ; ++i ) {
+            sorted_masses.push_back( std::make_pair( std::fabs( 91.1876 - masses[i] ), i ) );
+        }
+        //sort with the smallest first
+        std::sort(sorted_masses.begin(), sorted_masses.end());
+        int nearestZidx = sorted_masses[0].second;
+        OUT::m_nearestToZ = masses[nearestZidx];
+
+    }
+
+}
 
 bool RunModule::FilterEvent( ModuleConfig & config ) const {
 
@@ -493,6 +518,7 @@ void RunModule::FilterJet( ModuleConfig & config ) const {
         if( !keep_jet ) continue;
 
         for( int pidx = 0; pidx < OUT::ph_n; pidx++ ) {
+
             TLorentzVector phlv;
             phlv.SetPtEtaPhiE( OUT::ph_pt->at(pidx), 
                                OUT::ph_eta->at(pidx),

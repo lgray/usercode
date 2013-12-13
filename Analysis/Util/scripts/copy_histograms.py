@@ -58,7 +58,7 @@ def main() :
     outfile.Close()
 
     if copy_to_eos :
-        os.system('/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select cp /tmp/histograms.root %s/histograms.root' %options.output ) 
+        os.system('/afs/cern.ch/project/eos/installation/0.3.4/bin/eos.select cp /tmp/histograms.root %s/histograms.root' %options.output ) 
         
 
 

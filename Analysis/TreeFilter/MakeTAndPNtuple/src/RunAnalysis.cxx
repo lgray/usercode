@@ -36,9 +36,11 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
-          std::vector<ModuleConfig> & configs, const CmdOptions & options,
-          int minevt, int maxevt ) const {
+void RunModule::initialize( TChain * chain, TTree * _outtree, TFile *outfile,
+                            const CmdOptions & options ) {
+
+    // store the output tree locally
+    outtree = _outtree;
 
     // *************************
     // initialize trees
@@ -65,39 +67,28 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("m_tagprobe"     , &OUT::m_tagprobe    );
 
 
-    // *************************
-    // Begin loop over the input tree
-    // *************************
-    if( maxevt == 0 ) {
-        maxevt = chain->GetEntries();
+}
+bool RunModule::execute( std::vector<ModuleConfig> & configs ) {
+
+    // first run the event filter
+    bool save_event = true;
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+        if( mod_conf.GetName() == "FilterEvent" ) {
+            save_event &= FilterEvent( mod_conf );
+        }
     }
 
-    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
-    for( int cidx = minevt; cidx < maxevt; cidx++ ) {
-
-        if( cidx % 10000 == 0 ) {
-          std::cout << "Processed " << cidx << " entries " << std::endl;
-        }
-
-        chain->GetEntry(cidx);
-
-        // first run the event filter
-        bool save_event = true;
+    // if the event passes the filter, run the ntuple making
+    if( save_event ) {
         BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
-            if( mod_conf.GetName() == "FilterEvent" ) {
-                save_event &= FilterEvent( mod_conf );
-            }
-        }
-
-        // if the event passes the filter, run the ntuple making
-        if( save_event ) {
-            BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
-                if( mod_conf.GetName() == "MakeNtuple" ) {
-                    MakeNtuple( mod_conf, outtree );
-                }
+            if( mod_conf.GetName() == "MakeNtuple" ) {
+                MakeNtuple( mod_conf );
             }
         }
     }
+    
+    // always return false, handle the tree filling locally
+    return false;
 
 }
 
@@ -109,7 +100,7 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
 // ***********************************
 //
 
-void RunModule::MakeNtuple( ModuleConfig & config, TTree * outtree ) const {
+void RunModule::MakeNtuple( ModuleConfig & config ) const {
 
 
     // collect objects

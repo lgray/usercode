@@ -57,6 +57,8 @@ def ParseArgs() :
     
     parser.add_argument('--loglevel', dest='loglevel', default='INFO', help='Log level, DEBUG, INFO, WARNING, ERROR, CRITICAL. Default is INFO')
     
+    parser.add_argument('--moduleArgs', dest='moduleArgs', default=None, help='Arguments to pass to module.  Should be in the form of a dictionary')
+    
     return parser.parse_args()
 
 def config_and_run( options, package_name ) :
@@ -143,10 +145,18 @@ def config_and_run( options, package_name ) :
     # absolute path
     exe_path = '%s/TreeFilter/%s/RunAnalysis' %(workarea, package_name)
 
-    run_commands = []
+
+    #gather module arguments
+    modargs = {}
+    if options.moduleArgs is not None :
+        modargs = eval( options.moduleArgs )
 
     alg_list = []
-    ImportedModule.config_analysis(alg_list)
+    try :
+        ImportedModule.config_analysis(alg_list, modargs)
+    except TypeError : 
+        ImportedModule.config_analysis(alg_list)
+
 
     # --------------------------
     # Handle file splitting.
@@ -159,8 +169,8 @@ def config_and_run( options, package_name ) :
 
     file_evt_list = get_file_evt_map( input_files, options.nsplit, options.nFilesPerJob, options.treeName )
 
-    if options.nproc > 1 and options.nproc > len(file_evt_list) :
-        options.nproc = len(file_evt_list)
+    #if options.nproc > 1 and options.nproc > len(file_evt_list) :
+    #    options.nproc = len(file_evt_list)
 
     logging.info('********************************')
     logging.info('Will run a total of %d processes, %d at a time' %(len(file_evt_list), options.nproc) )
@@ -428,7 +438,20 @@ def make_exe_command( exe_path, conf_file ) :
 def generate_multiprocessing_commands( file_evt_list, alg_list, exe_path, options ) :
 
     commands = []
-    for idx, file_split in enumerate(file_evt_list) :
+    # if the number of files is less than 
+    # nproc, split the list so that it can be
+    # used for multiprocessing
+    file_evt_list_mod = []
+    if len(file_evt_list) < options.nproc : 
+        for entry in file_evt_list :
+            file = entry[0]
+            for evtrange in entry[1] :
+                file_evt_list_mod.append( (file, [evtrange]) )
+
+    if not file_evt_list_mod :
+        file_evt_list_mod = file_evt_list
+
+    for idx, file_split in enumerate(file_evt_list_mod) :
         jobid = 'Job_%04d' %idx
         outputDir = options.outputDir
         conf_file = '%s/%s_%s.%s' %(outputDir, options.confFileName.split('.')[0], jobid, '.'.join(options.confFileName.split('.')[1:]))
@@ -512,6 +535,8 @@ def get_file_evt_map( input_files, nsplit, nFilesPerJob, treeName ) :
     for flist, evtsplit in zip(split_files, files_evtsplit) :
         split_files_evt_match.append( (flist, evtsplit ))
 
+
+
     return split_files_evt_match
 
 def write_config( alg_list, filename, treeName, outputDir, outputFile, files_list, storage_path, sample, start_idx=0 ) :
@@ -555,7 +580,7 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
                 conf_string += '%s %s[%s] ; ' %(name, inv_str, val)
 
         for name, val in alg.vars.iteritems() :
-            conf_string += '%s [%s] ; ' %( name, val )
+            conf_string += 'data_%s [%s] ; ' %( name, val )
 
         if alg.do_cutflow :
             conf_string += 'do_cutflow [] ; '
@@ -866,8 +891,6 @@ def write_source_file(source_file_name, header_file_name, branches, keep_branche
             branch_setting.write('void Copy%sInToOutIndex( unsigned index, std::string  prefix ) { \n\n' %name)
             branch_setting.write('    std::string my_name = "%s";\n' %name)
             branch_setting.write('    std::size_t pos = my_name.find( prefix ); \n')
-            branch_setting.write('    std::size_t pos2 = my_name.find( "ph_sl" ); \n')
-            branch_setting.write('    if( pos2 != std::string::npos ) return; \n')
             branch_setting.write('    // if the filter is given only continue if its matched at the beginning \n' )
             branch_setting.write('    if( prefix != "" &&  pos != 0 ) return; \n' )
             branch_setting.write('    if( index >= IN::%s->size() ) {\n ' %name)
@@ -881,8 +904,6 @@ def write_source_file(source_file_name, header_file_name, branches, keep_branche
             branch_setting.write('void ClearOutput%s( std::string  prefix ) { \n\n' %name)
             branch_setting.write('    std::string my_name = "%s";\n' %name)
             branch_setting.write('    std::size_t pos = my_name.find( prefix ); \n')
-            branch_setting.write('    std::size_t pos2 = my_name.find( "ph_sl" ); \n')
-            branch_setting.write('    if( pos2 != std::string::npos ) return; \n')
             branch_setting.write('    // if the filter is given only continue if its matched at the beginning \n' )
             branch_setting.write('    if( prefix != "" &&  pos != 0 ) return; \n' )
             branch_setting.write('    //std::cout << "Clear varaible %s, prefix = " << prefix << std::endl; \n ' %name)

@@ -23,7 +23,7 @@ def config_analysis( alg_list ) :
 
     # lepton and photon filters must be run 
     # before the jet filter
-    #alg_list.append( get_electron_filter( 'medium' ) )
+    alg_list.append( get_electron_filter( 'medium' ) )
     alg_list.append( get_photon_filter( 'medium' ) )
     alg_list.append( get_jet_filter(do_hists=False) )
     
@@ -58,6 +58,7 @@ def get_electron_filter ( id ) :
 
     filt = Filter( 'FilterElectron' )
     setattr( filt, 'cut_el_%s' %id, 'True' )
+    filt.cut_el_pt = ' > 25'
 
     return filt
 
@@ -66,7 +67,9 @@ def get_photon_filter ( id ) :
     filt = Filter( 'FilterPhoton' )
     filt.cut_ph_eleVeto = ' == False'
     filt.cut_el_ph_dr = ' > 0.2 '
+    filt.cut_ph_pt = ' > 25'
     #setattr( filt, 'cut_ph_%s' %id, 'True' )
 
     return filt
+
 
