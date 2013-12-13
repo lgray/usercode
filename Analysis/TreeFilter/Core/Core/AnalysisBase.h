@@ -204,7 +204,9 @@ class RunModuleBase {
 
     public : 
 
-        virtual void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & configs, const CmdOptions & options, int minevt=0, int maxevt=0) = 0;
+        virtual void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) = 0;
+        virtual bool execute( std::vector<ModuleConfig> & configs ) = 0;
+        virtual void finalize( ) = 0;
 
 };
 
@@ -233,7 +235,7 @@ class AnaConfig {
 
 AnaConfig ParseConfig( const std::string & fname, CmdOptions & options );
 void ReadModuleLine( const std::string & line, AnaConfig& config);
-void ReadCut( const std::string & line, ModuleConfig& module);
+void ReadCut( std::string & line, ModuleConfig& module);
 void ParseHistPars( const std::string & line, ModuleConfig& module);
 void ParseDataEntry( const std::string & line, ModuleConfig& module);
 void ReadHeaderLine( const std::string & line, CmdOptions & options);

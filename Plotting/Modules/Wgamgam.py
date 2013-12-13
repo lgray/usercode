@@ -24,8 +24,8 @@ def config_samples(samples) :
     samples.AddSample('muon_2012c_PRv21'                 , path='job_muon_2012c_PRv21'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('muon_2012d_PRv1'                  , path='job_muon_2012d_PRv1'                  , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('muon_2012d_PRv11'                 , path='job_muon_2012d_PRv11'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, useXSFile=True );
-    #samples.AddSample('Zgammastar'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=False, useXSFile=True );
+    samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, scale=1.0 );
+    #samples.AddSample('Zgammastar'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=False, useXSFile=True, plotColor=ROOT.kCyan );
     samples.AddSample('LNuGG_FSR'               , path='job_summer12_LNuGG_FSR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('LNuGG_ISR'               , path='job_summer12_LNuGG_ISR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('WJetsToLNu1'             , path='job_summer12_WJetsToLNu1'             , filekey='tree.root', disableDraw=True, useXSFile=True );
@@ -59,6 +59,10 @@ def config_samples(samples) :
     samples.AddSample('ttg'                     , path='job_summer12_ttg'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('ttjets_1l'               , path='job_summer12_ttjets_1l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('ttjets_2l'               , path='job_summer12_ttjets_2l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
+    samples.AddSample('job_summer12_DYJetsToLLFFMultBinNew', path='job_summer12_DYJetsToLLFFMultBinNew',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
+    #samples.AddSample('DataTestOneBin', path='DataTestOneBin',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
+    #samples.AddSample('job_summer12_DYJetsToLLFFOneBin2', path='job_summer12_DYJetsToLLFFOneBin2',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
+    #samples.AddSample('job_summer12_DYJetsToLLFromLepGamma', path='job_summer12_DYJetsToLLFromLepGamma',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
 
     samples.AddSampleGroup( 'Data', legend_name='Data', 
                             input_samples = [
@@ -94,21 +98,21 @@ def config_samples(samples) :
     #                    ],
     #                       plotColor=ROOT.kYellow,
     #                      )
-    #samples.AddSampleGroup( 'Inclusive W', legend_name='Inclusive W', 
-    #                        input_samples = [
-    #                                         'WJetsToLNu1',
-    #                                         'WJetsToLNu2',
-    #                                        ],
-    #                       plotColor=ROOT.kPink,
-    #                      )
-
-    samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
+    samples.AddSampleGroup( 'Inclusive W', legend_name='Inclusive W', 
                             input_samples = [
-                                             'DYJetsToLL',
+                                             'WJetsToLNu1',
+                                             'WJetsToLNu2',
                                             ],
-                           plotColor=ROOT.kCyan,
-                           scale=0.887,
+                           plotColor=ROOT.kPink,
                           )
+
+    #samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
+    #                        input_samples = [
+    #                                         'DYJetsToLL',
+    #                                        ],
+    #                       plotColor=ROOT.kCyan,
+    #                       scale=0.887,
+    #                      )
 
     samples.AddSampleGroup( 'Wgamma', legend_name='W#gamma', 
                            input_samples = [

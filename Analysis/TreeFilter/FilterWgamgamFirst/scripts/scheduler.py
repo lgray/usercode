@@ -1,5 +1,6 @@
 import os
-base_ymaravin='/eos/cms/store/user/ymaravin/ggNtuples/'
+base_data='/eos/cms/store/group/phys_smp/ggNtuples/data'
+base_mc='/eos/cms/store/group/phys_smp/ggNtuples/mc'
 base_cmuko='/store/group/phys_egamma/cmkuo'
 job_conf = [
           #(base_mc1,'job_summer12_DYJetsToLL',400),
@@ -24,6 +25,7 @@ job_conf = [
           #(base_mc1,'job_summer12_gjet_pt40_doubleEM',100),
           #(base_mc1,'job_summer12_ttW',4),
           #(base_mc1,'job_summer12_ttZ',4),
+          #(base_cmuko, 'job_summer12_diphoton_box_25to250' , 10),
           #(base_mc1,'job_summer12_ttjets_1l',200),
           #(base_mc1,'job_summer12_ttjets_2l',200),
           #(base_mc2, 'job_summer12_WJetsToLNu1', 300),
@@ -36,33 +38,22 @@ job_conf = [
           #(base_mc2, 'job_summer12_tbar_t', 25),
           #(base_mc2, 'job_summer12_tbar_tW', 8),
 
-          (base_ymaravin, 'job_electron_2012a_Jan22rereco', 200),
-          #(base_data, 'job_1electron_2012b_Jul13rereco_run2', 20),
-          #(base_data, 'job_1electron_2012c_Aug24rereco', 50),
-          #(base_data, 'job_1electron_2012c_Dec11rereco', 20),
-          #(base_data, 'job_1electron_2012c_PRv2_part1', 250),
-          #(base_data, 'job_1electron_2012c_PRv2_part2', 450),
-          #(base_data, 'job_1electron_2012c_PRv2_part3', 2),
-          #(base_data, 'job_1electron_2012d_PRv1_part1', 300),
-          #(base_data, 'job_1electron_2012d_PRv1_part2', 500),
-          #(base_data, 'job_electron_2012a_Aug6rereco',  10),
-          #(base_data, 'job_electron_2012a_Jul13rereco', 100),
-          #(base_data, 'job_muon_2012a_Aug6rereco', 5),
-          #(base_data, 'job_muon_2012a_Jul13rereco', 40),
-          #(base_data, 'job_muon_2012b_Jul13rereco', 300),
-          #(base_data, 'job_muon_2012c_Aug24rereco', 30),
-          #(base_data, 'job_muon_2012c_Dec11rereco', 10),
-          #(base_data, 'job_muon_2012c_PRv2', 150),
-          #(base_data, 'job_muon_2012c_PRv21', 250),
-          #(base_data, 'job_muon_2012d_PRv1', 200),
-          #(base_data, 'job_muon_2012d_PRv11', 300),
+          #(base_data, 'job_muon_2012a_Jan22rereco', 50),
+          #(base_data, 'job_muon_2012b_Jan22rereco', 100),
+          #(base_data, 'job_muon_2012c_Jan22rereco', 200),
+          #(base_data, 'job_muon_2012d_Jan22rereco', 200),
+          #(base_data, 'job_electron_2012a_Jan22rereco', 100),
+          #(base_data, 'job_electron_2012b_Jan22rereco', 200),
+          #(base_data, 'job_electron_2012c_Jan2012rereco', 400),
+          (base_data, 'job_electron_2012d_Jan22rereco', 400),
 
 
 ]
 
-base_cmd = 'python scripts/filter.py  --files root://eoscms/%s/%s.root  --outputDir /tmp/jkunkle/%s  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfFilter.py --enableRemoveFilter --nsplit %d --storagePath /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesNew/%s ; python ../../Util/scripts/copy_histograms.py --file root://eoscms/%s/%s.root  --output /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesNew/%s'
+base_cmd = 'python scripts/filter.py  --files root://eoscms/%(base)s/%(job)s.root  --outputDir /tmp/jkunkle/%(job)s  --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfFilter.py --enableRemoveFilter --nsplit %(nsp)d --storagePath /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesDec13/%(job)s --confFileName analysis_config_%(job)s.txt --nproc 5 ; python ../../Util/scripts/copy_histograms.py --file root://eoscms/%(base)s/%(job)s.root  --output /eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesDec13/%(job)s'
 
 for base, name, nsp in job_conf :
 
-    command = base_cmd %( base, name, name, nsp, name, base, name, name ) 
+    command = base_cmd %{ 'base' : base, 'job' : name, 'nsp' : nsp } 
+    print command
     os.system( command )

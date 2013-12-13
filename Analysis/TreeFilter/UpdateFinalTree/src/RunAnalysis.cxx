@@ -36,10 +36,16 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
-          std::vector<ModuleConfig> & configs, const CmdOptions & options,
-          int minevt, int maxevt ) {
-
+void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
+                            const CmdOptions & _options ) {
+    
+    // *************************
+    // initialize random numbers
+    // *************************
+    rand = new TRandom3();
+    rand->SetSeed();
+       
+    
     // *************************
     // initialize trees
     // *************************
@@ -58,40 +64,29 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     //outtree->Branch("mu_pt25_n"        , &OUT::mu_pt25_n        , "mu_pt25_n/I"   );
     //outtree->Branch("el_pt25_n"        , &OUT::el_pt25_n        , "el_pt25_n/I"   );
     outtree->Branch("EventWeight"      , &OUT::EventWeight      , "EventWeight/F" );
+    outtree->Branch("HasElToPhFF"      , &OUT::HasElToPhFF      , "HasElToPhFF/O" );
 
-    // *************************
-    // Begin loop over the input tree
-    // *************************
-    if( maxevt == 0 ) {
-        maxevt = chain->GetEntries();
+    outtree->Branch("m_1nearestToZ"   , &OUT::m_1nearestToZ   , "m_1nearestToZ/F"     );
+    outtree->Branch("m_2nearestToZ"   , &OUT::m_2nearestToZ   , "m_2nearestToZ/F"     );
+    outtree->Branch("m_3nearestToZ"   , &OUT::m_3nearestToZ   , "m_3nearestToZ/F"     );
+    outtree->Branch("m_4nearestToZ"   , &OUT::m_4nearestToZ   , "m_4nearestToZ/F"     );
+
+    options = _options;
+
+}
+
+bool RunModule::execute( std::vector<ModuleConfig> & configs ) {
+
+    // In BranchInit
+    CopyInputVarsToOutput();
+
+    // loop over configured modules
+    bool save_event = true;
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+        save_event &= ApplyModule( mod_conf, options );
     }
 
-    int n_saved = 0;
-    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
-    for( int cidx = minevt; cidx < maxevt; cidx++ ) {
-
-        if( cidx % 10000 == 0 ) {
-          std::cout << "Processed " << cidx << " entries " << std::endl;
-        }
-
-        chain->GetEntry(cidx);
-
-        // In BranchInit
-        CopyInputVarsToOutput();
-
-        // loop over configured modules
-        bool save_event = true;
-        BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
-            save_event &= ApplyModule( mod_conf, options );
-        }
-
-        if( save_event ) {
-            outtree->Fill();
-            n_saved++;
-        }
-    }
-
-    std::cout << "Wrote " << n_saved << " events" << std::endl;
+    return save_event;
 
 }
 
@@ -122,7 +117,7 @@ bool RunModule::ApplyModule( ModuleConfig & config, const CmdOptions & options) 
         CalcEventVars( config );
     }
     if( config.GetName() == "AddEventWeight" ) {
-        AddEventWeight( config, options );
+        keep_evt &= AddEventWeight( config, options );
     }
 
     return keep_evt;
@@ -138,9 +133,10 @@ bool RunModule::ApplyModule( ModuleConfig & config, const CmdOptions & options) 
 //
 // Examples :
 
-void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & options ) {
+bool RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & options ) {
 
     OUT::EventWeight = 1.0;
+    OUT::HasElToPhFF = false;
 
     std::map<std::string, std::string> data = config.GetData();
 
@@ -153,28 +149,27 @@ void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & option
     }
     else {
         std::cout << "RunModule::AddEventWeight : ERROR - No root file was provided" << std::endl;
-        return;
+        return true;
     }
     if( data.find( "hist_name" ) != data.end() ) {
         hist_name = data["hist_name"];
     }
     else {
         std::cout << "RunModule::AddEventWeight : ERROR - No histogram name was provided" << std::endl;
-        return;
+        return true;
     }
     if( data.find( "sample_key" ) != data.end() ) {
         sample_key = data["sample_key"];
     }
     else {
-        std::cout << "RunModule::AddEventWeight : ERROR - No sample name was provided" << std::endl;
-        return;
+        return true;
     }
 
     if( !options.sample.empty() ) { // if the string is not empty, then try to match
         
         // if no match, then return, otherwise get the histo
         if( options.sample.find( sample_key ) == std::string::npos ) {
-            return;
+            return true;
         }
 
         // check if the file has already been opened.  If not, open it and get the histogram
@@ -182,20 +177,61 @@ void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & option
 
             rfile = TFile::Open( root_file.c_str() );
             rhist = dynamic_cast<TH1F*>(rfile->Get( hist_name.c_str() ) );
-            rfile->Close();
-            rfile=0;
+            //rfile->Close();
+            //rfile=0;
 
         }
 
         // Require two electrons
-        if( OUT::el_n != 2 ) return;
+        if( OUT::el_pt25_n != 2 ) return false;
 
         std::vector<float> scale_factors;
         for( int i = 0; i < OUT::el_n; ++i ) {
             float pt = OUT::el_pt->at(i);
 
-            scale_factors.push_back(rhist->GetBinContent( rhist->FindBin( pt ) ));
+            if( pt > 25 ) {
+                scale_factors.push_back(rhist->GetBinContent( rhist->FindBin( pt ) ));
+            }
         }
+
+        //float evt_sf = 1.0;
+        //int keep_evt = true;
+        //while( 1 ) {
+        //    // draw two random numbers, one for each scale factor
+        //    bool pass0 = false;
+        //    bool pass1 = false;
+
+        //    float randdbl0 = rand->Rndm();
+        //    float randdbl1 = rand->Rndm();
+        //   
+        //    //std::cout << "sf0 = " << scale_factors[0] << " rand0 = " << randdbl0 << " sf1 = " << scale_factors[1] << " rand1 = " << randdbl1 << std::endl;
+
+        //    if( randdbl0 < scale_factors[0] ) pass0 = true;
+        //    if( randdbl1 < scale_factors[1] ) pass1 = true;
+
+        //    if( pass0 && pass1 ) { 
+        //        keep_evt=false;
+        //        //std::cout << "Kill ev " << std::endl;
+        //        break;
+        //    }
+        //    else if( pass0 ) {
+        //        evt_sf = scale_factors[0];
+        //        keep_evt=true;
+        //        //std::cout << "SF = " << evt_sf << std::endl;
+        //        break;
+        //    }
+        //    else if( pass1 ) {
+        //        evt_sf = scale_factors[1];
+        //        keep_evt=true;
+        //        //std::cout << "SF = " << evt_sf << std::endl;
+        //        break;
+        //    }
+        //    // if pass neither, draw again
+        //}
+
+        //if( !keep_evt ) {
+        //    return false;
+        //}
 
         // the probability for either the first or the second electron to fake is
         // determined by constructing the total probability
@@ -204,11 +240,79 @@ void RunModule::AddEventWeight( ModuleConfig & config, const CmdOptions & option
         // P( one fake ) = 1 - ( 1 - sf1 )*(1-sf2) - sf1*sf2
         // P( one fake ) = 1 - ( 1 - sf1 - sf2 + sf1*sf2 ) - sf1*sf2
         // P( one fake ) = sf1 + sf2 -2*sf1*sf2
-        float event_factor = scale_factors[0] + scale_factors[1] - 2.*scale_factors[0]*scale_factors[1];
-        std::cout << "Scale factor 1 = " << scale_factors[0] << " scale factor 2 = " << scale_factors[1] << " event_factor = " << event_factor << std::endl;
+        //float evt_sf = scale_factors[0] + scale_factors[1] - 2.*scale_factors[0]*scale_factors[1];
+        float evt_sf = scale_factors[0] + scale_factors[1];
 
-        OUT::EventWeight *= event_factor;
+        OUT::EventWeight *= evt_sf;
+        OUT::HasElToPhFF = true;
+        // recalculate event kinematics counting a lepton as a photon
+        
+        TLorentzVector metlv;
+        metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
+
+        std::vector<TLorentzVector> leptons;
+        for( int idx = 0; idx < OUT::el_n; idx++ ) {
+
+            TLorentzVector lv;
+            lv.SetPtEtaPhiE(  OUT::el_pt->at(idx),
+                              OUT::el_eta->at(idx),
+                              OUT::el_phi->at(idx),
+                              OUT::el_e->at(idx)
+                            );
+            if( lv.Pt() > 25 ) {
+                leptons.push_back(lv);
+            }
+        }
+
+        for( int idx = 0; idx < OUT::mu_n; idx++ ) {
+
+            TLorentzVector lv;
+            lv.SetPtEtaPhiE(  OUT::mu_pt->at(idx),
+                              OUT::mu_eta->at(idx),
+                              OUT::mu_phi->at(idx),
+                              OUT::mu_e->at(idx)
+                            );
+            if( lv.Pt() > 25 ) {
+                leptons.push_back(lv);
+            }
+        }
+
+        std::vector<TLorentzVector> photons;
+        for( int idx = 0; idx < OUT::ph_n; ++idx ) {
+            TLorentzVector phot;
+            phot.SetPtEtaPhiE(  OUT::ph_pt->at(idx), 
+                                OUT::ph_eta->at(idx),
+                                OUT::ph_phi->at(idx),
+                                OUT::ph_e->at(idx)
+                            );
+            photons.push_back(phot);
+        }
+
+        if( leptons.size() > 2 ) {
+                OUT::m_leplepph  = (leptons[0] + leptons[1] + leptons[2] ).M();
+                OUT::pt_leplepph  = (leptons[0] + leptons[1] + leptons[2] ).Pt();
+        }
+
+        if( leptons.size() == 2 ) {
+           
+            OUT::mt_lep_met = calc_mt( leptons[0], metlv );
+
+            OUT::mt_lepph1_met = calc_mt( leptons[0] + leptons[1], metlv );
+
+            OUT::m_lepph1 = ( leptons[0] + leptons[1] ).M();
+
+            OUT::pt_lepph1 = ( leptons[0] + leptons[1] ).Pt();
+
+            if( photons.size() > 0 ) {
+
+                OUT::m_lepphph = ( leptons[0]+leptons[1]+photons[0] ).M();
+                OUT::mt_lepphph_met = calc_mt( leptons[0] + leptons[1] + photons[0], metlv );
+
+            }
+        }
     }
+
+    return true;
 }
 
 void RunModule::CalcEventVars( ModuleConfig & config ) const {
@@ -245,6 +349,10 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
     OUT::pt_leplepph      = 0;
     OUT::pt_secondLepton  = 0;
     OUT::pt_thirdLepton   = 0;
+    OUT::m_1nearestToZ    = 0;
+    OUT::m_2nearestToZ    = 0;
+    OUT::m_3nearestToZ    = 0;
+    OUT::m_4nearestToZ    = 0;
 
     TLorentzVector metlv;
     metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
@@ -400,12 +508,42 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
         OUT::m_4lep = ( leptons[0] + leptons[1] + leptons[2] + leptons[3] ).M();
     }
 
+    std::vector<TLorentzVector> objects;
+    objects.insert(objects.begin(), leptons.begin(), leptons.end() );
+    objects.insert(objects.begin(), photons.begin(), photons.end() );
+
+    if( objects.size() == 3 ) {
+        std::vector<float> masses;
+        for( unsigned i = 0; i < objects.size(); ++i ) {
+            for( unsigned j = i+1; j < objects.size(); ++j ) {
+                masses.push_back( (objects[i] + objects[j]).M() );
+            }
+        }
+        masses.push_back( (objects[0]+objects[1]+objects[2]).M() );
+
+        std::vector<std::pair<float, int > > sorted_masses;
+        for( unsigned i = 0; i < masses.size() ; ++i ) {
+            sorted_masses.push_back( std::make_pair( std::fabs( 91.1876 - masses[i] ), i ) );
+        }
+        //sort with the smallest first
+        std::sort(sorted_masses.begin(), sorted_masses.end());
+        int nearestZidx_1 = sorted_masses[0].second;
+        int nearestZidx_2 = sorted_masses[1].second;
+        int nearestZidx_3 = sorted_masses[2].second;
+        int nearestZidx_4 = sorted_masses[3].second;
+        OUT::m_1nearestToZ = masses[nearestZidx_1];
+        OUT::m_2nearestToZ = masses[nearestZidx_2];
+        OUT::m_3nearestToZ = masses[nearestZidx_3];
+        OUT::m_4nearestToZ = masses[nearestZidx_4];
+
+    }
 
 }
 
 
 RunModule::RunModule() :
     rfile(0),
-    rhist(0)
+    rhist(0),
+    rand(0)
 {
 }

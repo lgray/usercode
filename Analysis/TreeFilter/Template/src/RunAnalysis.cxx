@@ -36,9 +36,8 @@ int main(int argc, char **argv)
 
 }
 
-void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
-          std::vector<ModuleConfig> & configs, const CmdOptions & options,
-          int minevt, int maxevt ) const {
+void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
+                            const CmdOptions & options ) {
 
     // *************************
     // initialize trees
@@ -68,40 +67,20 @@ void RunModule::Run( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("ph_e"             , &OUT::ph_e                                      );
     outtree->Branch("ph_sigmaIEIE"     , &OUT::ph_sigmaIEIE                              );
 
+}
 
-    // *************************
-    // Begin loop over the input tree
-    // *************************
-    if( maxevt == 0 ) {
-        maxevt = chain->GetEntries();
+bool RunModule::execute( std::vector<ModuleConfig> & configs ) {
+
+    // In BranchInit
+    CopyInputVarsToOutput();
+
+    // loop over configured modules
+    bool save_event = true;
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+        save_event &= ApplyModule( mod_conf );
     }
 
-    int n_saved = 0;
-    std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
-    for( int cidx = minevt; cidx < maxevt; cidx++ ) {
-
-        if( cidx % 10000 == 0 ) {
-          std::cout << "Processed " << cidx << " entries " << std::endl;
-        }
-
-        chain->GetEntry(cidx);
-
-        // In BranchInit
-        CopyInputVarsToOutput();
-
-        // loop over configured modules
-        bool save_event = true;
-        BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
-            save_event &= ApplyModule( mod_conf );
-        }
-
-        if( save_event ) {
-            outtree->Fill();
-            n_saved++;
-        }
-    }
-
-    std::cout << "Wrote " << n_saved << " events" << std::endl;
+    return save_event;
 
 }
 

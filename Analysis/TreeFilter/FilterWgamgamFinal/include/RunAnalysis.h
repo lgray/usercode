@@ -26,7 +26,9 @@ class RunModule : public virtual RunModuleBase {
         // The run function must exist and be defined exactly as this
         // because it is defined in RunModuleBase 
         // in src/RunModule.cxx all the analysis is defind in this RunModule function
-        void Run( TChain * chain, TTree *outtree, TFile *outfile, std::vector<ModuleConfig> & config, const CmdOptions & options, int minevt=0, int maxevt=0) const;
+        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) ;
+        bool execute( std::vector<ModuleConfig> & config ) ;
+        void finalize( ) {};
 
         // The ApplyModule function calls any other module defined below
         // in src/RunModule.cxx.  This funciton is not strictly required
@@ -42,6 +44,7 @@ class RunModule : public virtual RunModuleBase {
         void FilterJet         ( ModuleConfig & config ) const;
         void FilterElectron    ( ModuleConfig & config ) const;
         void FilterPhoton      ( ModuleConfig & config ) const;
+        void FilterMuon        ( ModuleConfig & config ) const;
         void CalcEventVars     ( ModuleConfig & config ) const;
         bool FilterEvent       ( ModuleConfig & config ) const;
 
@@ -86,6 +89,8 @@ namespace OUT {
     Float_t pt_leplepph;
     Float_t pt_secondLepton;
     Float_t pt_thirdLepton;
+
+    Float_t m_nearestToZ;
 
     //Examples
 };

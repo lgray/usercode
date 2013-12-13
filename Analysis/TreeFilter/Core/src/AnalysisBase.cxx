@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include <sys/types.h>
@@ -34,8 +35,6 @@ const ModuleConfig AnaConfig::getEntry( unsigned int i ) const {
 
     return confs[i];
 }
-
-
 
 void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
 
@@ -72,14 +71,15 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
             // this now happens in all cases.  
             outputDir += "/" + jobstr;
             
-
             // create the output directory
             std::cout << "mkdir " << outputDir << std::endl;
-            mkdir(outputDir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            int res = boost::filesystem::create_directories(outputDir.c_str());
+            if( res != 1 ) {
+                std::cout << "WARNING -- Directory creation failed " << res << std::endl;
+            }
             std::string filepath = outputDir + "/" + options.outputFile;
 
             TFile * outfile  = TFile::Open(filepath.c_str(), "RECREATE");
-
 
             outfile->cd();
             TTree * outtree  = 0;
@@ -100,15 +100,45 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
                 std::cout << " Create output tree in " << dir_path << "/" << name << std::endl;
             
                 outtree = new TTree(name.c_str(), name.c_str());
-                //outtree->SetDirectory(outfile->GetDirectory( dir_path.c_str() ));
             }
             else {
                 outtree = new TTree(chain->GetName(), chain->GetName());
                 outtree->SetDirectory(outfile);
             }
-            //ConfigOutFile( outfile, chain->GetName(), outtree );
 
-            runmod.Run( chain, outtree, outfile, getEntries(), options, minevt, maxevt );
+            outfile->cd();
+            TH1F * hfilter = new TH1F("filter", "filter", 2, 0, 2);
+            hfilter->GetXaxis()->SetBinLabel(1, "Total");
+            hfilter->GetXaxis()->SetBinLabel(2, "Filter");
+
+            runmod.initialize( chain, outtree, outfile, options );
+
+            if( maxevt == 0 ) {
+                maxevt = chain->GetEntries();
+            }
+
+            int n_saved = 0;
+            std::cout << "Will analyze " << maxevt-minevt << " events between " << minevt << " and " << maxevt << std::endl;
+            for( int cidx = minevt; cidx < maxevt; cidx++ ) {
+
+                if( cidx % 10000 == 0 ) {
+                  std::cout << "Processed " << cidx << " entries " << std::endl;
+                }
+
+                chain->GetEntry(cidx);
+
+                bool save_event = runmod.execute( getEntries() );
+
+                hfilter->Fill(0);
+                if( save_event ) {
+                    outtree->Fill();
+                    hfilter->Fill(1);
+                    n_saved++;
+                }
+            }
+            std::cout << "Wrote " << n_saved << " events" << std::endl;
+
+            runmod.finalize();
 
             bool has_any_cutflows=false;
             BOOST_FOREACH( ModuleConfig & conf, getEntries() ) {
@@ -136,6 +166,7 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
 
             outfile->cd(dir_path.c_str());
             outtree->Write();
+            hfilter->Write();
             outfile->Close();
 
             std::vector<std::string> output_files;
@@ -143,7 +174,7 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
 
             if( options.transferToStorage ) {
                 std::string storage_dir = options.storagePath;
-                std::string eos = "/afs/cern.ch/project/eos/installation/0.2.22/bin/eos.select";
+                std::string eos = "/afs/cern.ch/project/eos/installation/0.3.4/bin/eos.select";
 
                 if( jobidx == 0 ) { // make the directory the first time
                     std::string mkdir_cmd = eos + " mkdir " + options.storagePath;
@@ -851,7 +882,7 @@ void ReadModuleLine( const std::string & line, AnaConfig & config ) {
     std::vector<std::string> cut_split = Tokenize( module_config, ";" );
 
     std::vector<CutConfig> module_cuts;
-    BOOST_FOREACH( const std::string & cut, cut_split ) {
+    BOOST_FOREACH( std::string & cut, cut_split ) {
         ReadCut( cut, this_module );
     }
 
@@ -859,21 +890,24 @@ void ReadModuleLine( const std::string & line, AnaConfig & config ) {
 
 }
 
-void ReadCut( const std::string &cut, ModuleConfig & module ) {
+void ReadCut( std::string &cut, ModuleConfig & module ) {
 
     if( cut.find_first_not_of(' ') == std::string::npos ) return; //check if cut is only whitespace 
+
+    //trim whitespae
+    boost::algorithm::trim(cut);
 
     // if value is do_cutflow just call AddCutFlow
     if( cut.find("do_cutflow") != std::string::npos ) {
         module.AddCutFlow( module.GetName() );
         return;
     }
-    // if valie is hist parse the histogram parameters
+    // if value is hist parse the histogram parameters
     else if( cut.find("hist") == 0 ) {
         ParseHistPars( cut, module );
         return;
     }
-    else if( cut.find("data") == 0 ) {
+    else if( cut.find("data_") == 0 ) {
         ParseDataEntry( cut, module );
         return;
     }
@@ -930,6 +964,9 @@ void ParseDataEntry( const std::string & cut_str, ModuleConfig & module ) {
     // get the cut name values
     std::string name    = cut_str.substr( 0, posbeg);
     std::string val_str = cut_str.substr( posbeg+1, posend-posbeg-1 );
+
+    // remove data_ from the name
+    name = name.substr( 5 );
 
     // remove whitespace from the name
     boost::algorithm::trim(name);

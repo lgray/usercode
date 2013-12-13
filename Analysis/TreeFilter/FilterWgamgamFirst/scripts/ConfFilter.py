@@ -35,7 +35,7 @@ def get_keep_filter() :
 
     return []
 
-def config_analysis( alg_list ) :
+def config_analysis( alg_list, args ) :
     """ Configure analysis modules. Order is preserved """
 
     jet_filt = Filter('FilterJet')
@@ -50,14 +50,14 @@ def config_analysis( alg_list ) :
     #mu_filt.cut_pt = '> 10'
     #alg_list.append(mu_filt)
 
-    #evt_filt = Filter('FilterEvent')
-    #evt_filt.cut_nLep = '> 0'
+    evt_filt = Filter('FilterEvent')
+    evt_filt.cut_nLep = '> 0'
     ##evt_filt.cut_nPho = '> 0'
 
     #alg_list.append(evt_filt)
 
     trig_filt = Filter('FilterTrigger')
-    trig_filt.cut_trigger = '==17 | == 18 | == 19' #electron | muon
+    trig_filt.cut_trigger = '==1 | ==17 | == 18 | == 19' #diphoton | electron | muon
     #trig_filt.cut_trigger = '== 18 | == 19' #muon
     #trig_filt.cut_trigger = '==17' #electron
     alg_list.append(trig_filt)
