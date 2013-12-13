@@ -244,11 +244,11 @@ def config_samples(samples) :
     #                       scale=-1,
     #                      )
 
-    #samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=False,
-    #                        input_samples = ['Data', 'AllMC'],
-    #                        plotColor=ROOT.kGreen,isSignal=True
-    #                      )
-    #                                         
+    samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=False,
+                            input_samples = ['Data', 'AllMC'],
+                            plotColor=ROOT.kGreen,isSignal=True
+                          )
+                                             
 
 
 

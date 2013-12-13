@@ -1044,6 +1044,7 @@ class SampleManager :
 
         if doratio :
             self.curr_canvases['bottom'].cd()
+            self.curr_ratios['ratio'].hist.Draw()
             for idx, (name, ratiosamp) in enumerate(self.curr_ratios.iteritems()) :
                 drawopt = 'same'
                 if idx == 0 :
