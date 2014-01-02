@@ -16,7 +16,7 @@ jobs = [
         #(base_data, 'job_electron_2012c_Jan2012rereco', 200),
         #(base_data, 'job_electron_2012d_Jan22rereco', 200),
         #(base_mc, 'job_summer12_DiPhotonBorn_Pt-10To25', 10),
-        #(base_mc2, 'job_summer12_DYJetsToLL', 100 ),
+        (base_mc2, 'job_summer12_DYJetsToLL', 100 ),
         ##(base_mc, 'job_summer12_TTH_100'),
         ##(base_mc, 'job_summer12_TTH_105'),
         ##(base_mc, 'job_summer12_TTH_110'),
@@ -73,7 +73,7 @@ jobs = [
         #(base_mc, 'job_summer12_WW_2l2nu', 10),
         #(base_mc, 'job_summer12_WWg', 10),
         #(base_mc, 'job_summer12_WZZ', 10),
-        (base_mc, 'job_summer12_WZ_2l2q', 10),
+        #(base_mc, 'job_summer12_WZ_2l2q', 10),
         #(base_mc, 'job_summer12_WZ_3lnu', 10),
         #(base_mc, 'job_summer12_Wg', 10),
         #(base_mc, 'job_summer12_Wgg_FSR', 10),
@@ -171,9 +171,9 @@ command_base = 'python scripts/filter.py  --files root://eoscms/%(base)s/%(job)s
 
 #command_base = 'python scripts/filter.py  --filesDir root://eoscms/%(base)s/%(job)s --fileKey tree.root --outputDir /tmp/jkunkle/%(output)s/%(job)s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableKeepFilter --nFilesPerJob 1 --nproc %(nproc)s --confFileName %(job)s.txt '
 
-output = 'RecoOutputREDO_2013_12_07'
+output = 'RecoOutputOnlyDY_2013_12_23'
 nFilesPerJob = 1
-nProc = 5
+nProc = 8
 
 for base, job, nsplit in jobs :
     command = command_base %{ 'base' : base, 'job' : job, 'nfiles' : nFilesPerJob, 'output' : output, 'nsplit': nsplit, 'nproc' : nProc }

@@ -3,6 +3,7 @@ import os
 base_muon = '/eos/cms/store/user/abelloni/Wgamgam/FilteredSamplesDec13'
 base_elec = '/eos/cms/store/user/jkunkle/Wgamgam/FilteredSamplesDec13'
 #base_data = '/eos/cms/store/group/phys_smp/ggNtuples/data'
+base_mc2 = '/eos/cms/store/group/phys_smp/ggNtuples/mc'
 base_mc = '/eos/cms/store/group/phys_egamma/cmkuo'
 
 jobs = [
@@ -15,6 +16,7 @@ jobs = [
         #(base_ele, 'job_electron_2012c_Jan2012rereco'),
         #(base_ele, 'job_electron_2012d_Jan22rereco'),
         #(base_mc, 'job_summer12_DiPhotonBorn_Pt-10To25', 10),
+        (base_mc2, 'job_summer12_DYJetsToLL', 100),
         ##(base_mc, 'job_summer12_TTH_100'),
         ##(base_mc, 'job_summer12_TTH_105'),
         ##(base_mc, 'job_summer12_TTH_110'),
@@ -71,7 +73,7 @@ jobs = [
         #(base_mc, 'job_summer12_WW_2l2nu', 10),
         #(base_mc, 'job_summer12_WWg', 10),
         #(base_mc, 'job_summer12_WZZ', 10),
-        (base_mc, 'job_summer12_WZ_2l2q', 10),
+        #(base_mc, 'job_summer12_WZ_2l2q', 10),
         #(base_mc, 'job_summer12_WZ_3lnu', 10),
         #(base_mc, 'job_summer12_Wg', 10),
         #(base_mc, 'job_summer12_Wgg_FSR', 10),
@@ -169,7 +171,7 @@ command_base = 'python scripts/filter.py  --filesDir root://eoscms/%(base)s/%(jo
 
 #command_base = 'python scripts/filter.py  --filesDir root://eoscms/%(base)s/%(job)s --fileKey tree.root --outputDir /tmp/jkunkle/%(output)s/%(job)s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableKeepFilter --nFilesPerJob 1 --nproc %(nproc)s --confFileName %(job)s.txt '
 
-output = 'RecoOutput_2013_12_07'
+output = 'RecoOutputDYOnly_2013_12_23'
 nFilesPerJob = 1
 nSplit = 8
 nProc = 8

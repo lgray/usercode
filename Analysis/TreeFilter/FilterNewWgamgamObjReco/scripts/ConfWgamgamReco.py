@@ -10,7 +10,7 @@ def get_keep_filter() :
 
 def config_analysis( alg_list ) :
 
-    alg_list.append( build_electron( do_cutflow=False, do_hists=False ) )
+    alg_list.append( build_electron( do_cutflow=True, do_hists=True, evalPID='medium' ) )
     alg_list.append( build_muon( do_cutflow=True, do_hists=True) )
 
     ## filter out a lepton 
@@ -19,7 +19,7 @@ def config_analysis( alg_list ) :
     #alg_list.append(filter_evt)
 
     alg_list.append( build_photon( do_cutflow=True, do_hists=True) )
-    alg_list.append( build_jet( do_cutflow=False, do_hists=False ) )
+    alg_list.append( build_jet( do_cutflow=True, do_hists=True ) )
 
     # do this later, after PID has been applied
     #alg_list.append( Filter('BuildEvent'   ) )
@@ -57,7 +57,7 @@ def build_muon( do_cutflow=False, do_hists=False ) :
 
     return filt
 
-def build_electron( do_cutflow=False, do_hists=False, filtPID=None ) :
+def build_electron( do_cutflow=False, do_hists=False, filtPID=None, evalPID=None ) :
 
     filt = Filter('BuildElectron')
 
@@ -179,6 +179,9 @@ def build_electron( do_cutflow=False, do_hists=False, filtPID=None ) :
     if filtPID is not None :
         setattr(filt, 'cut_pid_%s' %filtPID, ' == True' )
 
+    if evalPID is not None :
+        filt.add_var( 'evalPID', evalPID )
+
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )
         filt.add_hist( 'cut_abseta', 50, 0, 5 )
@@ -250,10 +253,14 @@ def build_photon( do_cutflow=False, do_hists=False, filtPID=None ) :
         filt.add_hist( 'cut_abseta_crack', 50, 0, 5 )
         filt.add_hist( 'cut_emfrac', 50, 0, 0.1 )
         filt.add_hist( 'cut_eveto', 2, 0, 2 )
-        filt.add_hist( 'cut_sigmaIEIE_barrel', 50, 0, 0.05 )
-        filt.add_hist( 'cut_chIsoCorr_barrel', 50, 0, 5 )
-        filt.add_hist( 'cut_neuIsoCorr_barrel', 50, 0, 5 )
-        filt.add_hist( 'cut_phoIsoCorr_barrel', 50, 0, 5 )
+        filt.add_hist( 'cut_sigmaIEIE_barrel_medium', 50, 0, 0.05 )
+        filt.add_hist( 'cut_chIsoCorr_barrel_medium', 50, 0, 5 )
+        filt.add_hist( 'cut_neuIsoCorr_barrel_medium', 50, 0, 5 )
+        filt.add_hist( 'cut_phoIsoCorr_barrel_medium', 50, 0, 5 )
+        filt.add_hist( 'cut_sigmaIEIE_endcap_medium', 50, 0, 0.05 )
+        filt.add_hist( 'cut_chIsoCorr_endcap_medium', 50, 0, 5 )
+        filt.add_hist( 'cut_neuIsoCorr_endcap_medium', 50, 0, 5 )
+        filt.add_hist( 'cut_phoIsoCorr_endcap_medium', 50, 0, 5 )
 
     return filt
 

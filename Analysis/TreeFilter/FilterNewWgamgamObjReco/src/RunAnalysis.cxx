@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 }
 
 void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
-                            const CmdOptions & options ) {
+                            const CmdOptions & options, std::vector<ModuleConfig> & configs ) {
 
     // *************************
     // initialize trees
@@ -61,9 +61,9 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     OUT::el_passLoose      = 0;
     OUT::el_passVeryLoose  = 0;
     OUT::el_passTightTrig  = 0;
-    OUT::el_truthMatch_ph  = 0;
-    OUT::el_truthMatch     = 0;
-    OUT::el_truthMinDR     = 0;
+    OUT::el_truthMatch_el  = 0;
+    OUT::el_truthMinDR_el  = 0;
+    OUT::el_truthMatchPt_el= 0;
     OUT::mu_pt             = 0;
     OUT::mu_eta            = 0;
     OUT::mu_phi            = 0;
@@ -96,8 +96,12 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     OUT::ph_passTight      = 0;
     OUT::ph_passMedium     = 0;
     OUT::ph_passLoose      = 0;
-    OUT::ph_truthMatch     = 0;
-    OUT::ph_truthMinDR     = 0;
+    OUT::ph_truthMatch_ph  = 0;
+    OUT::ph_truthMinDR_ph  = 0;
+    OUT::ph_truthMatchPt_ph= 0;
+    OUT::ph_truthMatch_el  = 0;
+    OUT::ph_truthMinDR_el  = 0;
+    OUT::ph_truthMatchPt_el= 0;
     OUT::ph_hasSLConv      = 0;
 
     OUT::jet_pt             = 0;
@@ -130,9 +134,9 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("el_passLoose"       , &OUT::el_passLoose                            );
     outtree->Branch("el_passVeryLoose"   , &OUT::el_passVeryLoose                        );
     outtree->Branch("el_passTightTrig"   , &OUT::el_passTightTrig                        );
-    outtree->Branch("el_truthMatch_ph"   , &OUT::el_truthMatch_ph                        );
-    outtree->Branch("el_truthMatch"      , &OUT::el_truthMatch                           );
-    outtree->Branch("el_truthMinDR"      , &OUT::el_truthMinDR                           );
+    outtree->Branch("el_truthMatch_el"   , &OUT::el_truthMatch_el                        );
+    outtree->Branch("el_truthMinDR_el"   , &OUT::el_truthMinDR_el                        );
+    outtree->Branch("el_truthMatchPt_el" , &OUT::el_truthMatchPt_el                      );
     
     outtree->Branch("mu_pt"              , &OUT::mu_pt                                   );
     outtree->Branch("mu_eta"             , &OUT::mu_eta                                  );
@@ -146,30 +150,34 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("mu_truthMatch"      , &OUT::mu_truthMatch                           );
     outtree->Branch("mu_truthMinDR"      , &OUT::mu_truthMinDR                           );
     
-    outtree->Branch("ph_pt"            , &OUT::ph_pt                                     );
-    outtree->Branch("ph_eta"           , &OUT::ph_eta                                    );
-    outtree->Branch("ph_phi"           , &OUT::ph_phi                                    );
-    outtree->Branch("ph_e"             , &OUT::ph_e                                      );
-    outtree->Branch("ph_HoverE"        , &OUT::ph_HoverE                                 );
-    outtree->Branch("ph_sigmaIEIE"     , &OUT::ph_sigmaIEIE                              );
-    outtree->Branch("ph_chIsoCorr"     , &OUT::ph_chIsoCorr                              );
-    outtree->Branch("ph_neuIsoCorr"    , &OUT::ph_neuIsoCorr                             );
-    outtree->Branch("ph_phoIsoCorr"    , &OUT::ph_phoIsoCorr                             );
-    outtree->Branch("ph_isConv"        , &OUT::ph_isConv                                 );
-    outtree->Branch("ph_conv_nTrk"     , &OUT::ph_conv_nTrk                              );
-    outtree->Branch("ph_conv_vtx_x"    , &OUT::ph_conv_vtx_x                             );
-    outtree->Branch("ph_conv_vtx_y"    , &OUT::ph_conv_vtx_y                             );
-    outtree->Branch("ph_conv_vtx_z"    , &OUT::ph_conv_vtx_z                             );
-    outtree->Branch("ph_conv_ptin1"    , &OUT::ph_conv_ptin1                             );
-    outtree->Branch("ph_conv_ptin2"    , &OUT::ph_conv_ptin2                             );
-    outtree->Branch("ph_conv_ptout1"   , &OUT::ph_conv_ptout1                            );
-    outtree->Branch("ph_conv_ptout2"   , &OUT::ph_conv_ptout2                            );
-    outtree->Branch("ph_passTight"     , &OUT::ph_passTight                              );
-    outtree->Branch("ph_passMedium"    , &OUT::ph_passMedium                             );
-    outtree->Branch("ph_passLoose"     , &OUT::ph_passLoose                              );
-    outtree->Branch("ph_truthMatch"    , &OUT::ph_truthMatch                             );
-    outtree->Branch("ph_truthMinDR"    , &OUT::ph_truthMinDR                             );
-    outtree->Branch("ph_hasSLConv"     , &OUT::ph_hasSLConv                              );
+    outtree->Branch("ph_pt"              , &OUT::ph_pt                                     );
+    outtree->Branch("ph_eta"             , &OUT::ph_eta                                    );
+    outtree->Branch("ph_phi"             , &OUT::ph_phi                                    );
+    outtree->Branch("ph_e"               , &OUT::ph_e                                      );
+    outtree->Branch("ph_HoverE"          , &OUT::ph_HoverE                                 );
+    outtree->Branch("ph_sigmaIEIE"       , &OUT::ph_sigmaIEIE                              );
+    outtree->Branch("ph_chIsoCorr"       , &OUT::ph_chIsoCorr                              );
+    outtree->Branch("ph_neuIsoCorr"      , &OUT::ph_neuIsoCorr                             );
+    outtree->Branch("ph_phoIsoCorr"      , &OUT::ph_phoIsoCorr                             );
+    outtree->Branch("ph_isConv"          , &OUT::ph_isConv                                 );
+    outtree->Branch("ph_conv_nTrk"       , &OUT::ph_conv_nTrk                              );
+    outtree->Branch("ph_conv_vtx_x"      , &OUT::ph_conv_vtx_x                             );
+    outtree->Branch("ph_conv_vtx_y"      , &OUT::ph_conv_vtx_y                             );
+    outtree->Branch("ph_conv_vtx_z"      , &OUT::ph_conv_vtx_z                             );
+    outtree->Branch("ph_conv_ptin1"      , &OUT::ph_conv_ptin1                             );
+    outtree->Branch("ph_conv_ptin2"      , &OUT::ph_conv_ptin2                             );
+    outtree->Branch("ph_conv_ptout1"     , &OUT::ph_conv_ptout1                            );
+    outtree->Branch("ph_conv_ptout2"     , &OUT::ph_conv_ptout2                            );
+    outtree->Branch("ph_passTight"       , &OUT::ph_passTight                              );
+    outtree->Branch("ph_passMedium"      , &OUT::ph_passMedium                             );
+    outtree->Branch("ph_passLoose"       , &OUT::ph_passLoose                              );
+    outtree->Branch("ph_truthMatch_el"   , &OUT::ph_truthMatch_el                          );
+    outtree->Branch("ph_truthMinDR_el"   , &OUT::ph_truthMinDR_el                          );
+    outtree->Branch("ph_truthMatchPt_el" , &OUT::ph_truthMatchPt_el                        );
+    outtree->Branch("ph_truthMatch_ph"   , &OUT::ph_truthMatch_ph                          );
+    outtree->Branch("ph_truthMinDR_ph"   , &OUT::ph_truthMinDR_ph                          );
+    outtree->Branch("ph_truthMatchPt_ph" , &OUT::ph_truthMatchPt_ph                        );
+    outtree->Branch("ph_hasSLConv"       , &OUT::ph_hasSLConv                              );
     
     outtree->Branch("jet_pt"            , &OUT::jet_pt                                   );
     outtree->Branch("jet_eta"           , &OUT::jet_eta                                  );
@@ -177,6 +185,28 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     outtree->Branch("jet_e"             , &OUT::jet_e                                    );
 
     //outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                        );
+
+    eval_tight     = false;
+    eval_medium    = false;
+    eval_loose     = false;
+    eval_veryloose = false;
+    eval_tightTrig = false;
+
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+    
+    
+        if( mod_conf.GetName() == "BuildElectron" ) { 
+            std::map<std::string, std::string>::const_iterator itr = mod_conf.GetInitData().find( "evalPID" );
+            if( itr != mod_conf.GetInitData().end() ) {
+                std::string pid = itr->second;
+                if( pid == "tight"     ) eval_tight     = true;
+                if( pid == "medium"    ) eval_medium    = true;
+                if( pid == "loose"     ) eval_loose     = true;
+                if( pid == "veryloose" ) eval_veryloose = true;
+                if( pid == "tightTrig" ) eval_tightTrig = true;
+            }
+        }
+    }
 
 }
 
@@ -347,8 +377,9 @@ void RunModule::BuildMediumElectron( ModuleConfig & config ) const {
     OUT::el_passMedium    -> clear();
     OUT::el_passLoose     -> clear();
     OUT::el_passVeryLoose -> clear();
-    OUT::el_truthMatch    -> clear();
-    OUT::el_truthMinDR    -> clear();
+    OUT::el_truthMatch_el -> clear();
+    OUT::el_truthMinDR_el -> clear();
+    OUT::el_truthMatchPt_el -> clear();
     OUT::el_n             = 0;
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
@@ -426,9 +457,11 @@ void RunModule::BuildMediumElectron( ModuleConfig & config ) const {
         matchPID.push_back(-11);
 
         float minTruthDR = 100.0;
-        bool match = HasTruthMatch( ellv, matchPID, 0.1, minTruthDR );
-        OUT::el_truthMatch->push_back( match  );
-        OUT::el_truthMinDR->push_back( minTruthDR );
+        TLorentzVector matchLV;
+        bool match = HasTruthMatch( ellv, matchPID, 0.1, minTruthDR, matchLV );
+        OUT::el_truthMatch_el->push_back( match  );
+        OUT::el_truthMinDR_el->push_back( minTruthDR );
+        OUT::el_truthMatchPt_el->push_back( matchLV.Pt() );
         
     }
 
@@ -451,9 +484,9 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
     OUT::el_passLoose      -> clear();
     OUT::el_passVeryLoose  -> clear();
     OUT::el_passTightTrig  -> clear();
-    OUT::el_truthMatch_ph  -> clear();
-    OUT::el_truthMatch     -> clear();
-    OUT::el_truthMinDR     -> clear();
+    OUT::el_truthMatch_el  -> clear();
+    OUT::el_truthMinDR_el  -> clear();
+    OUT::el_truthMatchPt_el-> clear();
     OUT::el_n              = 0;
 
     for( int idx = 0; idx < IN::nEle; ++idx ) {
@@ -496,139 +529,455 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
         bool pass_veryloose = true;
         bool pass_tightTrig = true;
 
+        bool use_eval = eval_tight || eval_medium || eval_loose || eval_veryloose || eval_tightTrig;
+
+
         if( fabs(sceta) < 1.479 ) { // barrel
+
             
             // Tight cuts
-            if( !config.PassFloat( "cut_absdEtaIn_barrel_tight"    , dEtaIn       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_absdPhiIn_barrel_tight"    , dPhiIn       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight" , sigmaIEIE    ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_d0_barrel_tight"        , d0           ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_z0_barrel_tight"        , z0           ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_hovere_barrel_tight"    , hovere       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_eoverp_barrel_tight"    , eoverp       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_pfIso30_barrel_tight"   , pfiso30/pt   ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_convfit_barrel_tight"   , convfit      ) ) pass_tight=false;
-            if( !config.PassInt  ( "cut_misshits_barrel_tight"  , misshits     ) ) pass_tight=false;
+            if( use_eval && eval_tight ) {
+                if( !config.PassFloat( "cut_absdEtaIn_barrel_tight"    , dEtaIn       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_barrel_tight"    , dPhiIn       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight" , sigmaIEIE    ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_barrel_tight"        , d0           ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_barrel_tight"        , z0           ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_barrel_tight"    , hovere       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_barrel_tight"    , eoverp       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_pfIso30_barrel_tight"   , pfiso30/pt   ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_convfit_barrel_tight"   , convfit      ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_barrel_tight"  , misshits     ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+            }
             
             // Medium cuts
-            if( !config.PassFloat( "cut_absdEtaIn_barrel_medium"    , dEtaIn       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_absdPhiIn_barrel_medium"    , dPhiIn       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium" , sigmaIEIE    ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_d0_barrel_medium"        , d0           ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_z0_barrel_medium"        , z0           ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_hovere_barrel_medium"    , hovere       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_eoverp_barrel_medium"    , eoverp       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_pfIso30_barrel_medium"   , pfiso30/pt   ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_convfit_barrel_medium"   , convfit      ) ) pass_medium=false;
-            if( !config.PassInt  ( "cut_misshits_barrel_medium"  , misshits     ) ) pass_medium=false;
+            if( use_eval && eval_medium ) {
+                if( !config.PassFloat( "cut_absdEtaIn_barrel_medium"    , dEtaIn       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_barrel_medium"    , dPhiIn       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium" , sigmaIEIE    ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_barrel_medium"        , d0           ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_barrel_medium"        , z0           ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_barrel_medium"    , hovere       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_barrel_medium"    , eoverp       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_pfIso30_barrel_medium"   , pfiso30/pt   ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_convfit_barrel_medium"   , convfit      ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_barrel_medium"  , misshits     ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+            }
             
             // Loose cuts
-            if( !config.PassFloat( "cut_absdEtaIn_barrel_loose"    , dEtaIn       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_absdPhiIn_barrel_loose"    , dPhiIn       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose" , sigmaIEIE    ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_d0_barrel_loose"        , d0           ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_z0_barrel_loose"        , z0           ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_hovere_barrel_loose"    , hovere       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_eoverp_barrel_loose"    , eoverp       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_pfIso30_barrel_loose"   , pfiso30/pt   ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_convfit_barrel_loose"   , convfit      ) ) pass_loose=false;
-            if( !config.PassInt  ( "cut_misshits_barrel_loose"  , misshits     ) ) pass_loose=false;
+            if( use_eval && eval_loose ) {
+                if( !config.PassFloat( "cut_absdEtaIn_barrel_loose"    , dEtaIn       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_barrel_loose"    , dPhiIn       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose" , sigmaIEIE    ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_barrel_loose"        , d0           ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_barrel_loose"        , z0           ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_barrel_loose"    , hovere       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_barrel_loose"    , eoverp       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_pfIso30_barrel_loose"   , pfiso30/pt   ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_convfit_barrel_loose"   , convfit      ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_barrel_loose"  , misshits     ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+            }
 
             // Very Loose cuts
-            if( !config.PassFloat( "cut_absdEtaIn_barrel_veryloose"    , dEtaIn       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_absdPhiIn_barrel_veryloose"    , dPhiIn       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_veryloose" , sigmaIEIE    ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_d0_barrel_veryloose"        , d0           ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_z0_barrel_veryloose"        , z0           ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_hovere_barrel_veryloose"    , hovere       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_eoverp_barrel_veryloose"    , eoverp       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_pfIso30_barrel_veryloose"   , pfiso30/pt   ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_convfit_barrel_veryloose"   , convfit      ) ) pass_veryloose=false;
-            if( !config.PassInt  ( "cut_misshits_barrel_veryloose"  , misshits     ) ) pass_veryloose=false;
+            if( use_eval && eval_veryloose ) {
+                if( !config.PassFloat( "cut_absdEtaIn_barrel_veryloose"    , dEtaIn       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_barrel_veryloose"    , dPhiIn       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_veryloose" , sigmaIEIE    ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_barrel_veryloose"        , d0           ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_barrel_veryloose"        , z0           ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_barrel_veryloose"    , hovere       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_barrel_veryloose"    , eoverp       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_pfIso30_barrel_veryloose"   , pfiso30/pt   ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_convfit_barrel_veryloose"   , convfit      ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_barrel_veryloose"  , misshits     ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+            }
 
             // tight trigger cuts
-            if( !config.PassFloat( "cut_absdEtaIn_barrel_tightTrig"   , dEtaIn      ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_absdPhiIn_barrel_tightTrig"   , dPhiIn      ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_tightTrig"   , sigmaIEIE   ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_hovere_barrel_tightTrig"   , hovere         ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_ecalIso30_barrel_tightTrig"   , ecalIso30/pt) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_hcalIso30_barrel_tightTrig"   , hcalIso30/pt) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_trkIso30_barrel_tightTrig"   , trkIso30/pt  ) ) pass_tightTrig=false;
+            if( use_eval && eval_tightTrig ) {
+                if( !config.PassFloat( "cut_absdEtaIn_barrel_tightTrig"   , dEtaIn      ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_barrel_tightTrig"   , dPhiIn      ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_tightTrig"   , sigmaIEIE   ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_barrel_tightTrig"   , hovere         ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_ecalIso30_barrel_tightTrig"   , ecalIso30/pt) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_hcalIso30_barrel_tightTrig"   , hcalIso30/pt) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_trkIso30_barrel_tightTrig"   , trkIso30/pt  ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+            }
 
         }
         else { // endcap
 
             // Tight cuts
-            if( !config.PassFloat( "cut_absdEtaIn_endcap_tight"    , dEtaIn       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_absdPhiIn_endcap_tight"    , dPhiIn       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_tight" , sigmaIEIE    ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_d0_endcap_tight"        , d0           ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_z0_endcap_tight"        , z0           ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_hovere_endcap_tight"    , hovere       ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_eoverp_endcap_tight"    , eoverp       ) ) pass_tight=false;
-            if( pt < 20 ) {
-              if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_tight"   , pfiso30/pt   ) ) pass_tight=false;
-            }
-            else {
-              if( !config.PassFloat( "cut_pfIso30_endcap_highPt_tight"   , pfiso30/pt   ) ) pass_tight=false;
-            }
+            if( use_eval && eval_tight ) {
+                if( !config.PassFloat( "cut_absdEtaIn_endcap_tight"    , dEtaIn       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_endcap_tight"    , dPhiIn       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_tight" , sigmaIEIE    ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_endcap_tight"        , d0           ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_endcap_tight"        , z0           ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_endcap_tight"    , hovere       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_endcap_tight"    , eoverp       ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( pt < 20 ) {
+                  if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_tight"   , pfiso30/pt   ) ) {
+                      pass_tight=false;
+                    if( eval_tight ) continue;
+                  }
+                }
+                else {
+                  if( !config.PassFloat( "cut_pfIso30_endcap_highPt_tight"   , pfiso30/pt   ) ) {
+                      pass_tight=false;
+                    if( eval_tight ) continue;
+                  }
+                }
 
-            if( !config.PassFloat( "cut_convfit_endcap_tight"   , convfit      ) ) pass_tight=false;
-            if( !config.PassInt  ( "cut_misshits_endcap_tight"  , misshits     ) ) pass_tight=false;
+                if( !config.PassFloat( "cut_convfit_endcap_tight"   , convfit      ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_endcap_tight"  , misshits     ) ) {
+                    pass_tight=false;
+                    if( eval_tight ) continue;
+                }
+            }
             
             // Medium cuts
-            if( !config.PassFloat( "cut_absdEtaIn_endcap_medium"    , dEtaIn       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_absdPhiIn_endcap_medium"    , dPhiIn       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_medium" , sigmaIEIE    ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_d0_endcap_medium"        , d0           ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_z0_endcap_medium"        , z0           ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_hovere_endcap_medium"    , hovere       ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_eoverp_endcap_medium"    , eoverp       ) ) pass_medium=false;
-            if( pt < 20 ) {
-                if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_medium"   , pfiso30/pt   ) ) pass_medium=false;
+            if( use_eval && eval_medium ) {
+                if( !config.PassFloat( "cut_absdEtaIn_endcap_medium"    , dEtaIn       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_endcap_medium"    , dPhiIn       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_medium" , sigmaIEIE    ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_endcap_medium"        , d0           ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_endcap_medium"        , z0           ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_endcap_medium"    , hovere       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_endcap_medium"    , eoverp       ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( pt < 20 ) {
+                    if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_medium"   , pfiso30/pt   ) ) {
+                        pass_medium=false;
+                    if( eval_medium ) continue;
+                    }
+                }
+                else {
+                    if( !config.PassFloat( "cut_pfIso30_endcap_highPt_medium"   , pfiso30/pt   ) ) {
+                        pass_medium=false;
+                    if( eval_medium ) continue;
+                    }
+                }
+                if( !config.PassFloat( "cut_convfit_endcap_medium"   , convfit      ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_endcap_medium"  , misshits     ) ) {
+                    pass_medium=false;
+                    if( eval_medium ) continue;
+                }
             }
-            else {
-                if( !config.PassFloat( "cut_pfIso30_endcap_highPt_medium"   , pfiso30/pt   ) ) pass_medium=false;
-            }
-            if( !config.PassFloat( "cut_convfit_endcap_medium"   , convfit      ) ) pass_medium=false;
-            if( !config.PassInt  ( "cut_misshits_endcap_medium"  , misshits     ) ) pass_medium=false;
             
             // Loose cuts
-            if( !config.PassFloat( "cut_absdEtaIn_endcap_loose"    , dEtaIn       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_absdPhiIn_endcap_loose"    , dPhiIn       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_loose" , sigmaIEIE    ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_d0_endcap_loose"        , d0           ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_z0_endcap_loose"        , z0           ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_hovere_endcap_loose"    , hovere       ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_eoverp_endcap_loose"    , eoverp       ) ) pass_loose=false;
-            if( pt < 20 ) {
-                if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_loose"   , pfiso30/pt   ) ) pass_loose=false;
+            if( use_eval && eval_loose ) {
+                if( !config.PassFloat( "cut_absdEtaIn_endcap_loose"    , dEtaIn       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_endcap_loose"    , dPhiIn       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_loose" , sigmaIEIE    ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_endcap_loose"        , d0           ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_endcap_loose"        , z0           ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_endcap_loose"    , hovere       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_endcap_loose"    , eoverp       ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( pt < 20 ) {
+                    if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_loose"   , pfiso30/pt   ) ) {
+                        pass_loose=false;
+                    if( eval_loose ) continue;
+                    }
+                }
+                else {
+                    if( !config.PassFloat( "cut_pfIso30_endcap_highPt_loose"   , pfiso30/pt   ) ) {
+                        pass_loose=false;
+                    if( eval_loose ) continue;
+                    }
+                }
+                if( !config.PassFloat( "cut_convfit_endcap_loose"   , convfit      ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_endcap_loose"  , misshits     ) ) {
+                    pass_loose=false;
+                    if( eval_loose ) continue;
+                }
             }
-            else {
-                if( !config.PassFloat( "cut_pfIso30_endcap_highPt_loose"   , pfiso30/pt   ) ) pass_loose=false;
-            }
-            if( !config.PassFloat( "cut_convfit_endcap_loose"   , convfit      ) ) pass_loose=false;
-            if( !config.PassInt  ( "cut_misshits_endcap_loose"  , misshits     ) ) pass_loose=false;
 
             // Very Loose cuts
-            if( !config.PassFloat( "cut_absdEtaIn_endcap_veryloose"    , dEtaIn       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_absdPhiIn_endcap_veryloose"    , dPhiIn       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_veryloose" , sigmaIEIE    ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_d0_endcap_veryloose"        , d0           ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_z0_endcap_veryloose"        , z0           ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_hovere_endcap_veryloose"    , hovere       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_eoverp_endcap_veryloose"    , eoverp       ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_pfIso30_endcap_veryloose"   , pfiso30/pt   ) ) pass_veryloose=false;
-            if( !config.PassFloat( "cut_convfit_endcap_veryloose"   , convfit      ) ) pass_veryloose=false;
-            if( !config.PassInt  ( "cut_misshits_endcap_veryloose"  , misshits     ) ) pass_veryloose=false;
+            if( use_eval && eval_veryloose ) {
+                if( !config.PassFloat( "cut_absdEtaIn_endcap_veryloose"    , dEtaIn       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_endcap_veryloose"    , dPhiIn       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_veryloose" , sigmaIEIE    ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_d0_endcap_veryloose"        , d0           ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_z0_endcap_veryloose"        , z0           ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_endcap_veryloose"    , hovere       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_eoverp_endcap_veryloose"    , eoverp       ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_pfIso30_endcap_veryloose"   , pfiso30/pt   ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassFloat( "cut_convfit_endcap_veryloose"   , convfit      ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+                if( !config.PassInt  ( "cut_misshits_endcap_veryloose"  , misshits     ) ) {
+                    pass_veryloose=false;
+                    if( eval_veryloose ) continue;
+                }
+            }
+
             // tight trigger cuts
-            if( !config.PassFloat( "cut_absdEtaIn_endcap_tightTrig"   , dEtaIn      ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_absdPhiIn_endcap_tightTrig"   , dPhiIn      ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_tightTrig"   , sigmaIEIE   ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_hovere_endcap_tightTrig"   , hovere         ) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_ecalIso30_endcap_tightTrig"   , ecalIso30/pt) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_hcalIso30_endcap_tightTrig"   , hcalIso30/pt) ) pass_tightTrig=false;
-            if( !config.PassFloat( "cut_trkIso30_endcap_tightTrig"   , trkIso30/pt  ) ) pass_tightTrig=false;
+            if( use_eval && eval_tightTrig ) {
+                if( !config.PassFloat( "cut_absdEtaIn_endcap_tightTrig"   , dEtaIn      ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_absdPhiIn_endcap_tightTrig"   , dPhiIn      ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_tightTrig"   , sigmaIEIE   ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_hovere_endcap_tightTrig"   , hovere         ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_ecalIso30_endcap_tightTrig"   , ecalIso30/pt) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_hcalIso30_endcap_tightTrig"   , hcalIso30/pt) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+                if( !config.PassFloat( "cut_trkIso30_endcap_tightTrig"   , trkIso30/pt  ) ) {
+                    pass_tightTrig=false;
+                    if( eval_tightTrig ) continue;
+                }
+            }
         }
 
         if( !config.PassBool( "cut_pid_tightTrig", pass_tightTrig ) ) continue;
@@ -664,14 +1013,20 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
         matchPID.push_back(-11);
 
         float minTruthDR = 100.0;
-        bool match = HasTruthMatch( ellv, matchPID, 0.1, minTruthDR );
-        OUT::el_truthMatch->push_back( match  );
-        OUT::el_truthMinDR->push_back( minTruthDR );
+        TLorentzVector matchLV;
+        bool match = HasTruthMatch( ellv, matchPID, 0.2, minTruthDR, matchLV );
+        OUT::el_truthMatch_el->push_back( match  );
+        OUT::el_truthMinDR_el->push_back( minTruthDR );
+        OUT::el_truthMatchPt_el->push_back( matchLV.Pt() );
 
-        std::vector<int> matchPIDPH;
-        matchPIDPH.push_back(22);
-        bool matchph = HasTruthMatch( ellv, matchPIDPH, 0.2 );
-        OUT::el_truthMatch_ph->push_back( matchph );
+        //std::vector<int> matchPIDPH;
+        //minTruthDR = 100.0;
+        //matchLV.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
+        //matchPIDPH.push_back(22);
+        //match = HasTruthMatch( ellv, matchPIDPH, 0.2, minTruthDR, matchLV );
+        //OUT::el_truthMatch_ph->push_back( matchph );
+        //OUT::el_truthMinDR_ph->push_back( minTruthDR );
+        //OUT::el_truthMatchPt_ph->push_back( matchLV.Pt() );
         
     }
 
@@ -706,29 +1061,33 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
 
 void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
 
-    OUT::ph_pt         -> clear();
-    OUT::ph_eta        -> clear();
-    OUT::ph_phi        -> clear();
-    OUT::ph_e          -> clear();
-    OUT::ph_HoverE     -> clear();
-    OUT::ph_sigmaIEIE  -> clear();
-    OUT::ph_chIsoCorr  -> clear();
-    OUT::ph_neuIsoCorr -> clear();
-    OUT::ph_phoIsoCorr -> clear();
-    OUT::ph_isConv     -> clear();
-    OUT::ph_conv_nTrk  -> clear();
-    OUT::ph_conv_vtx_x -> clear();
-    OUT::ph_conv_vtx_y -> clear();
-    OUT::ph_conv_vtx_z -> clear();
-    OUT::ph_conv_ptin1 -> clear();
-    OUT::ph_conv_ptin2 -> clear();
-    OUT::ph_conv_ptout1-> clear();
-    OUT::ph_conv_ptout2-> clear();
-    OUT::ph_passLoose  -> clear();
-    OUT::ph_passMedium -> clear();
-    OUT::ph_passTight  -> clear();
-    OUT::ph_truthMatch -> clear();
-    OUT::ph_truthMinDR -> clear();
+    OUT::ph_pt              -> clear();
+    OUT::ph_eta             -> clear();
+    OUT::ph_phi             -> clear();
+    OUT::ph_e               -> clear();
+    OUT::ph_HoverE          -> clear();
+    OUT::ph_sigmaIEIE       -> clear();
+    OUT::ph_chIsoCorr       -> clear();
+    OUT::ph_neuIsoCorr      -> clear();
+    OUT::ph_phoIsoCorr      -> clear();
+    OUT::ph_isConv          -> clear();
+    OUT::ph_conv_nTrk       -> clear();
+    OUT::ph_conv_vtx_x      -> clear();
+    OUT::ph_conv_vtx_y      -> clear();
+    OUT::ph_conv_vtx_z      -> clear();
+    OUT::ph_conv_ptin1      -> clear();
+    OUT::ph_conv_ptin2      -> clear();
+    OUT::ph_conv_ptout1     -> clear();
+    OUT::ph_conv_ptout2     -> clear();
+    OUT::ph_passLoose       -> clear();
+    OUT::ph_passMedium      -> clear();
+    OUT::ph_passTight       -> clear();
+    OUT::ph_truthMatch_el   -> clear();
+    OUT::ph_truthMinDR_el   -> clear();
+    OUT::ph_truthMatchPt_el -> clear();
+    OUT::ph_truthMatch_ph   -> clear();
+    OUT::ph_truthMinDR_ph   -> clear();
+    OUT::ph_truthMatchPt_ph -> clear();
     OUT::ph_n          = 0;
 
     for( int idx = 0; idx < IN::nPho; ++idx ) {
@@ -832,35 +1191,62 @@ void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
             OUT::ph_conv_ptout2 -> push_back(ptout_idx0);
             OUT::ph_conv_ptout1 -> push_back(ptout_idx1);
         }
+
+        TLorentzVector phlv;
+        phlv.SetPtEtaPhiE( pt, eta, phi, en );
+        std::vector<int> matchPID;
+        matchPID.push_back(22);
+
+        float minTruthDR = 100.0;
+        TLorentzVector matchLV;
+        bool match = HasTruthMatch( phlv, matchPID, 0.2, minTruthDR, matchLV );
+        OUT::ph_truthMatch_ph->push_back( match  );
+        OUT::ph_truthMinDR_ph->push_back( minTruthDR );
+        OUT::ph_truthMatchPt_ph->push_back( matchLV.Pt() );
+
+        std::vector<int> matchPIDEl;
+        matchPIDEl.push_back(11);
+        matchPIDEl.push_back(-11);
+
+        minTruthDR = 100.0;
+        matchLV.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
+        match = HasTruthMatch( phlv, matchPIDEl, 0.2, minTruthDR, matchLV );
+        OUT::ph_truthMatch_el->push_back( match  );
+        OUT::ph_truthMinDR_el->push_back( minTruthDR );
+        OUT::ph_truthMatchPt_el->push_back( matchLV.Pt() );
     }
             
 }        
 void RunModule::BuildPhoton( ModuleConfig & config ) const {
 
-    OUT::ph_pt         -> clear();
-    OUT::ph_eta        -> clear();
-    OUT::ph_phi        -> clear();
-    OUT::ph_e          -> clear();
-    OUT::ph_HoverE     -> clear();
-    OUT::ph_sigmaIEIE  -> clear();
-    OUT::ph_chIsoCorr  -> clear();
-    OUT::ph_neuIsoCorr -> clear();
-    OUT::ph_phoIsoCorr -> clear();
-    OUT::ph_isConv     -> clear();
-    OUT::ph_conv_nTrk  -> clear();
-    OUT::ph_conv_vtx_x -> clear();
-    OUT::ph_conv_vtx_y -> clear();
-    OUT::ph_conv_vtx_z -> clear();
-    OUT::ph_conv_ptin1 -> clear();
-    OUT::ph_conv_ptin2 -> clear();
-    OUT::ph_conv_ptout1-> clear();
-    OUT::ph_conv_ptout2-> clear();
-    OUT::ph_passLoose  -> clear();
-    OUT::ph_passMedium -> clear();
-    OUT::ph_passTight  -> clear();
-    OUT::ph_truthMatch -> clear();
-    OUT::ph_truthMinDR -> clear();
-    OUT::ph_hasSLConv  -> clear();
+    OUT::ph_pt              -> clear();
+    OUT::ph_eta             -> clear();
+    OUT::ph_phi             -> clear();
+    OUT::ph_e               -> clear();
+    OUT::ph_HoverE          -> clear();
+    OUT::ph_sigmaIEIE       -> clear();
+    OUT::ph_chIsoCorr       -> clear();
+    OUT::ph_neuIsoCorr      -> clear();
+    OUT::ph_phoIsoCorr      -> clear();
+    OUT::ph_isConv          -> clear();
+    OUT::ph_conv_nTrk       -> clear();
+    OUT::ph_conv_vtx_x      -> clear();
+    OUT::ph_conv_vtx_y      -> clear();
+    OUT::ph_conv_vtx_z      -> clear();
+    OUT::ph_conv_ptin1      -> clear();
+    OUT::ph_conv_ptin2      -> clear();
+    OUT::ph_conv_ptout1     -> clear();
+    OUT::ph_conv_ptout2     -> clear();
+    OUT::ph_passLoose       -> clear();
+    OUT::ph_passMedium      -> clear();
+    OUT::ph_passTight       -> clear();
+    OUT::ph_truthMatch_el   -> clear();
+    OUT::ph_truthMinDR_el   -> clear();
+    OUT::ph_truthMatchPt_el -> clear();
+    OUT::ph_truthMatch_ph   -> clear();
+    OUT::ph_truthMinDR_ph   -> clear();
+    OUT::ph_truthMatchPt_ph -> clear();
+    OUT::ph_hasSLConv       -> clear();
     OUT::ph_n          = 0;
 
     for( int idx = 0; idx < IN::nPho; ++idx ) {
@@ -1000,9 +1386,22 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         matchPID.push_back(22);
 
         float minTruthDR = 100.0;
-        bool match = HasTruthMatch( phlv, matchPID, 0.1, minTruthDR );
-        OUT::ph_truthMatch->push_back( match  );
-        OUT::ph_truthMinDR->push_back( minTruthDR );
+        TLorentzVector matchLV;
+        bool match = HasTruthMatch( phlv, matchPID, 0.2, minTruthDR, matchLV );
+        OUT::ph_truthMatch_ph->push_back( match  );
+        OUT::ph_truthMinDR_ph->push_back( minTruthDR );
+        OUT::ph_truthMatchPt_ph->push_back( matchLV.Pt() );
+
+        std::vector<int> matchPIDEl;
+        matchPIDEl.push_back(11);
+        matchPIDEl.push_back(-11);
+
+        minTruthDR = 100.0;
+        matchLV.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
+        match = HasTruthMatch( phlv, matchPIDEl, 0.2, minTruthDR, matchLV );
+        OUT::ph_truthMatch_el->push_back( match  );
+        OUT::ph_truthMinDR_el->push_back( minTruthDR );
+        OUT::ph_truthMatchPt_el->push_back( matchLV.Pt() );
     }
             
 }        
@@ -1021,19 +1420,30 @@ bool RunModule::FilterEvent( ModuleConfig & config ) const {
 bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR ) const {
     
     float minDR = 100.0;
-    return HasTruthMatch( objlv, matchPID, maxDR, minDR );
+    TLorentzVector matchLV;
+    return HasTruthMatch( objlv, matchPID, maxDR, minDR, matchLV );
 
 }
 
-bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float & minDR ) const {
+bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR ) const {
+    
+    TLorentzVector matchLV;
+    return HasTruthMatch( objlv, matchPID, maxDR, minDR, matchLV );
+
+}
+
+bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float & minDR, TLorentzVector & matchLV ) const {
    
     minDR = 100.0;
+    matchLV.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
     bool match=false;
 
+    //std::cout << "CHECK for " << matchPID[0] << std::endl;
     #ifdef EXISTS_nMC
     for( int mcidx = 0; mcidx < IN::nMC; mcidx++ ) {
         
         if( std::find( matchPID.begin(), matchPID.end(), IN::mcPID->at(mcidx) ) == matchPID.end() ) continue;
+        //std::cout << " Match PID " << IN::mcPID->at(mcidx) << " status " << IN::mcStatus->at(mcidx) << std::endl;
 
         #ifdef EXISTS_mcStatus
         if( IN::mcStatus->at(mcidx) != 1 ) continue;
@@ -1042,12 +1452,14 @@ bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<i
         TLorentzVector mclv;
         mclv.SetPtEtaPhiE( IN::mcPt->at(mcidx), IN::mcEta->at(mcidx), IN::mcPhi->at(mcidx), IN::mcE->at(mcidx) );
         float dr = mclv.DeltaR( objlv );
+        //std::cout << "dr = " << dr << std::endl;
         if( dr < maxDR) {
             match = true;
         }
         // store the minimum delta R
         if( dr < minDR ) {
             minDR = dr;
+            matchLV = mclv;
         }
     }
     #endif

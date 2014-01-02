@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 }
 
 void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
-                            const CmdOptions & options ) {
+                            const CmdOptions & options, std::vector<ModuleConfig> &/*configs*/ ) {
     // *************************
     // initialize trees
     // *************************
@@ -55,6 +55,7 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     // Declare Branches
     // *************************
     outtree->Branch("isBlinded", &OUT::isBlinded );
+    outtree->Branch("EventWeight", &OUT::EventWeight, "EventWeight/F" );
 
     outtree->Branch("mu_pt25_n"        , &OUT::mu_pt25_n        , "mu_pt25_n/I"        );
     outtree->Branch("el_pt25_n"        , &OUT::el_pt25_n        , "el_pt25_n/I"        );
@@ -275,6 +276,8 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
     OUT::pt_secondLepton  = 0;
     OUT::pt_thirdLepton   = 0;
     OUT::m_nearestToZ     = 0;
+
+    OUT::EventWeight = 1.0;
 
     TLorentzVector metlv;
     metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );

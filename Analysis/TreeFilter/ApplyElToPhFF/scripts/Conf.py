@@ -22,9 +22,18 @@ def config_analysis( alg_list ) :
     """ Configure analysis modules. Order is preserved """
 
     filt = Filter('AddEventWeight')
-    filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFF.root' )
-    filt.add_var( 'hist_name', 'pt')
+    #filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFF.root' )
+    #filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFFNoMassCut.root' )
+    #filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFFNoMassCut2Conv.root' )
+    #filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFFNoMassCut0Conv.root' )
+    filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFFNoMassCut.root ' )
+    #filt.add_var( 'root_file', '/afs/cern.ch/user/j/jkunkle/usercode/Analysis/TreeFilter/ApplyElToPhFF/data/ElToPhFFOneBin.root' )
+    filt.add_var( 'hist_name_norm', 'norm')
+    filt.add_var( 'hist_name_pt', 'pt')
+    filt.add_var( 'hist_name_eta', 'eta')
+    #filt.add_var( 'hist_name_pteta', 'pteta')
     filt.add_var( 'sample_key', 'DYJetsToLL' )
+    #filt.add_var( 'nconv', '0' )
 
     alg_list.append(filt)
     

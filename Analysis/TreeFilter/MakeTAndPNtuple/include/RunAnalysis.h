@@ -50,14 +50,17 @@ class RunModule : public virtual RunModuleBase {
 namespace OUT {
 
     float              tag_pt;
+    float              tag_eta_sc;
     float              tag_eta;
     float              tag_phi;
     float              probe_pt;
     float              probe_eta;
+    float              probe_eta_sc;
     float              probe_phi;
     Bool_t             probe_isPhoton;
     int                probe_nConvTrk;
     float              m_tagprobe;
+    float              m_tagprobe_sceta;
 
 };
 

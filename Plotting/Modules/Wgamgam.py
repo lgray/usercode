@@ -59,7 +59,10 @@ def config_samples(samples) :
     samples.AddSample('ttg'                     , path='job_summer12_ttg'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('ttjets_1l'               , path='job_summer12_ttjets_1l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('ttjets_2l'               , path='job_summer12_ttjets_2l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('job_summer12_DYJetsToLLFFMultBinNew', path='job_summer12_DYJetsToLLFFMultBinNew',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
+    #samples.AddSample('DYJetsModel', path='job_summer12_DYJetsToLLOneBin',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
+    samples.AddSample('DYJetsModel', path='job_summer12_DYJetsToLLFFNoMassCut',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
+    samples.AddSample('DYJetsModel0Conv', path='job_summer12_DYJetsToLLFFNoMassCut0Conv',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
+    samples.AddSample('DYJetsModel2Conv', path='job_summer12_DYJetsToLLFFNoMassCut2Conv',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
     #samples.AddSample('DataTestOneBin', path='DataTestOneBin',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
     #samples.AddSample('job_summer12_DYJetsToLLFFOneBin2', path='job_summer12_DYJetsToLLFFOneBin2',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
     #samples.AddSample('job_summer12_DYJetsToLLFromLepGamma', path='job_summer12_DYJetsToLLFromLepGamma',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);

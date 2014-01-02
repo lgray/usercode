@@ -26,7 +26,7 @@ class RunModule : public virtual RunModuleBase {
         // The run function must exist and be defined exactly as this
         // because it is defined in RunModuleBase 
         // in src/RunModule.cxx all the analysis is defind in this RunModule function
-        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) ;
+        void initialize(TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options, std::vector<ModuleConfig> & configs);
         bool execute( std::vector<ModuleConfig> & config ) ;
         void finalize( ) {};
 
@@ -56,8 +56,20 @@ class RunModule : public virtual RunModuleBase {
 
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR ) const;
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR ) const;
+        bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR, TLorentzVector &matchLV ) const;
         void calc_corr_iso( float chIso, float phoIso, float neuIso, float rho, float eta, float &chisoCorr, float &phoIsoCorr, float &neuIsoCorr ) const;
 
+     private :
+
+        bool eval_el_tight    ;
+        bool eval_el_medium   ;
+        bool eval_el_loose    ;
+        bool eval_el_veryloose;
+        bool eval_el_tightTrig;
+
+        bool eval_ph_tight    ;
+        bool eval_ph_medium   ;
+        bool eval_ph_loose    ;
 };
 
 // Ouput namespace 
@@ -86,9 +98,9 @@ namespace OUT {
     std::vector<Bool_t> *el_passLoose;
     std::vector<Bool_t> *el_passVeryLoose;
     std::vector<Bool_t> *el_passTightTrig;
-    std::vector<Bool_t> *el_truthMatch_ph;
-    std::vector<Bool_t> *el_truthMatch;
-    std::vector<float>  *el_truthMinDR;
+    std::vector<Bool_t> *el_truthMatch_el;
+    std::vector<float>  *el_truthMatchPt_el;
+    std::vector<float>  *el_truthMinDR_el;
 
     std::vector<float>  *mu_pt;
     std::vector<float>  *mu_eta;
@@ -123,8 +135,12 @@ namespace OUT {
     std::vector<Bool_t> *ph_passTight;
     std::vector<Bool_t> *ph_passMedium;
     std::vector<Bool_t> *ph_passLoose;
-    std::vector<Bool_t> *ph_truthMatch;
-    std::vector<float>  *ph_truthMinDR;
+    std::vector<Bool_t> *ph_truthMatch_el;
+    std::vector<Bool_t> *ph_truthMatch_ph;
+    std::vector<float>  *ph_truthMinDR_el;
+    std::vector<float>  *ph_truthMinDR_ph;
+    std::vector<float>  *ph_truthMatchPt_el;
+    std::vector<float>  *ph_truthMatchPt_ph;
     std::vector<Bool_t> *ph_hasSLConv;
 
     std::vector<float>  *jet_pt;

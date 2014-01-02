@@ -146,12 +146,12 @@ class ModuleConfig {
         bool HasCut( const std::string &name ) const;
 
         const std::vector<CutConfig> & GetAllCuts() const { return configs; }
-        const std::map<std::string, std::string > & GetData() const { return data; }
+        const std::map<std::string, std::string > & GetInitData() const { return init_data; }
 
         void AddCutFlow( const std::string & name );
         void AddCut( CutConfig config );
         void AddHist( const std::string & name, int nbin, float xmin, float xmax );
-        void AddData( const std::string &name, const std::string &val ) { data[name]=val ;}
+        void AddInitData( const std::string &name, const std::string &val ) { init_data[name]=val ;}
 
         void PrintCutFlows() const;
         void WriteCutFlowHists( TFile *) const;
@@ -164,7 +164,7 @@ class ModuleConfig {
 
         std::string name;
         std::vector<CutConfig> configs;
-        std::map<std::string, std::string> data;
+        std::map<std::string, std::string> init_data;
 
         // For now assume 1 cutflow per module
         // but use a vector in case this
@@ -194,6 +194,7 @@ struct CmdOptions {
     std::vector< FileEntry > files;
     int nevt;
     bool transferToStorage;
+    bool disableOutputTree;
     std::string sample;
 
 };
@@ -204,7 +205,7 @@ class RunModuleBase {
 
     public : 
 
-        virtual void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) = 0;
+        virtual void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options, std::vector<ModuleConfig> & configs) = 0;
         virtual bool execute( std::vector<ModuleConfig> & configs ) = 0;
         virtual void finalize( ) = 0;
 

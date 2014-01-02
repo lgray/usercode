@@ -12,8 +12,8 @@ def config_analysis( alg_list ) :
 
     alg_list.append( build_electron( do_cutflow=False, do_hists=False, filtPID='medium' ) )
     alg_list.append( build_muon( do_cutflow=False, do_hists=False) )
-    alg_list.append( build_photon( do_cutflow=False, do_hists=False, filtPID='medium') )
-    alg_list.append( build_sl_photon( ) )
+    alg_list.append( build_photon( do_cutflow=True, do_hists=False, filtPID='medium') )
+    #alg_list.append( build_sl_photon( ) )
     alg_list.append( build_jet( do_cutflow=False, do_hists=False ) )
 
     # filter out a lepton 
