@@ -42,153 +42,24 @@ samples = None
 def main() :
 
     global samples
-    samples = SampleManager(options.baseDir, options.mcweight, options.treeName, options.treeNameModel, options.fileName, base_path_model=options.baseDirModel, xsFile=options.xsFile, lumi=options.lumi)
+    samples = SampleManager(options.baseDir, options.treeName, mcweight=options.mcweight, treeNameModel=options.treeNameModel, filename=options.fileName, base_path_model=options.baseDirModel, xsFile=options.xsFile, lumi=options.lumi)
 
 
     if options.samplesConf is not None :
 
         samples.ReadSamples( options.samplesConf )
 
-    else :
+        print 'Samples ready.\n'  
 
-        #
-        # Add default samples
-        #
+        print 'The draw syntax follows that of TTree.Draw.  Examples : '
+        
+        print 'samples.Draw(\'met_et\', \'EventWeight && passcut_ee==1\', \'(300, 0, 300)\'\n'
 
-        samples.AddSample('Data',
-                          path=['Data',],
-                          isData    = True,
-                         )
+        print 'The first argument is a branch in the tree to draw'
+        print 'The second argument is a set of cuts and/or weights to apply'
+        print 'The third argument are the bin limits to use \n'
 
-        samples.AddSample('Z+jets',
-                          path=['DrellYanZll','DrellYanZtautau'],
-                          #path=['ZJets'],
-                          #path=['ZJetsMerged'],
-                          #scale=2.54345,
-                          plotColor = ROOT.kCyan,
-                          #scale = 1.07565,
-                         )
-
-        samples.AddSample('Nominal',
-                          path=['DrellYanZll','DrellYanZtautau'],
-                          plotColor = ROOT.kCyan,
-                          disableDraw=True,
-
-                          #scale = 1.07565,
-                         )
-
-        # for comparison
-        #samples.AddSample('Single Photon Model',
-        #                  path=['DrellYanZll','DrellYanZtautau'],
-        #                  #path=['ZJets'],
-        #                  #path=['ZJetsMerged'],
-        #                  #scale=2.54345,
-        #                  plotColor = ROOT.kBlue,
-        #                  #scale = 1.136,
-        #                 )
-
-        samples.AddSample('Top',
-                          path=['TTBar','SingleTop'],
-                          plotColor = ROOT.kGreen,
-                          scale=1.0,
-                         )
-        #samples.AddSample('WGamma',
-        #                  path='WgammaFiltered',
-        #                  plotColor = ROOT.kRed
-        #                 )
-
-        #samples.AddSample('ZllGamma',
-        #                  path=['Zeegamma', 'Zmumugamma'],
-        #                  #path=['ZllGamma'],
-        #                  plotColor = ROOT.kRed+5
-        #                 )
-
-        samples.AddSample('WZ',
-                          path='WZ',
-                          plotColor = ROOT.kWhite,
-                         )
-
-        samples.AddSample('WW',
-                          path='WW',
-                          plotColor = ROOT.kRed,
-                         )
-
-        samples.AddSample('W+jets',
-                          path=['Wenu','Wmunu'],
-                          #path=['WJets'],
-                          plotColor = ROOT.kBlue
-                         )
-
-        samples.AddSample('ZZ2l2nu',
-                          #path='ZZllnunuMCAtNLO',
-                          path='ZZllnunu',
-                          plotColor = ROOT.kMagenta
-                         )
-
-        #samples.AddSample('Nominal Z+jets', 
-        #                  path=['DrellYanZll','DrellYanZtautau', 'TTBar','SingleTop', 'WZ', 'WW', 'Wenu', 'Wmunu', 'ZZllnunuMCAtNLO'],
-        #                  isSignal=True,
-        #                  drawRatio=True,
-        #                  plotColor=ROOT.kRed,
-        #                  #scale = 1.07565,
-        #                  #scale=1.27
-
-        #                )
-
-        #samples.AddSample('ZZ2l2nu',
-        #                  path='ZZPowheg',
-        #                  plotColor = ROOT.kMagenta
-        #                 )
-
-        #samples.AddSample('ZHInv125',
-        #                  isSignal = True,
-        #                  path='ZHInv125',
-        #                  plotColor = ROOT.kRed
-        #                 )
-
-        #samples.AddModelTree('Z+jets',
-        #                  path='GammaJetModel',
-        #                  treename='photons',
-        #                  legend_name='Z+jets (data-driven)',
-        #                  #scale=0.001990889,
-        #                  #scale = 1.07565,
-        #                  #scale=1.05676,
-        #                  plotColor = ROOT.kCyan,
-        #    )
-        #samples.AddModelHist('Z+jets',
-        #                  path='GammaJetModel',
-        #                  plotColor = ROOT.kBlue,
-        #                  #scale=1.125135525,
-        #                  #scale=0.87818629,
-        #                  scale=1.343165222,
-        #                  #scale=1.0,
-        #                 )
-
-        #samples.AddModelHist('Z+jets',
-        #                  path='GammaJetModel',
-        #                  plotColor = ROOT.kBlue,
-        #                  scale=0.0035,
-        #                  #scale=1.0,
-        #                 )
-
-
-        #samples.AddSample('DrellYanPythia',
-        #                  path='DrellYanPythia',
-        #                  plotColor = ROOT.kRed
-        #                 )
-
-    print 'Samples ready.\n'  
-
-    print 'The draw syntax follows that of TTree.Draw.  Examples : '
-    
-    print 'samples.Draw(\'met_et\', \'EventWeight && passcut_ee==1\', \'(300, 0, 300)\'\n'
-
-    print 'The first argument is a branch in the tree to draw'
-    print 'The second argument is a set of cuts and/or weights to apply'
-    print 'The third argument are the bin limits to use \n'
-
-    print 'To see all available branches do ListBranches()'
-
+        print 'To see all available branches do ListBranches()'
 
 
 #---------------------------------------
@@ -220,8 +91,10 @@ def SaveStack( filename, canname=None  ) :
             print 'Creating directory %s' %options.outputDir
             os.mkdir(options.outputDir)
 
-        histnamepdf = options.outputDir + '/' + filename.split('.')[0]+'.pdf'
-        histnameeps = options.outputDir + '/' + filename.split('.')[0]+'.eps'
+        #histnamepdf = options.outputDir + '/' + filename.split('.')[0]+'.pdf'
+        #histnameeps = options.outputDir + '/' + filename.split('.')[0]+'.eps'
+        histnamepdf = options.outputDir + '/' + filename+'.pdf'
+        histnameeps = options.outputDir + '/' + filename+'.eps'
 
         if len( samples.curr_canvases ) == 0 :
             print 'No canvases to save'
@@ -270,122 +143,6 @@ def DrawFormatted(varexp, selection, histpars=None ) :
 
     statuslabel.Draw()
     luminosity.Draw()
-
-#---------------------------------------
-def DoTAndP( varexp, num_selection, den_selection, sample, histpars=None, binning=[], xlabel=None, ylabel=None, ymin=None, ymax=None, label=None, normalize=False ) :
-    global samples
-
-    samples.clear_all()
-
-    if not isinstance(sample, list) :
-        sample = [sample]
-
-    num_hists = {}
-    den_hists = {}
-
-    for idx, samp in enumerate(sample) :
-        print 'SAMP ', samp
-        use_stored_first = False
-        if idx > 0 :
-            use_stored_first = True
-
-        samples.MakeSameCanvas([samp], varexp, num_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=use_stored_first, preserve_hists=True )
-        num_hists[samp] = samples.get_samples(samp+'0')[0].hist.Clone('%s_TAndP_num' %samp)
-        samples.clear_hists()
-        #num_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_num' %samp)
-        samples.MakeSameCanvas([samp], varexp, den_selection, histpars, doratio=False, xlabel=xlabel, ylabel=ylabel, useStoredBinning=True, preserve_hists=True)
-        den_hists[samp] = samples.get_samples(samp+'0')[0].hist.Clone('%s_TAndP_den' %samp)
-        #den_hists[samp] = samples.samples[samp+'0'].hist.Clone('%s_TAndP_den' %samp)
-        samples.clear_hists()
-
-        if normalize :
-            num_hists[samp].Scale( 1.0/num_hists[samp].Integral() )
-            den_hists[samp].Scale( 1.0/den_hists[samp].Integral() )
-
-        samples.curr_ratios[samp] = num_hists[samp].Clone('%s_ratio' %samp)
-        if xlabel is not None :
-            samples.curr_ratios[samp].GetXaxis().SetTitle( xlabel )
-            samples.curr_ratios[samp].GetXaxis().SetTitleSize( 0.05 )
-            samples.curr_ratios[samp].GetXaxis().SetTitleOffset( 1.1 )
-        if ylabel is not None :
-            samples.curr_ratios[samp].GetYaxis().SetTitle( ylabel )
-            samples.curr_ratios[samp].GetYaxis().SetTitleSize( 0.05 )
-            samples.curr_ratios[samp].GetYaxis().SetTitleOffset( 1.25 )
-        samples.curr_ratios[samp].Divide(den_hists[samp])
-
-    plot_ymax = 0.0
-    plot_ymin = 100.0
-
-    for ratio in samples.curr_ratios.values() :
-        ratio.SetTitle('')
-        max = ratio.GetMaximum()
-        min = ratio.GetMinimum()
-        if max > plot_ymax :
-            plot_ymax = max
-        if min < plot_ymin :
-            plot_ymin = min
-    if ymin is not None :
-        plot_ymin = ymin
-    else :
-        plot_ymin *= 0.9
-    if ymax is not None :
-        plot_ymax = ymax
-    else :
-        plot_ymax *= 1.1
-
-
-    for ratio in samples.curr_ratios.values() :
-        ratio.GetYaxis().SetRangeUser( plot_ymin, plot_ymax )
-
-    samples.curr_canvases['ratiocan'] = ROOT.TCanvas( 'ratiocan', 'ratiocan' )
-    samples.curr_canvases['ratiocan'].SetBottomMargin(0.13)
-    samples.curr_canvases['ratiocan'].SetLeftMargin(0.13)
-    samples.curr_canvases['ratiocan'].SetTitle('')
-
-    for idx, ratio in enumerate( samples.curr_ratios.values() ) :
-        drawcmd = ''
-        if idx > 0 :
-            drawcmd = 'same'
-        ratio.Draw(drawcmd)
-
-    leg_xmin = 0.6
-    leg_xmax = 0.8
-    leg_ymin = 0.68
-    leg_ymax = 0.88
-
-    if varexp.count('eta') :
-        leg_xmin -= 0.2
-        leg_xmax -= 0.2
-        leg_ymin -= 0.1
-        leg_ymax -= 0.1
-
-    leg = ROOT.TLegend( leg_xmin, leg_ymin, leg_xmax,  leg_ymax)
-    leg.SetBorderSize(0)
-    leg.SetFillColor(ROOT.kWhite)
-
-    for name in sample :
-        ratio = samples.curr_ratios[name]
-        samp_leg = samples.get_samples(name)[0].legendName
-        leg.AddEntry( ratio, samp_leg, 'LPE' )
-
-    samples.curr_canvases['ratiocan'].cd()
-    leg.Draw()
-    samples.curr_legend = leg
-
-    if label is not None :
-        lab = ROOT.TLatex()
-        lab.SetNDC()
-
-        lab.SetText( 0.2, 0.83, label )
-        lab.SetTextFont(42)
-
-        lab.Draw()
-
-        if varexp.count('eta') :
-            xsize = lab.GetXsize()
-            newxmin = 0.5-( xsize/2 )
-            lab.SetX(newxmin)
-        samples.curr_decorations .append(lab)
 
 def WriteCurrentHists( filename='hist.root') :
     """ write all histograms in samples to a root file """

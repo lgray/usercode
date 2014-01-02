@@ -186,11 +186,15 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
 
     //outtree->Branch("avgPU"              , &OUT::avgPU, "avgPU/F"                        );
 
-    eval_tight     = false;
-    eval_medium    = false;
-    eval_loose     = false;
-    eval_veryloose = false;
-    eval_tightTrig = false;
+    eval_el_tight     = false;
+    eval_el_medium    = false;
+    eval_el_loose     = false;
+    eval_el_veryloose = false;
+    eval_el_tightTrig = false;
+
+    eval_ph_tight     = false;
+    eval_ph_medium    = false;
+    eval_ph_loose     = false;
 
     BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
     
@@ -199,11 +203,20 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
             std::map<std::string, std::string>::const_iterator itr = mod_conf.GetInitData().find( "evalPID" );
             if( itr != mod_conf.GetInitData().end() ) {
                 std::string pid = itr->second;
-                if( pid == "tight"     ) eval_tight     = true;
-                if( pid == "medium"    ) eval_medium    = true;
-                if( pid == "loose"     ) eval_loose     = true;
-                if( pid == "veryloose" ) eval_veryloose = true;
-                if( pid == "tightTrig" ) eval_tightTrig = true;
+                if( pid == "tight"     ) eval_el_tight     = true;
+                if( pid == "medium"    ) eval_el_medium    = true;
+                if( pid == "loose"     ) eval_el_loose     = true;
+                if( pid == "veryloose" ) eval_el_veryloose = true;
+                if( pid == "tightTrig" ) eval_el_tightTrig = true;
+            }
+        }
+        if( mod_conf.GetName() == "BuildPhoton" ) { 
+            std::map<std::string, std::string>::const_iterator itr = mod_conf.GetInitData().find( "evalPID" );
+            if( itr != mod_conf.GetInitData().end() ) {
+                std::string pid = itr->second;
+                if( pid == "tight"     ) eval_ph_tight     = true;
+                if( pid == "medium"    ) eval_ph_medium    = true;
+                if( pid == "loose"     ) eval_ph_loose     = true;
             }
         }
     }
@@ -252,9 +265,6 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     }
     if( config.GetName() == "BuildPhoton" ) {
         BuildPhoton( config );
-    }
-    if( config.GetName() == "BuildPIDPhoton" ) {
-        BuildPIDPhoton( config );
     }
     if( config.GetName() == "BuildJet" ) {
         BuildJet( config );
@@ -529,217 +539,217 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
         bool pass_veryloose = true;
         bool pass_tightTrig = true;
 
-        bool use_eval = eval_tight || eval_medium || eval_loose || eval_veryloose || eval_tightTrig;
+        bool use_eval = eval_el_tight || eval_el_medium || eval_el_loose || eval_el_veryloose || eval_el_tightTrig;
 
 
         if( fabs(sceta) < 1.479 ) { // barrel
 
             
             // Tight cuts
-            if( use_eval && eval_tight ) {
+            if( use_eval && eval_el_tight ) {
                 if( !config.PassFloat( "cut_absdEtaIn_barrel_tight"    , dEtaIn       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_barrel_tight"    , dPhiIn       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight" , sigmaIEIE    ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_barrel_tight"        , d0           ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_barrel_tight"        , z0           ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_barrel_tight"    , hovere       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_barrel_tight"    , eoverp       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_pfIso30_barrel_tight"   , pfiso30/pt   ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_convfit_barrel_tight"   , convfit      ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_barrel_tight"  , misshits     ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
             }
             
             // Medium cuts
-            if( use_eval && eval_medium ) {
+            if( use_eval && eval_el_medium ) {
                 if( !config.PassFloat( "cut_absdEtaIn_barrel_medium"    , dEtaIn       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_barrel_medium"    , dPhiIn       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium" , sigmaIEIE    ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_barrel_medium"        , d0           ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_barrel_medium"        , z0           ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_barrel_medium"    , hovere       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_barrel_medium"    , eoverp       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_pfIso30_barrel_medium"   , pfiso30/pt   ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_convfit_barrel_medium"   , convfit      ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_barrel_medium"  , misshits     ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
             }
             
             // Loose cuts
-            if( use_eval && eval_loose ) {
+            if( use_eval && eval_el_loose ) {
                 if( !config.PassFloat( "cut_absdEtaIn_barrel_loose"    , dEtaIn       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_barrel_loose"    , dPhiIn       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose" , sigmaIEIE    ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_barrel_loose"        , d0           ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_barrel_loose"        , z0           ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_barrel_loose"    , hovere       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_barrel_loose"    , eoverp       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_pfIso30_barrel_loose"   , pfiso30/pt   ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_convfit_barrel_loose"   , convfit      ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_barrel_loose"  , misshits     ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
             }
 
             // Very Loose cuts
-            if( use_eval && eval_veryloose ) {
+            if( use_eval && eval_el_veryloose ) {
                 if( !config.PassFloat( "cut_absdEtaIn_barrel_veryloose"    , dEtaIn       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_barrel_veryloose"    , dPhiIn       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_barrel_veryloose" , sigmaIEIE    ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_barrel_veryloose"        , d0           ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_barrel_veryloose"        , z0           ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_barrel_veryloose"    , hovere       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_barrel_veryloose"    , eoverp       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_pfIso30_barrel_veryloose"   , pfiso30/pt   ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_convfit_barrel_veryloose"   , convfit      ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_barrel_veryloose"  , misshits     ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
             }
 
             // tight trigger cuts
-            if( use_eval && eval_tightTrig ) {
+            if( use_eval && eval_el_tightTrig ) {
                 if( !config.PassFloat( "cut_absdEtaIn_barrel_tightTrig"   , dEtaIn      ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_barrel_tightTrig"   , dPhiIn      ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_barrel_tightTrig"   , sigmaIEIE   ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_barrel_tightTrig"   , hovere         ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_ecalIso30_barrel_tightTrig"   , ecalIso30/pt) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_hcalIso30_barrel_tightTrig"   , hcalIso30/pt) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_trkIso30_barrel_tightTrig"   , trkIso30/pt  ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
             }
 
@@ -747,235 +757,235 @@ void RunModule::BuildElectron( ModuleConfig & config ) const {
         else { // endcap
 
             // Tight cuts
-            if( use_eval && eval_tight ) {
+            if( use_eval && eval_el_tight ) {
                 if( !config.PassFloat( "cut_absdEtaIn_endcap_tight"    , dEtaIn       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_endcap_tight"    , dPhiIn       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_endcap_tight" , sigmaIEIE    ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_endcap_tight"        , d0           ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_endcap_tight"        , z0           ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_endcap_tight"    , hovere       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_endcap_tight"    , eoverp       ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( pt < 20 ) {
                   if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_tight"   , pfiso30/pt   ) ) {
                       pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                   }
                 }
                 else {
                   if( !config.PassFloat( "cut_pfIso30_endcap_highPt_tight"   , pfiso30/pt   ) ) {
                       pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                   }
                 }
 
                 if( !config.PassFloat( "cut_convfit_endcap_tight"   , convfit      ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_endcap_tight"  , misshits     ) ) {
                     pass_tight=false;
-                    if( eval_tight ) continue;
+                    if( eval_el_tight ) continue;
                 }
             }
             
             // Medium cuts
-            if( use_eval && eval_medium ) {
+            if( use_eval && eval_el_medium ) {
                 if( !config.PassFloat( "cut_absdEtaIn_endcap_medium"    , dEtaIn       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_endcap_medium"    , dPhiIn       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_endcap_medium" , sigmaIEIE    ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_endcap_medium"        , d0           ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_endcap_medium"        , z0           ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_endcap_medium"    , hovere       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_endcap_medium"    , eoverp       ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( pt < 20 ) {
                     if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_medium"   , pfiso30/pt   ) ) {
                         pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                     }
                 }
                 else {
                     if( !config.PassFloat( "cut_pfIso30_endcap_highPt_medium"   , pfiso30/pt   ) ) {
                         pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                     }
                 }
                 if( !config.PassFloat( "cut_convfit_endcap_medium"   , convfit      ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_endcap_medium"  , misshits     ) ) {
                     pass_medium=false;
-                    if( eval_medium ) continue;
+                    if( eval_el_medium ) continue;
                 }
             }
             
             // Loose cuts
-            if( use_eval && eval_loose ) {
+            if( use_eval && eval_el_loose ) {
                 if( !config.PassFloat( "cut_absdEtaIn_endcap_loose"    , dEtaIn       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_endcap_loose"    , dPhiIn       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_endcap_loose" , sigmaIEIE    ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_endcap_loose"        , d0           ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_endcap_loose"        , z0           ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_endcap_loose"    , hovere       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_endcap_loose"    , eoverp       ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( pt < 20 ) {
                     if( !config.PassFloat( "cut_pfIso30_endcap_lowPt_loose"   , pfiso30/pt   ) ) {
                         pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                     }
                 }
                 else {
                     if( !config.PassFloat( "cut_pfIso30_endcap_highPt_loose"   , pfiso30/pt   ) ) {
                         pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                     }
                 }
                 if( !config.PassFloat( "cut_convfit_endcap_loose"   , convfit      ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_endcap_loose"  , misshits     ) ) {
                     pass_loose=false;
-                    if( eval_loose ) continue;
+                    if( eval_el_loose ) continue;
                 }
             }
 
             // Very Loose cuts
-            if( use_eval && eval_veryloose ) {
+            if( use_eval && eval_el_veryloose ) {
                 if( !config.PassFloat( "cut_absdEtaIn_endcap_veryloose"    , dEtaIn       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_endcap_veryloose"    , dPhiIn       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_endcap_veryloose" , sigmaIEIE    ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_d0_endcap_veryloose"        , d0           ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_z0_endcap_veryloose"        , z0           ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_endcap_veryloose"    , hovere       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_eoverp_endcap_veryloose"    , eoverp       ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_pfIso30_endcap_veryloose"   , pfiso30/pt   ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassFloat( "cut_convfit_endcap_veryloose"   , convfit      ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
                 if( !config.PassInt  ( "cut_misshits_endcap_veryloose"  , misshits     ) ) {
                     pass_veryloose=false;
-                    if( eval_veryloose ) continue;
+                    if( eval_el_veryloose ) continue;
                 }
             }
 
             // tight trigger cuts
-            if( use_eval && eval_tightTrig ) {
+            if( use_eval && eval_el_tightTrig ) {
                 if( !config.PassFloat( "cut_absdEtaIn_endcap_tightTrig"   , dEtaIn      ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_absdPhiIn_endcap_tightTrig"   , dPhiIn      ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_sigmaIEIE_endcap_tightTrig"   , sigmaIEIE   ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_hovere_endcap_tightTrig"   , hovere         ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_ecalIso30_endcap_tightTrig"   , ecalIso30/pt) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_hcalIso30_endcap_tightTrig"   , hcalIso30/pt) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
                 if( !config.PassFloat( "cut_trkIso30_endcap_tightTrig"   , trkIso30/pt  ) ) {
                     pass_tightTrig=false;
-                    if( eval_tightTrig ) continue;
+                    if( eval_el_tightTrig ) continue;
                 }
             }
         }
@@ -1059,164 +1069,6 @@ void RunModule::BuildJet( ModuleConfig & config ) const {
             
 }        
 
-void RunModule::BuildPIDPhoton( ModuleConfig & config ) const {
-
-    OUT::ph_pt              -> clear();
-    OUT::ph_eta             -> clear();
-    OUT::ph_phi             -> clear();
-    OUT::ph_e               -> clear();
-    OUT::ph_HoverE          -> clear();
-    OUT::ph_sigmaIEIE       -> clear();
-    OUT::ph_chIsoCorr       -> clear();
-    OUT::ph_neuIsoCorr      -> clear();
-    OUT::ph_phoIsoCorr      -> clear();
-    OUT::ph_isConv          -> clear();
-    OUT::ph_conv_nTrk       -> clear();
-    OUT::ph_conv_vtx_x      -> clear();
-    OUT::ph_conv_vtx_y      -> clear();
-    OUT::ph_conv_vtx_z      -> clear();
-    OUT::ph_conv_ptin1      -> clear();
-    OUT::ph_conv_ptin2      -> clear();
-    OUT::ph_conv_ptout1     -> clear();
-    OUT::ph_conv_ptout2     -> clear();
-    OUT::ph_passLoose       -> clear();
-    OUT::ph_passMedium      -> clear();
-    OUT::ph_passTight       -> clear();
-    OUT::ph_truthMatch_el   -> clear();
-    OUT::ph_truthMinDR_el   -> clear();
-    OUT::ph_truthMatchPt_el -> clear();
-    OUT::ph_truthMatch_ph   -> clear();
-    OUT::ph_truthMinDR_ph   -> clear();
-    OUT::ph_truthMatchPt_ph -> clear();
-    OUT::ph_n          = 0;
-
-    for( int idx = 0; idx < IN::nPho; ++idx ) {
-        float pt        = IN::phoEt->at(idx);
-        float eta       = IN::phoEta->at(idx);
-        float sceta     = IN::phoSCEta->at(idx);
-        float phi       = IN::phoPhi->at(idx);
-        float en        = IN::phoE->at(idx);
-        int   isConv    = IN::phoIsConv->at(idx);
-
-        float rho = IN::rho2012;
-
-        int   eleVeto   = IN::phoEleVeto->at(idx);
-        float hovere    = IN::phoHoverE->at(idx);
-        float sigmaIEIE = IN::phoSigmaIEtaIEta->at(idx);
-        int   pixseed   = IN::phohasPixelSeed->at(idx);
-
-        float isohollow40 = IN::phoTrkIsoHollowDR04->at(idx);
-        float ecaliso40   = IN::phoEcalIsoDR04->at(idx);
-        float hcaliso40   = IN::phoHcalIsoDR04->at(idx);
-
-        float pfChIso     = IN::phoPFChIso->at(idx);
-        float pfNeuIso    = IN::phoPFNeuIso->at(idx);
-        float pfPhoIso    = IN::phoPFPhoIso->at(idx);
-
-        float pfChIsoRhoCorr = 0.0;
-        float pfNeuIsoRhoCorr = 0.0;
-        float pfPhoIsoRhoCorr = 0.0;
-        calc_corr_iso( pfChIso, pfPhoIso, pfNeuIso, rho, eta, pfChIsoRhoCorr, pfPhoIsoRhoCorr, pfNeuIsoRhoCorr);
-
-        float pfChIsoPtRhoCorr  = pfChIsoRhoCorr;
-        float pfNeuIsoPtRhoCorr = pfNeuIsoRhoCorr-0.04*pt;
-        float pfPhoIsoPtRhoCorr = pfPhoIsoRhoCorr-0.005*pt;
-
-        if( !config.PassFloat( "cut_pt"    , pt       ) ) continue;
-        if( !config.PassFloat( "cut_abseta"    , fabs(sceta)       ) ) continue;
-        if( !config.PassFloat( "cut_abseta_crack"    , fabs(sceta)       ) ) continue;
-        if( !config.PassFloat( "cut_emfrac"    , hovere ) ) continue;
-        if( !config.PassBool ( "cut_eveto"     , eleVeto) ) continue;
-
-        bool pass = true;
-
-        if( fabs(sceta) < 1.479 ) { // barrel
-
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel"   , sigmaIEIE         ) ) continue;
-            if( !config.PassFloat( "cut_chIsoCorr_barrel"   , pfChIsoPtRhoCorr  ) ) continue;
-            if( !config.PassFloat( "cut_neuIsoCorr_barrel"  , pfNeuIsoPtRhoCorr ) ) continue;
-            if( !config.PassFloat( "cut_phoIsoCorr_barrel"  , pfPhoIsoPtRhoCorr ) ) continue;
-
-        }
-        else {
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap"   , sigmaIEIE         ) ) continue;
-            if( !config.PassFloat( "cut_chIsoCorr_endcap"   , pfChIsoPtRhoCorr  ) ) continue;
-            if( !config.PassFloat( "cut_neuIsoCorr_endcap"  , pfNeuIsoPtRhoCorr ) ) continue;
-            if( !config.PassFloat( "cut_phoIsoCorr_endcap"  , pfPhoIsoPtRhoCorr ) ) continue;
-
-        }
-
-
-        OUT::ph_n++;
-
-        OUT::ph_pt         -> push_back(pt);
-        OUT::ph_eta        -> push_back(eta);
-        OUT::ph_phi        -> push_back(phi);
-        OUT::ph_e          -> push_back(pt*cosh(eta));
-        OUT::ph_HoverE     -> push_back(hovere);
-        OUT::ph_sigmaIEIE  -> push_back(sigmaIEIE);
-        OUT::ph_chIsoCorr  -> push_back(pfChIsoPtRhoCorr);
-        OUT::ph_neuIsoCorr -> push_back(pfNeuIsoPtRhoCorr);
-        OUT::ph_phoIsoCorr -> push_back(pfPhoIsoPtRhoCorr);
-
-        // fill conversion info
-        // the ntuples fill default values when the
-        // photon is not converted, so just keep that
-
-        OUT::ph_isConv     -> push_back(IN::phoIsConv->at(idx));
-        OUT::ph_conv_nTrk  -> push_back(IN::phoConvNTrks->at(idx));
-        OUT::ph_conv_vtx_x -> push_back(IN::phoConvVtx_x->at(idx));
-        OUT::ph_conv_vtx_y -> push_back(IN::phoConvVtx_y->at(idx));
-        OUT::ph_conv_vtx_z -> push_back(IN::phoConvVtx_z->at(idx));
-        // get the individual track pt
-        // i'm not sure if its pt sorted, so lets
-        // do that now to be sure
-        float ptin_idx0 = IN::phoConvTrkPin_x->at(idx);
-        float ptin_idx1 = IN::phoConvTrkPin_y->at(idx);
-        float ptout_idx0 = IN::phoConvTrkPout_x->at(idx);
-        float ptout_idx1 = IN::phoConvTrkPout_y->at(idx);
-        if( ptin_idx0 > ptin_idx1 ) {
-            OUT::ph_conv_ptin1 -> push_back(ptin_idx0);
-            OUT::ph_conv_ptin2 -> push_back(ptin_idx1);
-        }
-        else {
-            OUT::ph_conv_ptin2 -> push_back(ptin_idx0);
-            OUT::ph_conv_ptin1 -> push_back(ptin_idx1);
-        }
-        if( ptout_idx0 > ptout_idx1 ) {
-            OUT::ph_conv_ptout1 -> push_back(ptout_idx0);
-            OUT::ph_conv_ptout2 -> push_back(ptout_idx1);
-        }
-        else {
-            OUT::ph_conv_ptout2 -> push_back(ptout_idx0);
-            OUT::ph_conv_ptout1 -> push_back(ptout_idx1);
-        }
-
-        TLorentzVector phlv;
-        phlv.SetPtEtaPhiE( pt, eta, phi, en );
-        std::vector<int> matchPID;
-        matchPID.push_back(22);
-
-        float minTruthDR = 100.0;
-        TLorentzVector matchLV;
-        bool match = HasTruthMatch( phlv, matchPID, 0.2, minTruthDR, matchLV );
-        OUT::ph_truthMatch_ph->push_back( match  );
-        OUT::ph_truthMinDR_ph->push_back( minTruthDR );
-        OUT::ph_truthMatchPt_ph->push_back( matchLV.Pt() );
-
-        std::vector<int> matchPIDEl;
-        matchPIDEl.push_back(11);
-        matchPIDEl.push_back(-11);
-
-        minTruthDR = 100.0;
-        matchLV.SetPxPyPzE(0.0, 0.0, 0.0, 0.0);
-        match = HasTruthMatch( phlv, matchPIDEl, 0.2, minTruthDR, matchLV );
-        OUT::ph_truthMatch_el->push_back( match  );
-        OUT::ph_truthMinDR_el->push_back( minTruthDR );
-        OUT::ph_truthMatchPt_el->push_back( matchLV.Pt() );
-    }
-            
-}        
 void RunModule::BuildPhoton( ModuleConfig & config ) const {
 
     OUT::ph_pt              -> clear();
@@ -1291,39 +1143,130 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         bool pass_medium = true;
         bool pass_tight  = true;
 
+        bool use_eval = eval_ph_tight || eval_ph_medium || eval_ph_loose;
+
         if( fabs(sceta) < 1.479 ) { // barrel
 
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose"   , sigmaIEIE         ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_chIsoCorr_barrel_loose"   , pfChIsoPtRhoCorr  ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_barrel_loose"  , pfNeuIsoPtRhoCorr ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_barrel_loose"  , pfPhoIsoPtRhoCorr ) ) pass_loose=false;
+            //loose 
+            if( use_eval && eval_ph_loose ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_loose"   , sigmaIEIE         ) ) {
+                  pass_loose=false;
+                  if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_barrel_loose"   , pfChIsoPtRhoCorr  ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_barrel_loose"  , pfNeuIsoPtRhoCorr ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_barrel_loose"  , pfPhoIsoPtRhoCorr ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+            }
 
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium"  , sigmaIEIE         ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_chIsoCorr_barrel_medium"  , pfChIsoPtRhoCorr  ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_barrel_medium" , pfNeuIsoPtRhoCorr ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_barrel_medium" , pfPhoIsoPtRhoCorr ) ) pass_medium=false;
+            // medium
+            if( use_eval && eval_ph_medium ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_medium"  , sigmaIEIE         ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_barrel_medium"  , pfChIsoPtRhoCorr  ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_barrel_medium" , pfNeuIsoPtRhoCorr ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_barrel_medium" , pfPhoIsoPtRhoCorr ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+            }
 
-            if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight"   , sigmaIEIE         ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_chIsoCorr_barrel_tight"   , pfChIsoPtRhoCorr  ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_barrel_tight"  , pfNeuIsoPtRhoCorr ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_barrel_tight"  , pfPhoIsoPtRhoCorr ) ) pass_tight=false;
-
+            // tight
+            if( use_eval && eval_ph_tight ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_barrel_tight"   , sigmaIEIE         ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_barrel_tight"   , pfChIsoPtRhoCorr  ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_barrel_tight"  , pfNeuIsoPtRhoCorr ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_barrel_tight"  , pfPhoIsoPtRhoCorr ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+            }
         }
         else {
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_loose"   , sigmaIEIE         ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_chIsoCorr_endcap_loose"   , pfChIsoPtRhoCorr  ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_endcap_loose"  , pfNeuIsoPtRhoCorr ) ) pass_loose=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_endcap_loose"  , pfPhoIsoPtRhoCorr ) ) pass_loose=false;
+            // loose
+            if( use_eval && eval_ph_loose ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_loose"   , sigmaIEIE         ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_endcap_loose"   , pfChIsoPtRhoCorr  ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_endcap_loose"  , pfNeuIsoPtRhoCorr ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_endcap_loose"  , pfPhoIsoPtRhoCorr ) ) {
+                    pass_loose=false;
+                    if( eval_ph_loose ) continue;
+                }
+            }
 
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_medium"  , sigmaIEIE         ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_chIsoCorr_endcap_medium"  , pfChIsoPtRhoCorr  ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_endcap_medium" , pfNeuIsoPtRhoCorr ) ) pass_medium=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_endcap_medium" , pfPhoIsoPtRhoCorr ) ) pass_medium=false;
+            // medium
+            if( use_eval && eval_ph_medium ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_medium"  , sigmaIEIE         ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_endcap_medium"  , pfChIsoPtRhoCorr  ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_endcap_medium" , pfNeuIsoPtRhoCorr ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_endcap_medium" , pfPhoIsoPtRhoCorr ) ) {
+                    pass_medium=false;
+                    if( eval_ph_medium ) continue;
+                }
+            }
 
-            if( !config.PassFloat( "cut_sigmaIEIE_endcap_tight"   , sigmaIEIE         ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_chIsoCorr_endcap_tight"   , pfChIsoPtRhoCorr  ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_neuIsoCorr_endcap_tight"  , pfNeuIsoPtRhoCorr ) ) pass_tight=false;
-            if( !config.PassFloat( "cut_phoIsoCorr_endcap_tight"  , pfPhoIsoPtRhoCorr ) ) pass_tight=false;
+            // tight
+            if( use_eval && eval_ph_tight ) {
+                if( !config.PassFloat( "cut_sigmaIEIE_endcap_tight"   , sigmaIEIE         ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_chIsoCorr_endcap_tight"   , pfChIsoPtRhoCorr  ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_neuIsoCorr_endcap_tight"  , pfNeuIsoPtRhoCorr ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+                if( !config.PassFloat( "cut_phoIsoCorr_endcap_tight"  , pfPhoIsoPtRhoCorr ) ) {
+                    pass_tight=false;
+                    if( eval_ph_tight ) continue;
+                }
+            }
         }
 
         if( !config.PassBool( "cut_pid_tight"    , pass_tight     ) ) continue;

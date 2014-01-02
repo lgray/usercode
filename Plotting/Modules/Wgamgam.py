@@ -24,7 +24,7 @@ def config_samples(samples) :
     samples.AddSample('muon_2012c_PRv21'                 , path='job_muon_2012c_PRv21'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('muon_2012d_PRv1'                  , path='job_muon_2012d_PRv1'                  , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('muon_2012d_PRv11'                 , path='job_muon_2012d_PRv11'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, scale=1.0 );
+    #samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, scale=1.0 );
     samples.AddSample('Zgammastar'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=False, useXSFile=True, plotColor=ROOT.kCyan );
     samples.AddSample('LNuGG_FSR'               , path='job_summer12_LNuGG_FSR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
     samples.AddSample('LNuGG_ISR'               , path='job_summer12_LNuGG_ISR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
@@ -251,11 +251,11 @@ def config_samples(samples) :
     #                       scale=-1,
     #                      )
 
-    #samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=False,
-    #                        input_samples = ['Data', 'AllMC'],
-    #                        plotColor=ROOT.kGreen,isSignal=True
-    #                      )
-    #                                         
+    samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=True,
+                            input_samples = ['Data', 'AllMC'],
+                            plotColor=ROOT.kGreen,isSignal=True
+                          )
+                                             
 
 
 
