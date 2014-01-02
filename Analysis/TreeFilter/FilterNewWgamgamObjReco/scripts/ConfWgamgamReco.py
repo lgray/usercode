@@ -18,7 +18,7 @@ def config_analysis( alg_list ) :
     #filter_evt.cut_mu_n = ' > 0 '
     #alg_list.append(filter_evt)
 
-    alg_list.append( build_photon( do_cutflow=True, do_hists=True) )
+    alg_list.append( build_photon( do_cutflow=True, do_hists=True, evalPID='medium') )
     alg_list.append( build_jet( do_cutflow=True, do_hists=True ) )
 
     # do this later, after PID has been applied
@@ -199,7 +199,7 @@ def build_electron( do_cutflow=False, do_hists=False, filtPID=None, evalPID=None
 
     return filt
 
-def build_photon( do_cutflow=False, do_hists=False, filtPID=None ) :
+def build_photon( do_cutflow=False, do_hists=False, filtPID=None, evalPID=None ) :
 
     filt = Filter('BuildPhoton')
 
@@ -246,6 +246,9 @@ def build_photon( do_cutflow=False, do_hists=False, filtPID=None ) :
 
     if filtPID is not None :
         setattr(filt, 'cut_pid_%s' %filtPID, ' == True' )
+
+    if evalPID is not None :
+        filt.add_var( 'evalPID', evalPID )
 
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )

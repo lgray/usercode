@@ -45,7 +45,6 @@ class RunModule : public virtual RunModuleBase {
         void BuildMediumElectron ( ModuleConfig & config ) const;
         void BuildMuon           ( ModuleConfig & config ) const;
         void BuildPhoton         ( ModuleConfig & config ) const;
-        void BuildPIDPhoton      ( ModuleConfig & config ) const;
         void BuildJet            ( ModuleConfig & config ) const;
         void BuildEvent          ( ModuleConfig & config ) const;
         bool FilterElec          ( ModuleConfig & config ) const;
