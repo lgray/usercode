@@ -352,8 +352,6 @@ class SampleManager :
         if base_path is None or path_list is None or not path_list :
             return input_files
 
-        print base_path
-        print path_list
         for subpath in path_list :
             fullpath = base_path + '/' + subpath
             # if files have been provided, read them directly
@@ -727,8 +725,6 @@ class SampleManager :
             if max > ymax :
                 ymax = max
 
-        print 'FINAL Max ', ymax
-        
         ymax *= 1.2
 
         first = True
@@ -742,6 +738,7 @@ class SampleManager :
 
             if ylabel is not None :
                 samp.hist.GetYaxis().SetTitle( ylabel )
+                 print "GOTHERE1"
             if not doratio and xlabel is not None :
                 samp.hist.GetXaxis().SetTitle( xlabel )
 

@@ -37,13 +37,16 @@ int main(int argc, char **argv)
 }
 
 void RunModule::initialize( TChain * chain, TTree * _outtree, TFile *outfile,
-                            const CmdOptions & _options ) {
+                            const CmdOptions & _options, std::vector<ModuleConfig> & configs ) {
 
     // store tree for local use
     outtree = _outtree;
     options = _options;
     rfile = 0;
-    rhist = 0;
+    rhist_norm = 0;
+    rhist_pt   = 0;
+    rhist_eta  = 0;
+    rhist_pteta  = 0;
     // *************************
     // initialize trees
     // *************************
@@ -52,6 +55,46 @@ void RunModule::initialize( TChain * chain, TTree * _outtree, TFile *outfile,
     
     outtree->Branch("EventWeight"      , &OUT::EventWeight      , "EventWeight/F" );
     outtree->Branch("HasElToPhFF"      , &OUT::HasElToPhFF      , "HasElToPhFF/O" );
+
+    BOOST_FOREACH( ModuleConfig & mod_conf, configs ) {
+        if( mod_conf.GetName() == "AddEventWeight" ) {
+
+            std::map<std::string, std::string> data = mod_conf.GetInitData();
+
+            std::string root_file;
+            std::string hist_name_norm;
+            std::string hist_name_pt;
+            std::string hist_name_eta;
+            std::string nconv;
+
+            if( data.find( "root_file" ) != data.end() ) {
+                std::string root_file = data["root_file"];
+                rfile = TFile::Open( root_file.c_str() );
+            }
+            else {
+                std::cout << "RunModule::AddEventWeight : ERROR - No root file was provided" << std::endl;
+                return;
+            }
+            if( data.find( "hist_name_norm" ) != data.end() ) {
+                rhist_norm = dynamic_cast<TH1F*>(rfile->Get(data["hist_name_norm"].c_str()));
+            }
+            if( data.find( "hist_name_pt" ) != data.end() ) {
+                rhist_pt = dynamic_cast<TH1F*>(rfile->Get(data["hist_name_pt"].c_str()));
+            }
+            if( data.find( "hist_name_eta" ) != data.end() ) {
+                rhist_eta = dynamic_cast<TH1F*>(rfile->Get(data["hist_name_eta"].c_str()));
+            }
+            if( data.find( "hist_name_pteta" ) != data.end() ) {
+                rhist_pteta = dynamic_cast<TH2F*>(rfile->Get(data["hist_name_pteta"].c_str()));
+            }
+            if( data.find( "sample_key" ) != data.end() ) {
+                sample_key = data["sample_key"];
+            }
+            if( data.find( "nconv" ) != data.end() ) {
+                nconv = data[ "nconv" ];
+            }
+        }
+    }
 
 }
 
@@ -86,51 +129,12 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
     OUT::EventWeight = 1.0;
     OUT::HasElToPhFF = false;
 
-    std::map<std::string, std::string> data = config.GetData();
-
-    std::string root_file;
-    std::string hist_name;
-    std::string sample_key;
-
-    if( data.find( "root_file" ) != data.end() ) {
-        root_file = data["root_file"];
-    }
-    else {
-        std::cout << "RunModule::AddEventWeight : ERROR - No root file was provided" << std::endl;
-        return true;
-    }
-    if( data.find( "hist_name" ) != data.end() ) {
-        hist_name = data["hist_name"];
-    }
-    else {
-        std::cout << "RunModule::AddEventWeight : ERROR - No histogram name was provided" << std::endl;
-        return true;
-    }
-    if( data.find( "sample_key" ) != data.end() ) {
-        sample_key = data["sample_key"];
-    }
-    else {
-        return true;
-    }
-
     if( options.sample.empty() ) return true; 
     // if the string is not empty, then try to match
         
     // if no match, then return, otherwise get the histo
     if( options.sample.find( sample_key ) == std::string::npos ) {
         return true;
-    }
-
-    // check if the file has already been opened.  If not, open it and get the histogram
-    if( rfile == 0 ) {
-
-        std::cout << "Root file : " << root_file << std::endl;
-        std::cout << "Hist name : " << hist_name << std::endl;
-        rfile = TFile::Open( root_file.c_str() );
-        rhist = dynamic_cast<TH1F*>(rfile->Get( hist_name.c_str() ) );
-        //rfile->Close();
-        //rfile=0;
-
     }
 
     // Require two electrons
@@ -142,13 +146,23 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
     // treating this electron as a photon
     for( int i = 0; i < IN::el_n; ++i ) {
 
+        float pt  = IN::el_pt ->at(i);
+        float eta = IN::el_eta->at(i);
+
+        // make the photon eta cut
+        if( fabs(eta) > 1.479 && fabs(eta) < 1.566 ) continue;
+
         // copy the event
         CopyInputVarsToOutput();
 
-        float pt = IN::el_pt->at(i);
-        float sf = rhist->GetBinContent( rhist->FindBin( pt ) );
+        float sf = 1.0;
 
-        OUT::EventWeight *= sf;
+        if( rhist_norm ) sf *= rhist_norm->GetBinContent( 1 );
+        if( rhist_pt   ) sf *= rhist_pt  ->GetBinContent( rhist_pt ->FindBin( pt  ) );
+        if( rhist_eta  ) sf *= rhist_eta ->GetBinContent( rhist_eta->FindBin( eta ) );
+        if( rhist_pteta) sf *= rhist_pteta->GetBinContent( rhist_pteta->FindBin( pt, eta ) );
+
+        OUT::EventWeight = sf;
         OUT::HasElToPhFF = true;
 
         // we need to erase an electron, start by clearing all electron branches
@@ -174,6 +188,12 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
         OUT::ph_phi->push_back( IN::el_phi->at(i) );
         OUT::ph_e->push_back( IN::el_e->at(i) );
         OUT::ph_n++;
+        if( nconv == "0" ) {
+            OUT::ph_conv_nTrk->push_back(0);
+        }
+        if( nconv == "2" ) {
+            OUT::ph_conv_nTrk->push_back(2);
+        }
 
         // recalculate event kinematics counting the electron as a photon
         // reset all of them first
@@ -182,8 +202,6 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
         OUT::leadPhot_pt=0;
         OUT::sublPhot_pt=0;
         OUT::m_phph=0;
-        OUT::leadPhot_pt=0;
-        OUT::sublPhot_pt=0;
         OUT::pt_secondLepton=0;
         OUT::pt_thirdLepton=0;
         OUT::m_leplep=0;
@@ -208,10 +226,6 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
         OUT::pt_lepph1=0;
         OUT::pt_lepph2=0;
         OUT::pt_lepphph=0;
-        OUT::leadPhot_lepDR=0;
-        OUT::mt_lepph1_met=0;
-        OUT::m_lepph1=0;
-        OUT::pt_lepph1=0;
         OUT::m_leplepZ=0;
         OUT::m_3lep=0;
         OUT::m_4lep=0;
@@ -368,3 +382,11 @@ bool RunModule::AddEventWeight( ModuleConfig & config) {
     return true;
 }
 
+
+void RunModule::finalize() {
+
+    if( rfile->IsOpen() ) {
+        rfile->Close();
+    }
+
+}

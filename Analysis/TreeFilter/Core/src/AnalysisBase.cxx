@@ -111,7 +111,7 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
             hfilter->GetXaxis()->SetBinLabel(1, "Total");
             hfilter->GetXaxis()->SetBinLabel(2, "Filter");
 
-            runmod.initialize( chain, outtree, outfile, options );
+            runmod.initialize( chain, outtree, outfile, options, getEntries() );
 
             if( maxevt == 0 ) {
                 maxevt = chain->GetEntries();
@@ -131,7 +131,7 @@ void AnaConfig::Run( RunModuleBase & runmod, const CmdOptions & options ) {
 
                 hfilter->Fill(0);
                 if( save_event ) {
-                    outtree->Fill();
+                    if( !options.disableOutputTree ) outtree->Fill();
                     hfilter->Fill(1);
                     n_saved++;
                 }
@@ -907,7 +907,7 @@ void ReadCut( std::string &cut, ModuleConfig & module ) {
         ParseHistPars( cut, module );
         return;
     }
-    else if( cut.find("data_") == 0 ) {
+    else if( cut.find("init_") == 0 ) {
         ParseDataEntry( cut, module );
         return;
     }
@@ -972,7 +972,7 @@ void ParseDataEntry( const std::string & cut_str, ModuleConfig & module ) {
     boost::algorithm::trim(name);
     boost::algorithm::trim(val_str);
 
-    module.AddData( name, val_str );
+    module.AddInitData( name, val_str );
 
 }
 
@@ -1022,7 +1022,12 @@ void ReadHeaderLine( const std::string & line, CmdOptions & options ) {
         options.sample = header_val;
         boost::algorithm::trim(options.sample);
     }
-    
+    else if( header_key.find("disableOutputTree") != std::string::npos ) {
+        if( header_val.find("true") != std::string::npos ) {
+            options.disableOutputTree = true;
+        }
+    }
+
 }
 
 void ParseFiles( const std::string & files_val, CmdOptions & options ) {
@@ -1103,7 +1108,7 @@ void ParseFiles( const std::string & files_val, CmdOptions & options ) {
     }
 }
 
-CmdOptions::CmdOptions() : nevt(-1), transferToStorage(false)
+CmdOptions::CmdOptions() : nevt(-1), transferToStorage(false), disableOutputTree(false)
 {
 }
 

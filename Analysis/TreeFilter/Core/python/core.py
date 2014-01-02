@@ -52,6 +52,8 @@ def ParseArgs() :
     parser.add_argument('--enableRemoveFilter', dest='enableRemoveFilter', default=False, action='store_true', help='Do not write out branches in the remove filter in the analysis module')
     
     parser.add_argument('--enableKeepFilter', dest='enableKeepFilter', default=False, action='store_true', help='Only write out branches in the remove filter in the analysis module.  Can specify branches to remove within the keep filter by enabling the remove filter')
+
+    parser.add_argument('--disableOutputTree', dest='disableOutputTree', default=False, action='store_true', help='Do not write events to the output tree')
     
     parser.add_argument('--debugCode', dest='debugCode', default=False, action='store_true', help='Place debugging statements in the written code')
     
@@ -195,7 +197,7 @@ def config_and_run( options, package_name ) :
     else :
 
         output_file = '%s/%s' %(options.outputDir, options.outputFile )
-        write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath, options.sample ) 
+        write_config( alg_list, options.confFileName, options.treeName, options.outputDir, options.outputFile, file_evt_list, options.storagePath, options.sample, options.disableOutputTree ) 
         command = make_exe_command( exe_path, options.confFileName )
 
         # Stop here if not running
@@ -210,6 +212,8 @@ def config_and_run( options, package_name ) :
         logging.info( 'Executing ' + command )
         logging.info('********************************')
         os.system(command)
+
+    print 'Output written to %s' %(options.outputDir)
 
 
 def collect_input_files( filesDir, filekey='.root' ) :
@@ -458,7 +462,7 @@ def generate_multiprocessing_commands( file_evt_list, alg_list, exe_path, option
         if not os.path.isdir( outputDir ) :
             os.makedirs( outputDir )
         
-        write_config(alg_list, conf_file, options.treeName, outputDir, options.outputFile, [file_split], options.storagePath, options.sample, idx )
+        write_config(alg_list, conf_file, options.treeName, outputDir, options.outputFile, [file_split], options.storagePath, options.sample, options.disableOutputTree, idx )
         commands.append( make_exe_command( exe_path, conf_file ) )
 
     return commands
@@ -539,7 +543,7 @@ def get_file_evt_map( input_files, nsplit, nFilesPerJob, treeName ) :
 
     return split_files_evt_match
 
-def write_config( alg_list, filename, treeName, outputDir, outputFile, files_list, storage_path, sample, start_idx=0 ) :
+def write_config( alg_list, filename, treeName, outputDir, outputFile, files_list, storage_path, sample, disableOutputTree, start_idx=0 ) :
 
     cfile = open( filename, 'w')
 
@@ -563,6 +567,8 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
         cfile.write( 'storagePath : %s\n' %storage_path )
     if sample is not None :
         cfile.write( 'sample : %s\n' %sample )
+    if disableOutputTree :
+        cfile.write( 'disableOutputTree : true\n' )
 
     cfile.write( '__Modules__\n' )
 
@@ -580,7 +586,7 @@ def write_config( alg_list, filename, treeName, outputDir, outputFile, files_lis
                 conf_string += '%s %s[%s] ; ' %(name, inv_str, val)
 
         for name, val in alg.vars.iteritems() :
-            conf_string += 'data_%s [%s] ; ' %( name, val )
+            conf_string += 'init_%s [%s] ; ' %( name, val )
 
         if alg.do_cutflow :
             conf_string += 'do_cutflow [] ; '

@@ -45,7 +45,7 @@ jobs = [
         #(base_mc, 'job_summer12_ZZ_4e'),
         #(base_mc, 'job_summer12_ZZ_4mu'),
         #(base_mc, 'job_summer12_ZZ_4tau'),
-        (base_mc, 'job_summer12_Zg'),
+        #(base_mc, 'job_summer12_Zg'),
         #(base_mc, 'job_summer12_gjet_pt20to40_doubleEM'),
         #(base_mc, 'job_summer12_gjet_pt40_doubleEM'),
         #(base_mc, 'job_summer12_t_s'),
@@ -57,12 +57,12 @@ jobs = [
         #(base_mc, 'job_summer12_ttW'),
         #(base_mc, 'job_summer12_ttZ'),
         #(base_mc, 'job_summer12_ttg'),
-        (base_mc, 'job_summer12_ttjets_1l'),
-        (base_mc, 'job_summer12_ttjets_2l'),
+        #(base_mc, 'job_summer12_ttjets_1l'),
+        #(base_mc, 'job_summer12_ttjets_2l'),
 
 ]
 
 for base, job in jobs :
-    command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s/ --fileKey tree.root --outputDir /tmp/jkunkle/OutputS2TestNoPhJetOlap_2013_11_03/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableKeepFilter --nFilesPerJob 5 --storagePath /eos/cms/store/user/jkunkle/Wgamgam/OutputS2TestNoPhJetOlap_2013_11_03/%s --nproc 8 --confFileName %s ' %( base, job, job, job, job ) 
+    command = 'python scripts/filter.py  --filesDir root://eoscms/%s/%s/ --fileKey tree.root --outputDir /tmp/jkunkle/RecoOutputOld_2013_12_26/%s --outputFile tree.root --treeName ggNtuplizer/EventTree --module scripts/ConfWgamgamReco.py --enableKeepFilter --nFilesPerJob 5 --storagePath /eos/cms/store/user/jkunkle/Wgamgam/RecoOutputOld_2013_12_26/%s --nproc 8 --confFileName %s ' %( base, job, job, job, job ) 
     print command
     os.system(command)
