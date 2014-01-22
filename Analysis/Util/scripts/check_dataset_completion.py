@@ -21,7 +21,16 @@ def main() :
     
     options = parser.parse_args()
 
-    orig_nevt, filt_nevt = check_dataset_completion( options.originalDS, options.filteredDS, options.treeNameOrig, options.treeNameFilt, options.histNameOrig, options.histNameFilt, options.fileKeyOrig, options.fileKeyFilt )
+    orig_nevt_tree, orig_nevt_hist, filt_nevt_tree, filt_nevt_hist = check_dataset_completion( options.originalDS, options.filteredDS, options.treeNameOrig, options.treeNameFilt, options.histNameOrig, options.histNameFilt, options.fileKeyOrig, options.fileKeyFilt )
+
+    orig_nevt = orig_nevt_tree
+    if not orig_nevt :
+        orig_nevt = orig_nevt_hist
+
+    filt_nevt = filt_nevt_tree
+    if not filt_nevt :
+        filt_nevt = filt_nevt_hist
+
 
     print '%s : Orignal = %d events, filtered = %d events.  Difference = %d' %( options.filteredDS, orig_nevt, filt_nevt, orig_nevt-filt_nevt)
 

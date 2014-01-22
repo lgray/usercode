@@ -57,6 +57,9 @@ class RunModule : public virtual RunModuleBase {
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR ) const;
         bool HasTruthMatch( const TLorentzVector & objlv, const std::vector<int> & matchPID, float maxDR, float &minDR, TLorentzVector &matchLV ) const;
         void calc_corr_iso( float chIso, float phoIso, float neuIso, float rho, float eta, float &chisoCorr, float &phoIsoCorr, float &neuIsoCorr ) const;
+        float get_ph_el_mindr( const TLorentzVector &jetlv ) const;
+        float get_jet_el_mindr( const TLorentzVector &jetlv ) const;
+        float get_jet_ph_mindr( const TLorentzVector &jetlv ) const;
 
      private :
 

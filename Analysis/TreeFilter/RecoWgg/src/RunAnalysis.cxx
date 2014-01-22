@@ -313,7 +313,7 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
         unsigned int GlobalMuon = 1<<1;
         unsigned int PFMuon =  1<<5;
         bool is_global_muon = IN::muType->at(idx) & GlobalMuon;
-        bool is_pf_muon = IN::muType->at(idx) & GlobalMuon;
+        bool is_pf_muon = IN::muType->at(idx) & PFMuon;
 
         float chi2       = IN::muChi2NDF->at(idx);
         int   nHits      = IN::muNumberOfValidMuonHits->at(idx);
@@ -340,9 +340,10 @@ void RunModule::BuildMuon( ModuleConfig & config ) const {
         if( !config.PassFloat( "cut_pt"         , pt             ) ) continue;
         if( !config.PassFloat( "cut_abseta"     , fabs(eta)      ) ) continue;
         if( !config.PassFloat( "cut_chi2"       , chi2           ) ) continue;
-        if( !config.PassFloat( "cut_nTrkLayers" , nTrkLayers     ) ) continue;
+        if( !config.PassFloat( "cut_nMuonHits"  , nHits          ) ) continue;
         if( !config.PassFloat( "cut_nStations"  , muStations     ) ) continue;
         if( !config.PassFloat( "cut_nPixelHits" , nPixHit        ) ) continue;
+        if( !config.PassFloat( "cut_nTrkLayers" , nTrkLayers     ) ) continue;
         if( !config.PassFloat( "cut_d0"         , fabs(d0)       ) ) continue;
         if( !config.PassFloat( "cut_z0"         , fabs(z0)       ) ) continue;
         if( !config.PassFloat( "cut_trkiso"     , tkIso/pt       ) ) continue;
@@ -1107,18 +1108,17 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         float sceta     = IN::phoSCEta->at(idx);
         float phi       = IN::phoPhi->at(idx);
         float en        = IN::phoE->at(idx);
-        int   isConv    = IN::phoIsConv->at(idx);
 
         float rho = IN::rho2012;
 
         int   eleVeto   = IN::phoEleVeto->at(idx);
         float hovere    = IN::phoHoverE->at(idx);
         float sigmaIEIE = IN::phoSigmaIEtaIEta->at(idx);
-        int   pixseed   = IN::phohasPixelSeed->at(idx);
+        //int   pixseed   = IN::phohasPixelSeed->at(idx);
 
-        float isohollow40 = IN::phoTrkIsoHollowDR04->at(idx);
-        float ecaliso40   = IN::phoEcalIsoDR04->at(idx);
-        float hcaliso40   = IN::phoHcalIsoDR04->at(idx);
+        //float isohollow40 = IN::phoTrkIsoHollowDR04->at(idx);
+        //float ecaliso40   = IN::phoEcalIsoDR04->at(idx);
+        //float hcaliso40   = IN::phoHcalIsoDR04->at(idx);
 
         float pfChIso     = IN::phoPFChIso->at(idx);
         float pfNeuIso    = IN::phoPFNeuIso->at(idx);
@@ -1273,7 +1273,6 @@ void RunModule::BuildPhoton( ModuleConfig & config ) const {
         if( !config.PassBool( "cut_pid_medium"   , pass_medium    ) ) continue;
         if( !config.PassBool( "cut_pid_loose"    , pass_loose     ) ) continue;
 
-
         OUT::ph_n++;
 
         OUT::ph_pt         -> push_back(pt);
@@ -1414,9 +1413,9 @@ bool RunModule::HasTruthMatch( const TLorentzVector & objlv, const std::vector<i
 void RunModule::calc_corr_iso( float chIso, float phoIso, float neuIso, float rho, float eta, float &chIsoCorr, float &phoIsoCorr, float &neuIsoCorr )  const
 {
 
-    float ea_ch;
-    float ea_pho;
-    float ea_neu;
+    float ea_ch=0.0;
+    float ea_pho=0.0;
+    float ea_neu=0.0;
 
     if( fabs( eta ) < 1.0 ) {
         ea_ch = 0.012;
@@ -1469,14 +1468,4 @@ void RunModule::calc_corr_iso( float chIso, float phoIso, float neuIso, float rh
     }
 
 }
-
-//
-// ***********************************
-// This is an example of a module that applies an
-// event filter.  Note that it returns a bool instead
-// of a void.  In principle the modules can return any
-// type of variable, you just have to handle it
-// in the ApplyModule function
-// ***********************************
-
 

@@ -62,11 +62,11 @@ jobs_mc = [
 
 ]
 
-second_base = ['DiLeptonPt25_2013_12_05', 'LepGammaPt25_2013_12_05']
+second_base = ['DiLepton_2014_01_14', 'LepGamma_2014_01_14']
 
 #module_mc   = 'ConfLepGammaFilter.py'
 #module_data = 'ConfLepGammaFilter_Data.py'
-output_name = 'TAndP_2013_12_09'
+output_name = 'TAndP_2014_01_14'
 
 for base, job in jobs_data+jobs_mc :
 

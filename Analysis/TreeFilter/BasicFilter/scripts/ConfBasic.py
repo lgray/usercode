@@ -6,7 +6,7 @@ def get_remove_filter() :
 
 def get_keep_filter() :
 
-    return ['phoSigmaIEtaIEta','phoE','phoPhi','phoSCEta', 'phoEta', 'phoEt', 'nPho']
+    return ['el_n', 'mu_n']
 
 def config_analysis( alg_list ) :
 

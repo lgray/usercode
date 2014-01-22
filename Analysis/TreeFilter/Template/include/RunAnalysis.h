@@ -26,7 +26,7 @@ class RunModule : public virtual RunModuleBase {
         // The run function must exist and be defined exactly as this
         // because it is defined in RunModuleBase 
         // in src/RunModule.cxx all the analysis is defind in this RunModule function
-        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) ;
+        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options, std::vector<ModuleConfig> & config) ;
         bool execute( std::vector<ModuleConfig> & config ) ;
         void finalize( ) {};
 

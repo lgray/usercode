@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 }
 
 void RunModule::initialize( TChain * chain, TTree * _outtree, TFile *outfile,
-                            const CmdOptions & options ) {
+                            const CmdOptions & options, std::vector<ModuleConfig> & configs ) {
 
     // store the output tree locally
     outtree = _outtree;
@@ -118,8 +118,8 @@ void RunModule::MakeNtuple( ModuleConfig & config ) const {
                            IN::el_phi->at(eidx),
                            IN::el_e->at(eidx)    );
         objects.push_back( ellv );
-        ellv.SetPtEtaPhiE( ellv.Pt() 
-        objects_sceta.push_back( ellv );
+        //ellv.SetPtEtaPhiE( ellv.Pt(), IN::el_sceta->at(eidx), ellv.Phi(), ellv.E() );
+        //objects_sceta.push_back( ellv );
         obj_isElec.push_back(true);
         obj_index.push_back( eidx );
     }
@@ -133,8 +133,8 @@ void RunModule::MakeNtuple( ModuleConfig & config ) const {
         objects.push_back( phlv );
         obj_isElec.push_back(false);
         obj_index.push_back( pidx );
-        phlv.SetEta( IN::ph_sceta->at(eidx) );
-        objects_sceta.push_back( phlv );
+        //phlv.SetPtEtaPhiE( phlv.Pt(), IN::ph_sceta->at(pidx), phlv.Phi(), phlv.E() );
+        //objects_sceta.push_back( phlv );
     }
 
     if( objects.size() == 2 ) {
@@ -145,7 +145,7 @@ void RunModule::MakeNtuple( ModuleConfig & config ) const {
                 OUT::tag_pt = objects[i].Pt();
                 OUT::tag_eta = objects[i].Eta();
                 OUT::tag_phi = objects[i].Phi();
-                OUT::tag_eta_sc = objects_sceta[i].Eta();
+                //OUT::tag_eta_sc = objects_sceta[i].Eta();
 
                 // now loop over the objects again
                 for( unsigned j = 0; j < objects.size(); ++j) {
@@ -154,13 +154,13 @@ void RunModule::MakeNtuple( ModuleConfig & config ) const {
                     OUT::probe_pt  = objects[j].Pt();
                     OUT::probe_eta = objects[j].Eta();
                     OUT::probe_phi = objects[j].Phi();
-                    OUT::probe_eta_sc = objects_sceta[j].Eta();
+                    //OUT::probe_eta_sc = objects_sceta[j].Eta();
                     OUT::probe_isPhoton = !obj_isElec[j];
                     if( OUT::probe_isPhoton ) {
                         OUT::probe_nConvTrk = IN::ph_conv_nTrk->at(obj_index[j]);
                     }
                     OUT::m_tagprobe = (objects[i] + objects[j]).M();
-                    OUT::m_tagprobe_sceta = ( objects_sceta[i] + objects_sceta[j] ).M();
+                    //OUT::m_tagprobe_sceta = ( objects_sceta[i] + objects_sceta[j] ).M();
                 }
 
                 outtree->Fill();

@@ -3,93 +3,61 @@
 def config_samples(samples) :
 
     import ROOT
-
-    samples.AddSample('1electron_2012b_Jul13rereco_run1' , path='job_1electron_2012b_Jul13rereco_run1' , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012b_Jul13rereco_run2' , path='job_1electron_2012b_Jul13rereco_run2' , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012c_Aug24rereco'      , path='job_1electron_2012c_Aug24rereco'      , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012c_Dec11rereco'      , path='job_1electron_2012c_Dec11rereco'      , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012c_PRv2_part1'       , path='job_1electron_2012c_PRv2_part1'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012c_PRv2_part2'       , path='job_1electron_2012c_PRv2_part2'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012c_PRv2_part3'       , path='job_1electron_2012c_PRv2_part3'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012d_PRv1_part1'       , path='job_1electron_2012d_PRv1_part1'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('1electron_2012d_PRv1_part2'       , path='job_1electron_2012d_PRv1_part2'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('electron_2012a_Aug6rereco'        , path='job_electron_2012a_Aug6rereco'        , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('electron_2012a_Jul13rereco'       , path='job_electron_2012a_Jul13rereco'       , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012a_Aug6rereco'            , path='job_muon_2012a_Aug6rereco'            , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012a_Jul13rereco'           , path='job_muon_2012a_Jul13rereco'           , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012b_Jul13rereco'           , path='job_muon_2012b_Jul13rereco'           , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012c_Aug24rereco'           , path='job_muon_2012c_Aug24rereco'           , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012c_Dec11rereco'           , path='job_muon_2012c_Dec11rereco'           , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012c_PRv2'                  , path='job_muon_2012c_PRv2'                  , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012c_PRv21'                 , path='job_muon_2012c_PRv21'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012d_PRv1'                  , path='job_muon_2012d_PRv1'                  , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('muon_2012d_PRv11'                 , path='job_muon_2012d_PRv11'                 , filekey='tree.root', disableDraw=True, scale=1.0 );
-    #samples.AddSample('DYJetsToLL'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=True, scale=1.0 );
-    samples.AddSample('Zgammastar'              , path='job_summer12_DYJetsToLL'              , filekey='tree.root', disableDraw=False, useXSFile=True, plotColor=ROOT.kCyan );
-    samples.AddSample('LNuGG_FSR'               , path='job_summer12_LNuGG_FSR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('LNuGG_ISR'               , path='job_summer12_LNuGG_ISR'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WJetsToLNu1'             , path='job_summer12_WJetsToLNu1'             , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('Wg'                      , path='job_summer12_Wg'                      , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WJetsToLNu2'             , path='job_summer12_WJetsToLNu2'             , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WWW'                     , path='job_summer12_WWW'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WWZ'                     , path='job_summer12_WWZ'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WW_2l2nu'                , path='job_summer12_WW_2l2nu'                , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WZZ'                     , path='job_summer12_WZZ'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WZ_2l2q'                 , path='job_summer12_WZ_2l2q'                 , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('WZ_3lnu'                 , path='job_summer12_WZ_3lnu'                 , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZZ'                     , path='job_summer12_ZZZ'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_2e2mu'                , path='job_summer12_ZZ_2e2mu'                , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_2e2tau'               , path='job_summer12_ZZ_2e2tau'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_2l2q'                 , path='job_summer12_ZZ_2l2q'                 , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_2mu2tau'              , path='job_summer12_ZZ_2mu2tau'              , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_4e'                   , path='job_summer12_ZZ_4e'                   , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_4mu'                  , path='job_summer12_ZZ_4mu'                  , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ZZ_4tau'                 , path='job_summer12_ZZ_4tau'                 , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('Zg'                      , path='job_summer12_Zg'                      , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('gjet_pt20to40_doubleEM'  , path='job_summer12_gjet_pt20to40_doubleEM'  , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('gjet_pt40_doubleEM'      , path='job_summer12_gjet_pt40_doubleEM'      , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('t_s'                     , path='job_summer12_t_s'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('t_t'                     , path='job_summer12_t_t'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('t_tW'                    , path='job_summer12_t_tW'                    , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('tbar_s'                  , path='job_summer12_tbar_s'                  , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('tbar_t'                  , path='job_summer12_tbar_t'                  , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('tbar_tW'                 , path='job_summer12_tbar_tW'                 , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ttW'                     , path='job_summer12_ttW'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ttZ'                     , path='job_summer12_ttZ'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ttg'                     , path='job_summer12_ttg'                     , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ttjets_1l'               , path='job_summer12_ttjets_1l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    samples.AddSample('ttjets_2l'               , path='job_summer12_ttjets_2l'               , filekey='tree.root', disableDraw=True, useXSFile=True );
-    #samples.AddSample('DYJetsModel', path='job_summer12_DYJetsToLLOneBin',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
-    samples.AddSample('DYJetsModel', path='job_summer12_DYJetsToLLFFNoMassCut',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
-    samples.AddSample('DYJetsModel0Conv', path='job_summer12_DYJetsToLLFFNoMassCut0Conv',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
-    samples.AddSample('DYJetsModel2Conv', path='job_summer12_DYJetsToLLFFNoMassCut2Conv',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan, disableDraw=True);
-    #samples.AddSample('DataTestOneBin', path='DataTestOneBin',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
-    #samples.AddSample('job_summer12_DYJetsToLLFFOneBin2', path='job_summer12_DYJetsToLLFFOneBin2',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
-    #samples.AddSample('job_summer12_DYJetsToLLFromLepGamma', path='job_summer12_DYJetsToLLFromLepGamma',            filekey='tree.root', scale=1.0, plotColor=ROOT.kCyan);
+    samples.AddSample('electron_2012a_Jan22rereco'   , path='job_electron_2012a_Jan22rereco'    ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('electron_2012b_Jan22rereco'   , path='job_electron_2012b_Jan22rereco'   ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('electron_2012c_Jan2012rereco' , path='job_electron_2012c_Jan2012rereco' ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('electron_2012d_Jan22rereco'   , path='job_electron_2012d_Jan22rereco'   ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('muon_2012a_Jan22rereco'       , path='job_muon_2012a_Jan22rereco'       ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('muon_2012b_Jan22rereco'       , path='job_muon_2012b_Jan22rereco'       ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('muon_2012c_Jan22rereco'       , path='job_muon_2012c_Jan22rereco'       ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('muon_2012d_Jan22rereco'       , path='job_muon_2012d_Jan22rereco'       ,  disableDraw=True, scale=1.0 )
+    samples.AddSample('diphoton_box_10to25'          , path='job_summer12_diphoton_box_10to25'  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('diphoton_box_250toInf'        , path='job_summer12_diphoton_box_250toInf',  disableDraw=True, useXSFile=True )
+    samples.AddSample('diphoton_box_25to250'         , path='job_summer12_diphoton_box_25to250' ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('DYJetsToLL'                   , path='job_summer12_DYJetsToLL'           ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('tbar_s'                       , path='job_summer12_tbar_s'               ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('tbar_t'                       , path='job_summer12_tbar_t'               ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('tbar_tW'                      , path='job_summer12_tbar_tW'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('t_s'                          , path='job_summer12_t_s'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('t_t'                          , path='job_summer12_t_t'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ttg'                          , path='job_summer12_ttg'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ttjets_1l'                    , path='job_summer12_ttjets_1l'            ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ttjets_2l'                    , path='job_summer12_ttjets_2l'            ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('t_tW'                         , path='job_summer12_t_tW'                 ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WAA_ISR'                      , path='job_summer12_WAA_ISR'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('Wg'                           , path='job_summer12_Wg'                   ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('Wgg_FSR'                      , path='job_summer12_Wgg_FSR'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WH_ZH_125'                    , path='job_summer12_WH_ZH_125'            ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('Wjets'                        , path='job_summer12_Wjets'                ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WW_2l2nu'                     , path='job_summer12_WW_2l2nu'             ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WWg'                          , path='job_summer12_WWg'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WWW'                          , path='job_summer12_WWW'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WWZ'                          , path='job_summer12_WWZ'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WZ_3lnu'                      , path='job_summer12_WZ_3lnu'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('WZZ'                          , path='job_summer12_WZZ'                  ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('Zg'                           , path='job_summer12_Zg'                   ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2e2mu'                     , path='job_summer12_ZZ_2e2mu'             ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2e2tau'                    , path='job_summer12_ZZ_2e2tau'            ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2l2nu'                     , path='job_summer12_ZZ_2l2nu'             ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2l2q'                      , path='job_summer12_ZZ_2l2q'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2mu2tau'                   , path='job_summer12_ZZ_2mu2tau'           ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_2q2nu'                     , path='job_summer12_ZZ_2q2nu'             ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_4e'                        , path='job_summer12_ZZ_4e'                ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_4mu'                       , path='job_summer12_ZZ_4mu'               ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZ_4tau'                      , path='job_summer12_ZZ_4tau'              ,  disableDraw=True, useXSFile=True )
+    samples.AddSample('ZZZ'                          , path='job_summer12_ZZZ'                  ,  disableDraw=True, useXSFile=True )
 
     samples.AddSampleGroup( 'Data', legend_name='Data', 
                             input_samples = [
-                                              '1electron_2012b_Jul13rereco_run1' ,
-                                              '1electron_2012b_Jul13rereco_run2' ,
-                                              '1electron_2012c_Aug24rereco'      ,
-                                              '1electron_2012c_Dec11rereco'      ,
-                                              '1electron_2012c_PRv2_part1'       ,
-                                              '1electron_2012c_PRv2_part2'       ,
-                                              '1electron_2012c_PRv2_part3'       ,
-                                              '1electron_2012d_PRv1_part1'       ,
-                                              '1electron_2012d_PRv1_part2'       ,
-                                              'electron_2012a_Aug6rereco'        ,
-                                              'electron_2012a_Jul13rereco'       ,
-                                              'muon_2012a_Aug6rereco'            ,
-                                              'muon_2012a_Jul13rereco'           ,
-                                              'muon_2012b_Jul13rereco'           ,
-                                              'muon_2012c_Aug24rereco'           ,
-                                              'muon_2012c_Dec11rereco'           ,
-                                              'muon_2012c_PRv2'                  ,
-                                              'muon_2012c_PRv21'                 ,
-                                              'muon_2012d_PRv1'                  ,
-                                              'muon_2012d_PRv11'                 ,
-                            ],
+                                             'electron_2012a_Jan22rereco',
+                                             'electron_2012b_Jan22rereco',
+                                             'electron_2012c_Jan2012rereco',
+                                             'electron_2012d_Jan22rereco',
+                                             'muon_2012a_Jan22rereco',
+                                             'muon_2012b_Jan22rereco',
+                                             'muon_2012c_Jan22rereco',
+                                             'muon_2012d_Jan22rereco',
+                                            ],
                            plotColor=ROOT.kBlack,
                            isData=True,
                           )
@@ -103,19 +71,18 @@ def config_samples(samples) :
     #                      )
     samples.AddSampleGroup( 'Inclusive W', legend_name='Inclusive W', 
                             input_samples = [
-                                             'WJetsToLNu1',
-                                             'WJetsToLNu2',
+                                             'Wjets',
                                             ],
                            plotColor=ROOT.kPink,
                           )
 
-    #samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
-    #                        input_samples = [
-    #                                         'DYJetsToLL',
-    #                                        ],
-    #                       plotColor=ROOT.kCyan,
-    #                       scale=0.887,
-    #                      )
+    samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
+                            input_samples = [
+                                             'DYJetsToLL',
+                                            ],
+                           plotColor=ROOT.kCyan,
+                           scale=1.0,
+                          )
 
     samples.AddSampleGroup( 'Wgamma', legend_name='W#gamma', 
                            input_samples = [
@@ -158,8 +125,8 @@ def config_samples(samples) :
     #                      )
     samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
                             input_samples = [
-                                             'LNuGG_FSR',
-                                             'LNuGG_ISR',
+                                             'WAA_ISR',
+                                             'Wgg_FSR',
                                             ],
                            plotColor=ROOT.kRed,
                            isSignal=True
@@ -173,6 +140,8 @@ def config_samples(samples) :
                                            'ZZ_2e2mu'                ,
                                            'ZZ_2e2tau'               ,
                                            'ZZ_2l2q'                 ,
+                                           'ZZ_2q2nu'                ,
+                                           'ZZ_2l2nu'                ,
                                            'ZZ_2mu2tau'              ,
                                            'ZZ_4e'                   ,
                                            'ZZ_4mu'                  ,
@@ -180,15 +149,16 @@ def config_samples(samples) :
                           ],
                            plotColor=ROOT.kRed-3,
                           )
-    #samples.AddSampleGroup( 'TriBoson', legend_name='WWW/WWZ/WZZ/ZZZ', 
-    #                       input_samples = [
-    #                                       'WWW'                     ,
-    #                                       'WWZ'                     ,
-    #                                       'WZZ'                     ,
-    #                                       'ZZZ'                     ,
-    #                       ],
-    #                       plotColor=ROOT.kBlue-4,
-    #                      )
+    samples.AddSampleGroup( 'TriBoson', legend_name='Other Triboson', 
+                           input_samples = [
+                                           'WWg'                     ,
+                                           'WWW'                     ,
+                                           'WWZ'                     ,
+                                           'WZZ'                     ,
+                                           'ZZZ'                     ,
+                           ],
+                           plotColor=ROOT.kBlue-4,
+                          )
 
     #samples.AddSampleGroup( 'Top1l', legend_name='tt #rightarrow l#nu jj + X', 
     #                       input_samples = [
@@ -227,6 +197,12 @@ def config_samples(samples) :
                            plotColor=ROOT.kGreen,
                           )
 
+    samples.AddSampleGroup( 'VH', legend_name='WH/ZH 125', 
+                           input_samples = [
+                                           'WH_ZH_125'                     ,
+                           ],
+                           plotColor=ROOT.kRed+4,
+                          )
     #samples.AddSampleGroup( 'AllMC', legend_name='AllMC', disableDraw=True,
     #                        input_samples = [
     #                                         #'DYJetsToLL',
@@ -251,10 +227,10 @@ def config_samples(samples) :
     #                       scale=-1,
     #                      )
 
-    samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=True,
-                            input_samples = ['Data', 'AllMC'],
-                            plotColor=ROOT.kGreen,isSignal=True
-                          )
+    #samples.AddSampleGroup( 'DataMCSubtracted', legend_name='Data, bkg subtracted', disableDraw=True,
+    #                        input_samples = ['Data', 'AllMC'],
+    #                        plotColor=ROOT.kGreen,isSignal=True
+    #                      )
                                              
 
 

@@ -1,6 +1,23 @@
 import subprocess 
 import os
 import sys
+
+__EOS__ = '/afs/cern.ch/project/eos/installation/0.3.4/bin/eos.select'
+
+#---------------------------------------------------------
+def copy_eos_to_local(eos_path, local_path) :
+
+    cmd = [__EOS__, 'cp', eos_path, local_path]
+    result = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+
+#---------------------------------------------------------
+def rm_eos(path) :
+
+    cmd = [__EOS__, 'rm', path]
+    result = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+
+
+
 #---------------------------------------------------------
 def walk_eos(path) :
 
@@ -13,7 +30,7 @@ def walk_eos(path) :
 
 #---------------------------------------------------------
 def parse_eos_dir(path, DEBUG=False) :
-
+    
     # remove leading xrootd for using xrd dirlist
     #res = re.match('/xrootd/(.*)', path)
     #if res is not None :
@@ -27,7 +44,7 @@ def parse_eos_dir(path, DEBUG=False) :
     #lines = os.popen("xrd hn.at3f dirlist "+path).readlines()
     #output = str("").join(lines)
 
-    eos = '/afs/cern.ch/project/eos/installation/0.3.4/bin/eos.select'
+    eos = __EOS__
 
     # get directory contents
     cmd = [eos, 'ls -l', path+'/']

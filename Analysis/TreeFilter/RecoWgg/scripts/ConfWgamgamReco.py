@@ -10,16 +10,16 @@ def get_keep_filter() :
 
 def config_analysis( alg_list ) :
 
-    alg_list.append( build_electron( do_cutflow=False, do_hists=False ) )
-    alg_list.append( build_muon( do_cutflow=False, do_hists=False) )
+    alg_list.append( build_electron( do_cutflow=True, do_hists=False ) )
+    alg_list.append( build_muon( do_cutflow=True, do_hists=False) )
 
     ## filter out a lepton 
     #filter_evt = Filter( 'FilterEvent' )
     #filter_evt.cut_mu_n = ' > 0 '
     #alg_list.append(filter_evt)
 
-    alg_list.append( build_photon( do_cutflow=False, do_hists=False) )
-    alg_list.append( build_jet( do_cutflow=False, do_hists=False ) )
+    alg_list.append( build_photon( do_cutflow=True, do_hists=False) )
+    alg_list.append( build_jet( do_cutflow=True, do_hists=False ) )
 
     # do this later, after PID has been applied
     #alg_list.append( Filter('BuildEvent'   ) )
@@ -250,6 +250,8 @@ def build_photon( do_cutflow=False, do_hists=False, filtPID=None, evalPID=None )
     if evalPID is not None :
         filt.add_var( 'evalPID', evalPID )
 
+    filt.cut_ph_el_dr = ' > 0.2 '
+
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )
         filt.add_hist( 'cut_abseta', 50, 0, 5 )
@@ -274,6 +276,9 @@ def build_jet( do_cutflow=False, do_hists=False ) :
 
     filt.cut_pt = ' > 30 '
     filt.cut_abseta = ' < 4.5 '
+
+    filt.cut_jet_el_dr = ' > 0.4 '
+    filt.cut_jet_ph_dr = ' > 0.4 '
 
     if do_hists :
         filt.add_hist( 'cut_pt', 100, 0, 500 )

@@ -26,7 +26,7 @@ class RunModule : public virtual RunModuleBase {
         // The run function must exist and be defined exactly as this
         // because it is defined in RunModuleBase 
         // in src/RunModule.cxx all the analysis is defind in this RunModule function
-        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options) ;
+        void initialize( TChain * chain, TTree *outtree, TFile *outfile, const CmdOptions & options, std::vector<ModuleConfig> &configs ) ;
         bool execute( std::vector<ModuleConfig> & config ) ;
         void finalize( ) {};
 
@@ -39,6 +39,7 @@ class RunModule : public virtual RunModuleBase {
         void FilterJet  ( ModuleConfig & config ) const;
         bool FilterEvent( ModuleConfig & config ) const;
         bool FilterTrigger ( ModuleConfig & config ) const;
+        void CalcLeptonVtxVars( ModuleConfig & config ) const; 
 
 
         // Define modules below.
@@ -51,6 +52,11 @@ class RunModule : public virtual RunModuleBase {
 // Ouput namespace 
 // Declare any output variables that you'll fill here
 namespace OUT {
+
+    std::vector<float>  *eleD0LepVtx;
+    std::vector<float>  *eleDzLepVtx;
+    std::vector<float>  *muD0LepVtx;
+    std::vector<float>  *muDzLepVtx;
 
 };
 

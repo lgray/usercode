@@ -17,26 +17,25 @@ def main() :
 
     print 'Total is %f Gb' %( tot_size / (1024*1024*1024.0) )
 
-def get_eos_tot_size( dir ) :
+def get_eos_tot_size( top_dir ) :
 
     top_size = 0
     subdir_sizes = {}
     iteration = 0
-    for top, dirs, files, sizes in eosutil.walk_eos( dir ) :
-        # only iterate once here to
-        # get the directories
-        if dirs :
-            for sdir in dirs :
-                subdir_sizes[sdir] = 0
-                for stop, sdirs, sfiles, ssizes in eosutil.walk_eos( top+'/'+sdir) :
-                    for size in ssizes :
-                        subdir_sizes[sdir] = subdir_sizes[sdir] + size
+    dirs, files, sizes = eosutil.parse_eos_dir( top_dir )
+    # only iterate once here to
+    # get the directories
+    if dirs :
+        for sdir in dirs :
+            subdir_sizes[sdir] = 0
+            for stop, sdirs, sfiles, ssizes in eosutil.walk_eos( top_dir+'/'+sdir) :
+                for size in ssizes :
+                    subdir_sizes[sdir] = subdir_sizes[sdir] + size
     
-            top_size = reduce(lambda x, y : x+y , subdir_sizes.values() )
-            break
-        else :
-            for size in sizes :
-                top_size += size
+        top_size = reduce(lambda x, y : x+y , subdir_sizes.values() )
+
+    for size in sizes :
+        top_size += size
 
 
 

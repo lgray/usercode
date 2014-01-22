@@ -178,10 +178,11 @@ void RunModule::FilterElectron( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::el_n; idx++ ) {
 
-        if( !config.PassBool( "cut_el_pt", IN::el_pt->at(idx)) ) continue;
+        if( !config.PassFloat( "cut_el_pt", IN::el_pt->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_loose", IN::el_passLoose->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_medium", IN::el_passMedium->at(idx)) ) continue;
         if( !config.PassBool( "cut_el_tight", IN::el_passTight->at(idx)) ) continue;
+        if( !config.PassBool( "cut_el_tightTrig", IN::el_passTightTrig->at(idx)) ) continue;
 
         CopyPrefixIndexBranchesInToOut( "el_", idx );
         OUT::el_n++;
@@ -232,7 +233,7 @@ void RunModule::FilterMuon( ModuleConfig & config ) const {
 
     for( int idx = 0; idx < IN::mu_n; idx++ ) {
 
-        if( !config.PassBool( "cut_mu_pt", IN::mu_pt->at(idx)) ) continue;
+        if( !config.PassFloat( "cut_mu_pt", IN::mu_pt->at(idx)) ) continue;
 
         CopyPrefixIndexBranchesInToOut( "mu_", idx );
         OUT::mu_n++;
@@ -279,179 +280,179 @@ void RunModule::CalcEventVars( ModuleConfig & config ) const {
 
     OUT::EventWeight = 1.0;
 
-    TLorentzVector metlv;
-    metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
+    //TLorentzVector metlv;
+    //metlv.SetPtEtaPhiM( OUT::pfMET, 0.0, OUT::pfMETPhi, 0.0 );
 
-    std::vector<TLorentzVector> leptons;
-    // map pt to a bool, int pair.  The bool is 1 if electron, 0 if muon.  The int is the index
-    std::vector<std::pair<float, std::pair<bool, int > > > sorted_leptons;
-    for( int idx = 0; idx < OUT::el_n; idx++ ) {
+    //std::vector<TLorentzVector> leptons;
+    //// map pt to a bool, int pair.  The bool is 1 if electron, 0 if muon.  The int is the index
+    //std::vector<std::pair<float, std::pair<bool, int > > > sorted_leptons;
+    //for( int idx = 0; idx < OUT::el_n; idx++ ) {
 
-        TLorentzVector lv;
-        lv.SetPtEtaPhiE(  OUT::el_pt->at(idx),
-                          OUT::el_eta->at(idx),
-                          OUT::el_phi->at(idx),
-                          OUT::el_e->at(idx)
-                        );
-        leptons.push_back(lv);
-        sorted_leptons.push_back( std::make_pair( lv.Pt(), std::make_pair( 1, idx ) ) );
-        if( lv.Pt() > 25 ) {
-            OUT::el_pt25_n++;
-        }
-    }
+    //    TLorentzVector lv;
+    //    lv.SetPtEtaPhiE(  OUT::el_pt->at(idx),
+    //                      OUT::el_eta->at(idx),
+    //                      OUT::el_phi->at(idx),
+    //                      OUT::el_e->at(idx)
+    //                    );
+    //    leptons.push_back(lv);
+    //    sorted_leptons.push_back( std::make_pair( lv.Pt(), std::make_pair( 1, idx ) ) );
+    //    if( lv.Pt() > 25 ) {
+    //        OUT::el_pt25_n++;
+    //    }
+    //}
 
-    for( int idx = 0; idx < OUT::mu_n; idx++ ) {
+    //for( int idx = 0; idx < OUT::mu_n; idx++ ) {
 
-        TLorentzVector lv;
-        lv.SetPtEtaPhiE(  OUT::mu_pt->at(idx),
-                          OUT::mu_eta->at(idx),
-                          OUT::mu_phi->at(idx),
-                          OUT::mu_e->at(idx)
-                        );
-        leptons.push_back(lv);
-        sorted_leptons.push_back( std::make_pair( lv.Pt(), std::make_pair( 0, idx ) ) );
-        if( lv.Pt() > 25 ) {
-            OUT::mu_pt25_n++;
-        }
-    }
+    //    TLorentzVector lv;
+    //    lv.SetPtEtaPhiE(  OUT::mu_pt->at(idx),
+    //                      OUT::mu_eta->at(idx),
+    //                      OUT::mu_phi->at(idx),
+    //                      OUT::mu_e->at(idx)
+    //                    );
+    //    leptons.push_back(lv);
+    //    sorted_leptons.push_back( std::make_pair( lv.Pt(), std::make_pair( 0, idx ) ) );
+    //    if( lv.Pt() > 25 ) {
+    //        OUT::mu_pt25_n++;
+    //    }
+    //}
 
-    std::vector<TLorentzVector> photons;
-    std::vector<std::pair<float, int> > sorted_photons;
-    for( int idx = 0; idx < OUT::ph_n; ++idx ) {
-        TLorentzVector phot;
-        phot.SetPtEtaPhiE(  OUT::ph_pt->at(idx), 
-                            OUT::ph_eta->at(idx),
-                            OUT::ph_phi->at(idx),
-                            OUT::ph_e->at(idx)
-                        );
-        photons.push_back(phot);
-        sorted_photons.push_back(std::make_pair( phot.Pt(), idx ));
-    }
+    //std::vector<TLorentzVector> photons;
+    //std::vector<std::pair<float, int> > sorted_photons;
+    //for( int idx = 0; idx < OUT::ph_n; ++idx ) {
+    //    TLorentzVector phot;
+    //    phot.SetPtEtaPhiE(  OUT::ph_pt->at(idx), 
+    //                        OUT::ph_eta->at(idx),
+    //                        OUT::ph_phi->at(idx),
+    //                        OUT::ph_e->at(idx)
+    //                    );
+    //    photons.push_back(phot);
+    //    sorted_photons.push_back(std::make_pair( phot.Pt(), idx ));
+    //}
 
 
-    // sort the list of photon momenta in descending order
-    std::sort(sorted_photons.rbegin(), sorted_photons.rend());
-    std::sort(sorted_leptons.rbegin(), sorted_leptons.rend());
+    //// sort the list of photon momenta in descending order
+    //std::sort(sorted_photons.rbegin(), sorted_photons.rend());
+    //std::sort(sorted_leptons.rbegin(), sorted_leptons.rend());
 
-    if( photons.size() > 1 ) { 
-        OUT::leadPhot_pt = sorted_photons[0].first;
-        OUT::sublPhot_pt = sorted_photons[1].first;
+    //if( photons.size() > 1 ) { 
+    //    OUT::leadPhot_pt = sorted_photons[0].first;
+    //    OUT::sublPhot_pt = sorted_photons[1].first;
 
-        int leadidx = sorted_photons[0].second;
-        int sublidx = sorted_photons[1].second;
-        OUT::m_phph = ( photons[leadidx] + photons[sublidx] ).M();
-    }
-    else if ( photons.size() == 1 ) {
-        OUT::leadPhot_pt = sorted_photons[0].first;
-        OUT::sublPhot_pt = 0;
-    }
+    //    int leadidx = sorted_photons[0].second;
+    //    int sublidx = sorted_photons[1].second;
+    //    OUT::m_phph = ( photons[leadidx] + photons[sublidx] ).M();
+    //}
+    //else if ( photons.size() == 1 ) {
+    //    OUT::leadPhot_pt = sorted_photons[0].first;
+    //    OUT::sublPhot_pt = 0;
+    //}
 
-    if( leptons.size() == 2 ) {
-        OUT::pt_secondLepton = sorted_leptons[1].first;
-    }
-    if( leptons.size() == 3 ) {
-        OUT::pt_thirdLepton = sorted_leptons[2].first;
-    }
+    //if( leptons.size() == 2 ) {
+    //    OUT::pt_secondLepton = sorted_leptons[1].first;
+    //}
+    //if( leptons.size() == 3 ) {
+    //    OUT::pt_thirdLepton = sorted_leptons[2].first;
+    //}
 
-    if( leptons.size() > 1 ) {
-        OUT::m_leplep = ( leptons[0] + leptons[1] ).M();
-        OUT::pt_leplep = ( leptons[0] + leptons[1] ).Pt();
+    //if( leptons.size() > 1 ) {
+    //    OUT::m_leplep = ( leptons[0] + leptons[1] ).M();
+    //    OUT::pt_leplep = ( leptons[0] + leptons[1] ).Pt();
 
-        if( photons.size() > 0 ) { 
-            OUT::m_leplepph  = (leptons[0] + leptons[1] + photons[0] ).M();
-            OUT::pt_leplepph  = (leptons[0] + leptons[1] + photons[0] ).Pt();
-        }
-    }
+    //    if( photons.size() > 0 ) { 
+    //        OUT::m_leplepph  = (leptons[0] + leptons[1] + photons[0] ).M();
+    //        OUT::pt_leplepph  = (leptons[0] + leptons[1] + photons[0] ).Pt();
+    //    }
+    //}
 
-    if( leptons.size() == 1 ) {
-       
-        OUT::mt_lep_met = calc_mt( leptons[0], metlv );
+    //if( leptons.size() == 1 ) {
+    //   
+    //    OUT::mt_lep_met = calc_mt( leptons[0], metlv );
 
-        if( photons.size() > 1 ) { 
+    //    if( photons.size() > 1 ) { 
 
-            int leadidx = sorted_photons[0].second;
-            int sublidx = sorted_photons[1].second;
+    //        int leadidx = sorted_photons[0].second;
+    //        int sublidx = sorted_photons[1].second;
 
-            OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
-            OUT::sublPhot_lepDR = photons[sublidx].DeltaR(leptons[0]);
-            OUT::ph_phDR    = photons[leadidx].DeltaR(photons[sublidx]);
-            OUT::phPhot_lepDR = (photons[leadidx]+photons[sublidx]).DeltaR(photons[sublidx]);
-            
-            OUT::leadPhot_lepDPhi = photons[leadidx].DeltaPhi(leptons[0]);
-            OUT::sublPhot_lepDPhi = photons[sublidx].DeltaPhi(leptons[0]);
-            OUT::ph_phDPhi    = photons[leadidx].DeltaPhi(photons[sublidx]);
-            OUT::phPhot_lepDPhi = (photons[leadidx]+photons[sublidx]).DeltaPhi(photons[sublidx]);
-            
-            OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
-            OUT::mt_lepph2_met = calc_mt( leptons[0] + photons[sublidx], metlv );
+    //        OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
+    //        OUT::sublPhot_lepDR = photons[sublidx].DeltaR(leptons[0]);
+    //        OUT::ph_phDR    = photons[leadidx].DeltaR(photons[sublidx]);
+    //        OUT::phPhot_lepDR = (photons[leadidx]+photons[sublidx]).DeltaR(photons[sublidx]);
+    //        
+    //        OUT::leadPhot_lepDPhi = photons[leadidx].DeltaPhi(leptons[0]);
+    //        OUT::sublPhot_lepDPhi = photons[sublidx].DeltaPhi(leptons[0]);
+    //        OUT::ph_phDPhi    = photons[leadidx].DeltaPhi(photons[sublidx]);
+    //        OUT::phPhot_lepDPhi = (photons[leadidx]+photons[sublidx]).DeltaPhi(photons[sublidx]);
+    //        
+    //        OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
+    //        OUT::mt_lepph2_met = calc_mt( leptons[0] + photons[sublidx], metlv );
 
-            OUT::mt_lepphph_met = calc_mt( leptons[0] + photons[leadidx] + photons[sublidx], metlv );
+    //        OUT::mt_lepphph_met = calc_mt( leptons[0] + photons[leadidx] + photons[sublidx], metlv );
 
-            OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
-            OUT::m_lepph2 = ( leptons[0] + photons[sublidx] ).M();
-            OUT::m_lepphph = ( leptons[0] + photons[leadidx] + photons[sublidx] ).M();
+    //        OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
+    //        OUT::m_lepph2 = ( leptons[0] + photons[sublidx] ).M();
+    //        OUT::m_lepphph = ( leptons[0] + photons[leadidx] + photons[sublidx] ).M();
 
-            OUT::pt_lepph1 = ( leptons[0] + photons[leadidx] ).Pt();
-            OUT::pt_lepph2 = ( leptons[0] + photons[sublidx] ).Pt();
-            OUT::pt_lepphph = ( leptons[0] + photons[leadidx] + photons[sublidx] ).Pt();
-        }
-        else if( photons.size() == 1 ) {
+    //        OUT::pt_lepph1 = ( leptons[0] + photons[leadidx] ).Pt();
+    //        OUT::pt_lepph2 = ( leptons[0] + photons[sublidx] ).Pt();
+    //        OUT::pt_lepphph = ( leptons[0] + photons[leadidx] + photons[sublidx] ).Pt();
+    //    }
+    //    else if( photons.size() == 1 ) {
 
-            int leadidx = sorted_photons[0].second;
-            OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
+    //        int leadidx = sorted_photons[0].second;
+    //        OUT::leadPhot_lepDR = photons[leadidx].DeltaR(leptons[0]);
 
-            OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
+    //        OUT::mt_lepph1_met = calc_mt( leptons[0] + photons[leadidx], metlv );
 
-            OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
-            OUT::pt_lepph1 = ( leptons[0] + photons[leadidx] ).Pt();
+    //        OUT::m_lepph1 = ( leptons[0] + photons[leadidx] ).M();
+    //        OUT::pt_lepph1 = ( leptons[0] + photons[leadidx] ).Pt();
 
-        }
-            
-            
-    }
-    if( leptons.size() > 2 ) {
-        std::vector< std::pair<float, float> > lep_pair_masses;
-        for( unsigned i = 0; i < leptons.size() ; i++ ) {
-            for( unsigned j = i+1; j < leptons.size() ; j++ ) {
-                lep_pair_masses.push_back( std::make_pair( fabs(91.1876 - (leptons[i]+leptons[j]).M() ),(leptons[i]+leptons[j]).M())  );
-            }
-       }
-        //sort from smallest to greatest
-        std::sort( lep_pair_masses.begin(), lep_pair_masses.end() );
+    //    }
+    //        
+    //        
+    //}
+    //if( leptons.size() > 2 ) {
+    //    std::vector< std::pair<float, float> > lep_pair_masses;
+    //    for( unsigned i = 0; i < leptons.size() ; i++ ) {
+    //        for( unsigned j = i+1; j < leptons.size() ; j++ ) {
+    //            lep_pair_masses.push_back( std::make_pair( fabs(91.1876 - (leptons[i]+leptons[j]).M() ),(leptons[i]+leptons[j]).M())  );
+    //        }
+    //   }
+    //    //sort from smallest to greatest
+    //    std::sort( lep_pair_masses.begin(), lep_pair_masses.end() );
 
-        OUT::m_leplepZ = lep_pair_masses[0].second;
-    }
-    if( leptons.size() == 3 ) {
-        OUT::m_3lep = ( leptons[0] + leptons[1] + leptons[2] ).M();
-    }
+    //    OUT::m_leplepZ = lep_pair_masses[0].second;
+    //}
+    //if( leptons.size() == 3 ) {
+    //    OUT::m_3lep = ( leptons[0] + leptons[1] + leptons[2] ).M();
+    //}
 
-    if( leptons.size() == 4 ) {
-        OUT::m_4lep = ( leptons[0] + leptons[1] + leptons[2] + leptons[3] ).M();
-    }
+    //if( leptons.size() == 4 ) {
+    //    OUT::m_4lep = ( leptons[0] + leptons[1] + leptons[2] + leptons[3] ).M();
+    //}
 
-    std::vector<TLorentzVector> objects;
-    objects.insert(objects.begin(), leptons.begin(), leptons.end() );
-    objects.insert(objects.begin(), photons.begin(), photons.end() );
+    //std::vector<TLorentzVector> objects;
+    //objects.insert(objects.begin(), leptons.begin(), leptons.end() );
+    //objects.insert(objects.begin(), photons.begin(), photons.end() );
 
-    if( objects.size() > 2 ) {
-        std::vector<float> masses;
-        for( unsigned i = 0; i < objects.size(); ++i ) {
-            for( unsigned j = i+1; j < objects.size(); ++j ) {
-                masses.push_back( (objects[i] + objects[j]).M() );
-            }
-        }
-        masses.push_back( (objects[0]+objects[1]+objects[2]).M() );
+    //if( objects.size() > 2 ) {
+    //    std::vector<float> masses;
+    //    for( unsigned i = 0; i < objects.size(); ++i ) {
+    //        for( unsigned j = i+1; j < objects.size(); ++j ) {
+    //            masses.push_back( (objects[i] + objects[j]).M() );
+    //        }
+    //    }
+    //    masses.push_back( (objects[0]+objects[1]+objects[2]).M() );
 
-        std::vector<std::pair<float, int > > sorted_masses;
-        for( unsigned i = 0; i < masses.size() ; ++i ) {
-            sorted_masses.push_back( std::make_pair( std::fabs( 91.1876 - masses[i] ), i ) );
-        }
-        //sort with the smallest first
-        std::sort(sorted_masses.begin(), sorted_masses.end());
-        int nearestZidx = sorted_masses[0].second;
-        OUT::m_nearestToZ = masses[nearestZidx];
+    //    std::vector<std::pair<float, int > > sorted_masses;
+    //    for( unsigned i = 0; i < masses.size() ; ++i ) {
+    //        sorted_masses.push_back( std::make_pair( std::fabs( 91.1876 - masses[i] ), i ) );
+    //    }
+    //    //sort with the smallest first
+    //    std::sort(sorted_masses.begin(), sorted_masses.end());
+    //    int nearestZidx = sorted_masses[0].second;
+    //    OUT::m_nearestToZ = masses[nearestZidx];
 
-    }
+    //}
 
 }
 

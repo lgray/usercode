@@ -33,6 +33,8 @@ def ParseArgs() :
     
     parser.add_argument('--confFileName', dest='confFileName', default='analysis_config.txt', help='Name of the configuration file.  Default : analysis_config.txt')
 
+    parser.add_argument('--exeName', dest='exeName', default='RunAnalysis', help='Name of the executable file.  Use to avoid overwriting an executable that is in use')
+
     parser.add_argument('--sample', dest='sample', default=None, help='Name of sample.  May be used in cases where the sample name must be known to the c++ code')
     
     parser.add_argument('--nproc', dest='nproc', type=int, default=1, help='Number of processors to use.  If set to > 1, use multiprocessing')
@@ -128,7 +130,7 @@ def config_and_run( options, package_name ) :
         logging.info('********************************')
         proc = subprocess.Popen(['make', 'clean'])
         proc.wait()
-        proc = subprocess.Popen(['make'])
+        proc = subprocess.Popen(['make', 'EXENAME="%s"' %options.exeName])
         retcode = proc.wait()
         
         # abort if non-zero return code
@@ -145,7 +147,7 @@ def config_and_run( options, package_name ) :
     # an absolute path.  If that doesn't exist, try
     # Using the path of this script to get an
     # absolute path
-    exe_path = '%s/TreeFilter/%s/RunAnalysis' %(workarea, package_name)
+    exe_path = '%s/TreeFilter/%s/%s' %(workarea, package_name, options.exeName)
 
 
     #gather module arguments
@@ -333,6 +335,8 @@ def get_branch_mapping( files, treename ) :
                 leafEntry += '/%s' %varId
 
             prop_dic = {'name' : name, 'type' : type, 'totSize' : totSize, 'arrayStr' : arrayStr, 'leafEntry' : leafEntry, 'sizeEntries' : size_entries }
+            if name in [d['name'] for d in all_branches] :
+                continue
 
             if is_range :
                 # any variable that is a range variable needs to come first

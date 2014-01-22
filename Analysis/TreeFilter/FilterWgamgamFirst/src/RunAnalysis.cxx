@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 }
 
 void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
-                            const CmdOptions & options ) {
+                            const CmdOptions & options, std::vector<ModuleConfig> &configs ) {
 
     // *************************
     // initialize trees
@@ -48,10 +48,18 @@ void RunModule::initialize( TChain * chain, TTree * outtree, TFile *outfile,
     // *************************
     // Set defaults for added output variables
     // *************************
+    OUT::eleD0LepVtx = 0;
+    OUT::eleDzLepVtx = 0;
+    OUT::muD0LepVtx = 0;
+    OUT::muDzLepVtx = 0;
 
     // *************************
     // Declare Branches
     // *************************
+    outtree->Branch("eleD0LepVtx", &OUT::eleD0LepVtx);
+    outtree->Branch("eleDzLepVtx", &OUT::eleDzLepVtx);
+    outtree->Branch("muD0LepVtx",  &OUT::muD0LepVtx);
+    outtree->Branch("muDzLepVtx",  &OUT::muDzLepVtx);
   
 }
 bool RunModule::execute( std::vector<ModuleConfig> & configs ) {
@@ -101,6 +109,9 @@ bool RunModule::ApplyModule( ModuleConfig & config ) const {
     if( config.GetName() == "FilterTrigger" ) {
         keep_evt &= FilterTrigger( config );
     }
+    if( config.GetName() == "CalcLeptonVtxVars" ) {
+        CalcLeptonVtxVars( config );
+    }
 
 
     // If the module applies a filter the filter decision
@@ -130,6 +141,65 @@ void RunModule::FilterElec( ModuleConfig & config ) const {
     }
 
 }     
+
+void RunModule::CalcLeptonVtxVars( ModuleConfig & /*config*/ ) const { 
+
+    OUT::eleD0LepVtx->clear();
+    OUT::eleDzLepVtx->clear();
+    OUT::muD0LepVtx->clear();
+    OUT::muDzLepVtx->clear();
+
+    for( int idx = 0; idx < IN::nEle; ++idx ) {
+        bool found_nearest = false;
+        unsigned nearestIdx=0;
+        float mindz = 1000;
+        for( int vidx = 0; vidx < IN::nVtxBS; ++vidx ) {
+            float dz = fabs(IN::vtxbs_z->at(vidx)-IN::eleVtx_z->at(idx));
+            if( dz < mindz ) {
+                mindz = dz;
+                nearestIdx = vidx;
+                found_nearest = true;
+            }
+        }
+        if( !found_nearest ) {
+            std::cout << "WARNING -- no nearest vertex found" << std::endl;
+        }
+        if( IN::eleD0Vtx->at(idx).size() ) {
+            OUT::eleD0LepVtx->push_back(IN::eleD0Vtx->at(idx).at(nearestIdx));
+        }
+        if( IN::eleDzVtx->at(idx).size() ) {
+            OUT::eleDzLepVtx->push_back(IN::eleDzVtx->at(idx).at(nearestIdx));
+        }
+        
+    }
+
+    for( int idx = 0; idx < IN::nMu; ++idx ) {
+        bool found_nearest = false;
+        unsigned nearestIdx=0;
+        float mindz = 1000;
+        for( int vidx = 0; vidx < IN::nVtxBS; ++vidx ) {
+            float dz = fabs(IN::vtxbs_z->at(vidx)-IN::muVtx_z->at(idx));
+            if( dz < mindz ) {
+                mindz = dz;
+                nearestIdx = vidx;
+                found_nearest = true;
+            }
+        }
+        if( !found_nearest ) {
+            std::cout << "WARNING -- no nearest vertex found" << std::endl;
+        }
+        if( IN::muD0Vtx->at(idx).size() ) {
+            OUT::muD0LepVtx->push_back(IN::muD0Vtx->at(idx).at(nearestIdx));
+        }
+        if( IN::muDzVtx->at(idx).size() ) {
+            OUT::muDzLepVtx->push_back(IN::muDzVtx->at(idx).at(nearestIdx));
+        }
+        
+    }
+
+}
+
+
 
 void RunModule::FilterJet( ModuleConfig & config ) const {
 
