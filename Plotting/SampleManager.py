@@ -633,7 +633,7 @@ class SampleManager :
 
         if ylabel is None :
             binwidth = self.get_samples(isActive=True)[0].hist.GetBinWidth(1)
-            ylabel = 'Events / %d GeV' %binwidth
+            ylabel = 'Events / %.1f GeV' %binwidth
         if rlabel is None :
             rlabel = 'Data / MC'
             
@@ -1309,7 +1309,7 @@ class SampleManager :
 
         if ylabel is None :
             bin_width = ( histpars[2] - histpars[1] )/histpars[0]
-            ylabel = 'Events / %d GeV' %bin_width
+            ylabel = 'Events / %.1f GeV' %bin_width
             if normalize :
                 ylabel = 'Normalized ' + ylabel
 
