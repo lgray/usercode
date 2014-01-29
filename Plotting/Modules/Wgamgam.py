@@ -62,6 +62,15 @@ def config_samples(samples) :
                            isData=True,
                           )
 
+    samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
+                            input_samples = [
+                                             'WAA_ISR',
+                                             'Wgg_FSR',
+                                            ],
+                           plotColor=ROOT.kRed,
+                           isSignal=False
+                          )
+
     #samples.AddSampleGroup( 'Single Photon', legend_name='Single photon', 
     #                    input_samples = [
     #                                       'gjet_pt20to40_doubleEM'  ,
@@ -73,7 +82,7 @@ def config_samples(samples) :
                             input_samples = [
                                              'Wjets',
                                             ],
-                           plotColor=ROOT.kPink,
+                           plotColor=ROOT.kRed+3,
                           )
 
     samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
@@ -123,14 +132,7 @@ def config_samples(samples) :
     #                      ],
     #                       plotColor=ROOT.kRed-5,
     #                      )
-    samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
-                            input_samples = [
-                                             'WAA_ISR',
-                                             'Wgg_FSR',
-                                            ],
-                           plotColor=ROOT.kRed,
-                           isSignal=True
-                          )
+    
 
     samples.AddSampleGroup( 'DiBoson', legend_name='WW/WZ/ZZ', 
                            input_samples = [
@@ -231,6 +233,7 @@ def config_samples(samples) :
     #                        input_samples = ['Data', 'AllMC'],
     #                        plotColor=ROOT.kGreen,isSignal=True
     #                      )
+    
                                              
 
 
