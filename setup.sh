@@ -1,2 +1,2 @@
-export WorkArea=$PWD/Analysis
-export PYTHONPATH=$PYTHONPATH:${PWD}/Analysis/TreeFilter/Core/python:${PWD}/Analysis/Util/python
+export WorkArea=${CMSSW_BASE}/src/usercode/Analysis
+export PYTHONPATH=$PYTHONPATH:${WorkArea}/TreeFilter/Core/python:${WorkArea}/Util/python
