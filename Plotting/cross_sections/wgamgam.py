@@ -1,3 +1,4 @@
+
 {
                   #'DYJetsToLL'            : { 'n_evt' : 30459504 , 'cross_section' : 11050.0 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   #'DYJetsToLL'            : { 'n_evt' : 30459504 , 'cross_section' : 6911.7 , 'gen_eff' : 1.0 , 'k_factor' : 1.25 },
@@ -40,7 +41,7 @@
                   'ttjets_1l'              : { 'n_evt' : 10629902 , 'cross_section' : 99.44 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'ttjets_2l'              : { 'n_evt' : 12019013 , 'cross_section' : 23.83 , 'gen_eff' : 1.0 , 'k_factor' : 1.0 },
                   'diphoton_box_25to250'   : { 'n_evt' : 1664550,   'cross_section' : 15.54, 'gen_eff' : 1.0, 'k_factor' : 1.0 },
-                  'WH_ZH_125'              : { 'n_evt' : 100320,   'cross_section' : 1.1199, 'gen_eff' : 1.0, 'k_factor' : 1.0 },
+                  'WH_ZH_125'              : { 'n_evt' : 100320,   'cross_section' : 0.002498161, 'gen_eff' : 1.0, 'k_factor' : 1.0 },
 
 
 }

@@ -47,6 +47,7 @@ def config_samples(samples) :
     samples.AddSample('ZZ_4tau'                      , path='job_summer12_ZZ_4tau'              ,  disableDraw=True, useXSFile=True )
     samples.AddSample('ZZZ'                          , path='job_summer12_ZZZ'                  ,  disableDraw=True, useXSFile=True )
 
+    """
     samples.AddSampleGroup( 'Data', legend_name='Data', 
                             input_samples = [
                                              'electron_2012a_Jan22rereco',
@@ -61,6 +62,7 @@ def config_samples(samples) :
                            plotColor=ROOT.kBlack,
                            isData=True,
                           )
+                          """
 
     samples.AddSampleGroup( 'Wgammagamma', legend_name='W#gamma#gamma', 
                             input_samples = [
@@ -84,6 +86,12 @@ def config_samples(samples) :
                                             ],
                            plotColor=ROOT.kRed+3,
                           )
+    samples.AddSampleGroup( 'Wgamma', legend_name='W#gamma', 
+                           input_samples = [
+                                            'Wg',
+                           ],
+                           plotColor=ROOT.kBlue,
+                          )
 
     samples.AddSampleGroup( 'Zgammastar', legend_name='Z/#gamma * ', 
                             input_samples = [
@@ -91,14 +99,7 @@ def config_samples(samples) :
                                             ],
                            plotColor=ROOT.kCyan,
                            scale=1.0,
-                          )
-
-    samples.AddSampleGroup( 'Wgamma', legend_name='W#gamma', 
-                           input_samples = [
-                                            'Wg',
-                           ],
-                           plotColor=ROOT.kBlue,
-                          )
+                          )    
 
     samples.AddSampleGroup( 'Zgamma', legend_name='Z#gamma', 
                            input_samples = [
@@ -200,8 +201,8 @@ def config_samples(samples) :
                           )
 
     samples.AddSampleGroup( 'VH', legend_name='WH/ZH 125', 
-                           input_samples = [
-                                           'WH_ZH_125'                     ,
+                            input_samples = [
+                             'WH_ZH_125'                     ,
                            ],
                            plotColor=ROOT.kRed+4,
                           )
